@@ -16,8 +16,6 @@ import (
 	"github.com/kr/pretty"
 )
 
-
-
 type Node struct {
 	opts Options
 

@@ -44,7 +44,7 @@ func (m *FSM) Apply(l *raft.Log) interface{} {
 	// TODO: Pass in transaction.
 
 	// apply instruction
-	err = instruction.Apply(nil)
+	err = instruction.Execute(nil)
 	if err != nil {
 		panic("failed to apply instruction: " + c.Name)
 	}

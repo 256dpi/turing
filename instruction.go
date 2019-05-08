@@ -4,6 +4,8 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
+// TODO: Writable instructions?
+
 // TODO: Batchable instructions?
 
 type Instruction interface {
@@ -19,6 +21,6 @@ type Instruction interface {
 	// Decode should decode the instruction.
 	Decode([]byte) error
 
-	// Apply should apply the instruction.
-	Apply(txn *badger.Txn) error
+	// Execute should execute the instruction.
+	Execute(txn *badger.Txn) error
 }

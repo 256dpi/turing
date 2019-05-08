@@ -39,7 +39,7 @@ func main() {
 		Directory: dir,
 		Peers:     strings.Split(*peers, ","),
 		Instructions: []turing.Instruction{
-			&Set{}, &Del{},
+			&Set{}, &Get{}, &Del{},
 		},
 	})
 	if err != nil {
