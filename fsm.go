@@ -53,10 +53,32 @@ func (m *fsm) Apply(l *raft.Log) interface{} {
 	return nil
 }
 
-func (*fsm) Snapshot() (raft.FSMSnapshot, error) {
-	panic("implement me")
+func (m *fsm) Snapshot() (raft.FSMSnapshot, error) {
+	return m, nil
 }
 
-func (*fsm) Restore(io.ReadCloser) error {
-	panic("implement me")
+func (m *fsm) Persist(sink raft.SnapshotSink) error {
+	// backup database
+	_, err := m.db.Backup(sink, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *fsm) Release() {
+	// do nothing
+}
+
+func (m *fsm) Restore(rc io.ReadCloser) error {
+	// TODO: Clear database beforehand?
+
+	// load backup
+	err := m.db.Load(rc)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
