@@ -8,18 +8,18 @@ import (
 	"strings"
 )
 
-type Route struct {
+type route struct {
 	Name string
 	Host string
 	Port int
 }
 
-func (r Route) Addr() string {
+func (r route) addr() string {
 	return net.JoinHostPort(r.Host, strconv.Itoa(r.Port))
 }
 
-func (r Route) String() string {
-	return fmt.Sprintf("%s@%s", r.Name, r.Addr())
+func (r route) string() string {
+	return fmt.Sprintf("%s@%s", r.Name, r.addr())
 }
 
 type Options struct {
@@ -42,41 +42,41 @@ type Options struct {
 	Instructions []Instruction
 }
 
-func (o Options) NodeRoute() Route {
-	return Route{
+func (o Options) nodeRoute() route {
+	return route{
 		Name: o.Name,
 		Host: o.Host,
 		Port: o.Port,
 	}
 }
 
-func (o Options) SerfPort() int {
+func (o Options) serfPort() int {
 	return o.Port
 }
 
-func (o Options) SerfAddr() string {
-	return net.JoinHostPort(o.Host, strconv.Itoa(o.SerfPort()))
+func (o Options) serfAddr() string {
+	return net.JoinHostPort(o.Host, strconv.Itoa(o.serfPort()))
 }
 
-func (o Options) RaftPort() int {
+func (o Options) raftPort() int {
 	return o.Port + 1
 }
 
-func (o Options) RaftAddr() string {
-	return net.JoinHostPort(o.Host, strconv.Itoa(o.RaftPort()))
+func (o Options) raftAddr() string {
+	return net.JoinHostPort(o.Host, strconv.Itoa(o.raftPort()))
 }
 
-func (o Options) RaftDir() string {
+func (o Options) raftDir() string {
 	return filepath.Join(o.Directory, "raft")
 }
 
-func (o Options) DBDir() string {
+func (o Options) dbDir() string {
 	return filepath.Join(o.Directory, "db")
 }
 
-func (o Options) PeerRoutes() []Route {
+func (o Options) peerRoutes() []route {
 	// prepare list
-	var list []Route
+	var list []route
 
 	// parse peers
 	for _, peer := range o.Peers {
@@ -99,7 +99,7 @@ func (o Options) PeerRoutes() []Route {
 		}
 
 		// add route
-		list = append(list, Route{
+		list = append(list, route{
 			Name: s[0],
 			Host: host,
 			Port: port,

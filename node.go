@@ -32,7 +32,7 @@ func CreateNode(opts Options) (*Node, error) {
 	/* db */
 
 	// open db
-	db, err := openDB(opts.DBDir())
+	db, err := openDB(opts.dbDir())
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func CreateNode(opts Options) (*Node, error) {
 	memberlistConfig := memberlist.DefaultLANConfig()
 	memberlistConfig.Name = opts.Name
 	memberlistConfig.BindAddr = opts.Host
-	memberlistConfig.BindPort = opts.SerfPort()
+	memberlistConfig.BindPort = opts.serfPort()
 	memberlistConfig.LogOutput = os.Stdout
 
 	// prepare events
@@ -78,11 +78,9 @@ func CreateNode(opts Options) (*Node, error) {
 
 	// prepare serf peers
 	var serfPeers []string
-	for _, peer := range opts.PeerRoutes() {
-		serfPeers = append(serfPeers, peer.Addr())
+	for _, peer := range opts.peerRoutes() {
+		serfPeers = append(serfPeers, peer.addr())
 	}
-
-	pretty.Println(serfPeers)
 
 	// join other serf peers if available
 	if len(serfPeers) > 0 {
@@ -101,25 +99,25 @@ func CreateNode(opts Options) (*Node, error) {
 	config.LogOutput = os.Stdout
 
 	// resolve raft binding
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", opts.RaftPort()))
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", opts.raftPort()))
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft transport
-	transport, err := raft.NewTCPTransport(opts.RaftAddr(), addr, 3, 10*time.Second, os.Stdout)
+	transport, err := raft.NewTCPTransport(opts.raftAddr(), addr, 3, 10*time.Second, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(opts.RaftDir(), 2, os.Stdout)
+	snapshotStore, err := raft.NewFileSnapshotStore(opts.raftDir(), 2, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create bolt db based raft store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(opts.RaftDir(), "raft.db"))
+	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(opts.raftDir(), "raft.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +145,7 @@ func CreateNode(opts Options) (*Node, error) {
 		}
 
 		// add raft peers
-		for _, peer := range opts.PeerRoutes() {
+		for _, peer := range opts.peerRoutes() {
 			// check if self
 			if peer.Name == opts.Name {
 				continue
@@ -157,7 +155,7 @@ func CreateNode(opts Options) (*Node, error) {
 			peer.Port++
 			servers = append(servers, raft.Server{
 				ID:      raft.ServerID(peer.Name),
-				Address: raft.ServerAddress(peer.Addr()),
+				Address: raft.ServerAddress(peer.addr()),
 			})
 		}
 
