@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dgraph-io/badger"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/raft"
 	"github.com/hashicorp/raft-boltdb"
@@ -19,8 +20,8 @@ import (
 type Node struct {
 	opts Options
 
-	db   *DB
-	fsm  *FSM
+	db   *badger.DB
+	fsm  *fsm
 	serf *serf.Serf
 	raft *raft.Raft
 }
@@ -45,7 +46,8 @@ func CreateNode(opts Options) (*Node, error) {
 	}
 
 	// create fsm
-	fsm := &FSM{
+	fsm := &fsm{
+		db:           db,
 		instructions: instructions,
 	}
 
@@ -86,7 +88,7 @@ func CreateNode(opts Options) (*Node, error) {
 	if len(serfPeers) > 0 {
 		_, err = srf.Join(serfPeers, false)
 		if err != nil {
-		//	return nil, err
+			//	return nil, err
 		}
 	}
 
@@ -199,7 +201,7 @@ func (n *Node) Update(i Instruction) error {
 	}
 
 	// prepare command
-	cmd := &Command{
+	cmd := &command{
 		Name: i.Name(),
 		Data: data,
 	}

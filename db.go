@@ -7,10 +7,7 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-// DB is a generic database.
-type DB = badger.DB
-
-func openDB(dir string) (*DB, error) {
+func openDB(dir string) (*badger.DB, error) {
 	// ensure directory
 	err := os.MkdirAll(dir, 0777)
 	if err != nil {

@@ -4,23 +4,26 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/dgraph-io/badger"
 	"github.com/hashicorp/raft"
 )
 
-type Command struct {
+type command struct {
 	Name string `json:"name"`
 	Data []byte `json:"data"`
 }
 
-type FSM struct {
+type fsm struct {
+	db *badger.DB
+
 	instructions map[string]Instruction
 }
 
-func (m *FSM) Apply(l *raft.Log) interface{} {
+func (m *fsm) Apply(l *raft.Log) interface{} {
 	// TODO: Handle errors.
 
 	// parse command
-	var c Command
+	var c command
 	err := json.Unmarshal(l.Data, &c)
 	if err != nil {
 		panic("failed to unmarshal raft log")
@@ -41,10 +44,8 @@ func (m *FSM) Apply(l *raft.Log) interface{} {
 		panic("failed to decode instruction: " + c.Name)
 	}
 
-	// TODO: Pass in transaction.
-
 	// apply instruction
-	err = instruction.Execute(nil)
+	err = m.db.Update(instruction.Execute)
 	if err != nil {
 		panic("failed to apply instruction: " + c.Name)
 	}
@@ -52,10 +53,10 @@ func (m *FSM) Apply(l *raft.Log) interface{} {
 	return nil
 }
 
-func (*FSM) Snapshot() (raft.FSMSnapshot, error) {
+func (*fsm) Snapshot() (raft.FSMSnapshot, error) {
 	panic("implement me")
 }
 
-func (*FSM) Restore(io.ReadCloser) error {
+func (*fsm) Restore(io.ReadCloser) error {
 	panic("implement me")
 }
