@@ -186,6 +186,10 @@ func CreateNode(opts Options) (*Node, error) {
 	return n, nil
 }
 
+func (n *Node) Leader() bool {
+	return n.raft.VerifyLeader().Error() == nil
+}
+
 func (n *Node) Update(i Instruction) error {
 	// // check state
 	// if n.raft.State() != raft.Leader {
@@ -219,10 +223,14 @@ func (n *Node) Update(i Instruction) error {
 	return nil
 }
 
-func (n *Node) View(i Instruction) (interface{}, error) {
-	// TODO: Implement view command.
+func (n *Node) View(i Instruction) error {
+	// execute instruction
+	err := n.db.View(i.Execute)
+	if err != nil {
+		return err
+	}
 
-	return nil, nil
+	return nil
 }
 
 func (n *Node) Close() {

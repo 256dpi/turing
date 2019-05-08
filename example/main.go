@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/256dpi/turing"
 )
@@ -49,17 +50,34 @@ func main() {
 	// ensure closing
 	defer node.Close()
 
-	// // set key
-	// err = node.Update(&Set{Key: "foo", Value: "bar"})
-	// if err != nil {
-	// 	println(err.Error())
-	// }
-	//
-	// // delete key
-	// err = node.Update(&Del{Key: "foo"})
-	// if err != nil {
-	// 	println(err.Error())
-	// }
+	for {
+		// sleep
+		time.Sleep(time.Second)
 
-	select {}
+		// check leadership
+		if !node.Leader() {
+			continue
+		}
+
+		// set key
+		err = node.Update(&Set{Key: "foo", Value: "bar"})
+		if err != nil {
+			println(err.Error())
+		}
+
+		// get key
+		get := &Get{Key: "foo"}
+		err = node.View(get)
+		if err != nil {
+			println(err.Error())
+		}
+
+		println(get.Value)
+
+		// delete key
+		err = node.Update(&Del{Key: "foo"})
+		if err != nil {
+			println(err.Error())
+		}
+	}
 }
