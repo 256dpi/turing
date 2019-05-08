@@ -9,17 +9,62 @@ import (
 )
 
 type route struct {
-	Name string
-	Host string
-	Port int
+	name string
+	host string
+	port int
 }
 
-func (r route) addr() string {
-	return net.JoinHostPort(r.Host, strconv.Itoa(r.Port))
+func parseRoute(str string) route {
+	// split name and addr
+	s := strings.Split(str, "@")
+	if len(s) == 1 {
+		s = []string{"", s[0]}
+	}
+
+	// split addr
+	host, portString, _ := net.SplitHostPort(s[1])
+
+	// set default host
+	if host == "" {
+		host = "0.0.0.0"
+	}
+
+	// parse port
+	port, _ := strconv.Atoi(portString)
+
+	return route{
+		name: s[0],
+		host: host,
+		port: port,
+	}
+}
+
+func (r route) serfPort() int {
+	return r.port
+}
+
+func (r route) serfAddr() string {
+	return net.JoinHostPort(r.host, strconv.Itoa(r.serfPort()))
+}
+
+func (r route) raftPort() int {
+	return r.port + 1
+}
+
+func (r route) raftAddr() string {
+	return net.JoinHostPort(r.host, strconv.Itoa(r.raftPort()))
+}
+
+func (r route) rpcPort() int {
+	return r.port + 2
+}
+
+func (r route) rpcAddr() string {
+	return net.JoinHostPort(r.host, strconv.Itoa(r.rpcPort()))
 }
 
 func (r route) string() string {
-	return fmt.Sprintf("%s@%s", r.Name, r.addr())
+	return fmt.Sprintf("%s@%s", r.name, r.serfAddr())
 }
 
 type Options struct {
@@ -44,26 +89,10 @@ type Options struct {
 
 func (o Options) nodeRoute() route {
 	return route{
-		Name: o.Name,
-		Host: o.Host,
-		Port: o.Port,
+		name: o.Name,
+		host: o.Host,
+		port: o.Port,
 	}
-}
-
-func (o Options) serfPort() int {
-	return o.Port
-}
-
-func (o Options) serfAddr() string {
-	return net.JoinHostPort(o.Host, strconv.Itoa(o.serfPort()))
-}
-
-func (o Options) raftPort() int {
-	return o.Port + 1
-}
-
-func (o Options) raftAddr() string {
-	return net.JoinHostPort(o.Host, strconv.Itoa(o.raftPort()))
 }
 
 func (o Options) raftDir() string {
@@ -77,33 +106,8 @@ func (o Options) dbDir() string {
 func (o Options) peerRoutes() []route {
 	// prepare list
 	var list []route
-
-	// parse peers
 	for _, peer := range o.Peers {
-		// split name and addr
-		s := strings.Split(peer, "@")
-		if len(s) != 2 {
-			continue
-		}
-
-		// split addr
-		host, portString, err := net.SplitHostPort(s[1])
-		if err != nil {
-			continue
-		}
-
-		// parse port
-		port, err := strconv.Atoi(portString)
-		if err != nil {
-			continue
-		}
-
-		// add route
-		list = append(list, route{
-			Name: s[0],
-			Host: host,
-			Port: port,
-		})
+		list = append(list, parseRoute(peer))
 	}
 
 	return list

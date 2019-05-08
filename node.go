@@ -1,9 +1,12 @@
 package turing
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -57,7 +60,7 @@ func CreateNode(opts Options) (*Node, error) {
 	memberlistConfig := memberlist.DefaultLANConfig()
 	memberlistConfig.Name = opts.Name
 	memberlistConfig.BindAddr = opts.Host
-	memberlistConfig.BindPort = opts.serfPort()
+	memberlistConfig.BindPort = opts.nodeRoute().serfPort()
 	memberlistConfig.LogOutput = os.Stdout
 
 	// prepare events
@@ -79,7 +82,7 @@ func CreateNode(opts Options) (*Node, error) {
 	// prepare serf peers
 	var serfPeers []string
 	for _, peer := range opts.peerRoutes() {
-		serfPeers = append(serfPeers, peer.addr())
+		serfPeers = append(serfPeers, peer.serfAddr())
 	}
 
 	// join other serf peers if available
@@ -99,13 +102,13 @@ func CreateNode(opts Options) (*Node, error) {
 	config.LogOutput = os.Stdout
 
 	// resolve raft binding
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", opts.raftPort()))
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", opts.nodeRoute().raftPort()))
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft transport
-	transport, err := raft.NewTCPTransport(opts.raftAddr(), addr, 3, 10*time.Second, os.Stdout)
+	transport, err := raft.NewTCPTransport(opts.nodeRoute().raftAddr(), addr, 3, 10*time.Second, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
@@ -147,15 +150,14 @@ func CreateNode(opts Options) (*Node, error) {
 		// add raft peers
 		for _, peer := range opts.peerRoutes() {
 			// check if self
-			if peer.Name == opts.Name {
+			if peer.name == opts.Name {
 				continue
 			}
 
 			// add peer
-			peer.Port++
 			servers = append(servers, raft.Server{
-				ID:      raft.ServerID(peer.Name),
-				Address: raft.ServerAddress(peer.addr()),
+				ID:      raft.ServerID(peer.name),
+				Address: raft.ServerAddress(peer.raftAddr()),
 			})
 		}
 
@@ -168,6 +170,8 @@ func CreateNode(opts Options) (*Node, error) {
 		}
 	}
 
+	/* node */
+
 	// create node
 	n := &Node{
 		opts: opts,
@@ -176,6 +180,9 @@ func CreateNode(opts Options) (*Node, error) {
 		serf: srf,
 		raft: rft,
 	}
+
+	// run rpc server
+	go http.ListenAndServe(opts.nodeRoute().rpcAddr(), n.rpcEndpoint())
 
 	// run serf handler
 	go n.serfHandler(serfEvents)
@@ -187,17 +194,17 @@ func CreateNode(opts Options) (*Node, error) {
 }
 
 func (n *Node) Leader() bool {
-	return n.raft.VerifyLeader().Error() == nil
+	return n.raft.State() == raft.Leader
 }
 
 func (n *Node) Update(i Instruction) error {
-	// // check state
-	// if n.raft.State() != raft.Leader {
-	// 	return ErrNotLeader
-	// }
+	// check if leader
+	if n.raft.State() != raft.Leader {
+		return n.updateRemote(i)
+	}
 
 	// encode instruction
-	data, err := i.Encode()
+	id, err := i.Encode()
 	if err != nil {
 		return err
 	}
@@ -205,17 +212,17 @@ func (n *Node) Update(i Instruction) error {
 	// prepare command
 	cmd := &command{
 		Name: i.Name(),
-		Data: data,
+		Data: id,
 	}
 
 	// encode command
-	bytes, err := json.Marshal(cmd)
+	cd, err := json.Marshal(cmd)
 	if err != nil {
 		return err
 	}
 
 	// apply command
-	err = n.raft.Apply(bytes, 10*time.Second).Error()
+	err = n.raft.Apply(cd, 10*time.Second).Error()
 	if err != nil {
 		return err
 	}
@@ -223,9 +230,113 @@ func (n *Node) Update(i Instruction) error {
 	return nil
 }
 
-func (n *Node) View(i Instruction) error {
-	// execute instruction
-	err := n.db.View(i.Execute)
+func (n *Node) updateRemote(i Instruction) error {
+	// get leader
+	leader := string(n.raft.Leader())
+	if leader == "" {
+		return fmt.Errorf("no leader")
+	}
+
+	// encode instruction
+	id, err := i.Encode()
+	if err != nil {
+		return err
+	}
+
+	// prepare command
+	cmd := command{
+		Name: i.Name(),
+		Data: id,
+	}
+
+	// encode command
+	cd, err := json.Marshal(cmd)
+	if err != nil {
+		return err
+	}
+
+	// parse route
+	route := parseRoute(string(n.raft.Leader()))
+	route.port--
+
+	// prepare url
+	url := fmt.Sprintf("http://%s/update", route.rpcAddr())
+
+	// create client
+	client := http.Client{}
+
+	// run request
+	_, err = client.Post(url, "application/json", bytes.NewReader(cd))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *Node) View(i Instruction, forward bool) error {
+	// execute instruction locally if leader or not forwarded
+	if !forward || n.raft.State() == raft.Leader {
+		err := n.db.View(i.Execute)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// get leader
+	leader := string(n.raft.Leader())
+	if leader == "" {
+		return fmt.Errorf("no leader")
+	}
+
+	// encode instruction
+	id, err := i.Encode()
+	if err != nil {
+		return err
+	}
+
+	// prepare command
+	cmd := command{
+		Name: i.Name(),
+		Data: id,
+	}
+
+	// encode command
+	cd, err := json.Marshal(cmd)
+	if err != nil {
+		return err
+	}
+
+	// parse route
+	route := parseRoute(string(n.raft.Leader()))
+	route.port--
+
+	// prepare url
+	url := fmt.Sprintf("http://%s/view", route.rpcAddr())
+
+	// create client
+	client := http.Client{}
+
+	// run request
+	res, err := client.Post(url, "application/json", bytes.NewReader(cd))
+	if err != nil {
+		return err
+	}
+
+	// ensure closing
+	defer res.Body.Close()
+
+	// parse command
+	var c command
+	err = json.NewDecoder(res.Body).Decode(&c)
+	if err != nil {
+		return err
+	}
+
+	// decode instruction
+	err = i.Decode(c.Data)
 	if err != nil {
 		return err
 	}
@@ -235,6 +346,88 @@ func (n *Node) View(i Instruction) error {
 
 func (n *Node) Close() {
 	// TODO: Implement close.
+}
+
+func (n *Node) rpcEndpoint() http.Handler {
+	// create mux
+	mux := http.NewServeMux()
+
+	// add update handler
+	mux.HandleFunc("/update", func(w http.ResponseWriter, r *http.Request) {
+		// read command
+		cmd, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// apply command
+		err = n.raft.Apply(cmd, 0).Error()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	// add update handler
+	mux.HandleFunc("/view", func(w http.ResponseWriter, r *http.Request) {
+		// parse command
+		var c command
+		err := json.NewDecoder(r.Body).Decode(&c)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// get factory instruction
+		factory, ok := n.fsm.instructions[c.Name]
+		if !ok {
+			http.Error(w, "missing instruction", http.StatusInternalServerError)
+			return
+		}
+
+		// create new instruction
+		instruction := factory.Build()
+
+		// decode instruction
+		err = instruction.Decode(c.Data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// execute instruction locally
+		err = n.db.View(instruction.Execute)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// encode instruction
+		id, err := instruction.Encode()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// prepare command
+		cmd := &command{
+			Name: instruction.Name(),
+			Data: id,
+		}
+
+		// encode command
+		cd, err := json.Marshal(cmd)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// write result
+		_, _ = w.Write(cd)
+	})
+
+	return mux
 }
 
 func (n *Node) confPrinter() {

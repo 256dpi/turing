@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -50,34 +51,35 @@ func main() {
 	// ensure closing
 	defer node.Close()
 
+	// prepare counter
+	counter := 0
+
 	for {
 		// sleep
 		time.Sleep(time.Second)
 
-		// check leadership
-		if !node.Leader() {
+		// get value
+		value := strconv.Itoa(counter)
+
+		// set key
+		println("set key: ", *name, "=", value)
+		err = node.Update(&Set{Key: *name, Value: value})
+		if err != nil {
+			println(err.Error())
 			continue
 		}
 
-		// set key
-		err = node.Update(&Set{Key: "foo", Value: "bar"})
-		if err != nil {
-			println(err.Error())
-		}
-
 		// get key
-		get := &Get{Key: "foo"}
-		err = node.View(get)
+		get := &Get{Key: *name}
+		err = node.View(get, true)
 		if err != nil {
 			println(err.Error())
+			continue
 		}
 
-		println(get.Value)
+		println("get key: ", *name, "=", get.Value)
 
-		// delete key
-		err = node.Update(&Del{Key: "foo"})
-		if err != nil {
-			println(err.Error())
-		}
+		// increment
+		counter++
 	}
 }
