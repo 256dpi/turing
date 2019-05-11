@@ -1,6 +1,8 @@
 package turing
 
-import "github.com/dgraph-io/badger"
+import (
+	"github.com/dgraph-io/badger"
+)
 
 type Value struct {
 	item *badger.Item
@@ -33,7 +35,9 @@ type Transaction struct {
 func (t *Transaction) Get(key []byte) (*Value, error) {
 	// get item
 	item, err := t.txn.Get(key)
-	if err != nil {
+	if err == badger.ErrKeyNotFound {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 

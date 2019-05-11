@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/dgraph-io/badger"
 	"github.com/256dpi/turing"
 )
 
@@ -37,11 +36,11 @@ func (i *Increment) Execute(txn *turing.Transaction) error {
 
 	// get existing value
 	value, err := txn.Get(key)
-	if err != nil && err != badger.ErrKeyNotFound {
+	if err != nil {
 		return err
 	}
 
-	// set current count
+	// set current count if available
 	if value != nil {
 		err = value.Load(func(value []byte) error {
 			n, err := strconv.Atoi(string(value))
