@@ -39,16 +39,8 @@ func parseRoute(str string) route {
 	}
 }
 
-func (r route) serfPort() int {
-	return r.port
-}
-
-func (r route) serfAddr() string {
-	return net.JoinHostPort(r.host, strconv.Itoa(r.serfPort()))
-}
-
 func (r route) raftPort() int {
-	return r.port + 1
+	return r.port
 }
 
 func (r route) raftAddr() string {
@@ -56,7 +48,7 @@ func (r route) raftAddr() string {
 }
 
 func (r route) rpcPort() int {
-	return r.port + 2
+	return r.port + 1
 }
 
 func (r route) rpcAddr() string {
@@ -64,17 +56,17 @@ func (r route) rpcAddr() string {
 }
 
 func (r route) string() string {
-	return fmt.Sprintf("%s@%s", r.name, r.serfAddr())
+	return fmt.Sprintf("%s@%s", r.name, r.raftAddr())
 }
 
 type Options struct {
 	// The node name.
 	Name string
 
-	// The host used for serf and raft.
+	// The host used for raft.
 	Host string
 
-	// The port used for serf and raft (+1).
+	// The port used for raft.
 	Port int
 
 	// The storage directory.

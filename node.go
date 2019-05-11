@@ -9,14 +9,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/dgraph-io/badger"
-	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/raft"
 	"github.com/hashicorp/raft-boltdb"
-	"github.com/hashicorp/serf/serf"
 	"github.com/kr/pretty"
 )
 
@@ -25,7 +22,6 @@ type Node struct {
 
 	db   *badger.DB
 	rsm  *rsm
-	serf *serf.Serf
 	raft *raft.Raft
 }
 
@@ -52,45 +48,6 @@ func CreateNode(opts Options) (*Node, error) {
 	fsm := &rsm{
 		db:           db,
 		instructions: instructions,
-	}
-
-	/* serf */
-
-	// prepare memberlist config
-	memberlistConfig := memberlist.DefaultLANConfig()
-	memberlistConfig.Name = opts.Name
-	memberlistConfig.BindAddr = opts.Host
-	memberlistConfig.BindPort = opts.nodeRoute().serfPort()
-	memberlistConfig.LogOutput = os.Stdout
-
-	// prepare events
-	serfEvents := make(chan serf.Event, 16)
-
-	// prepare serf config
-	serfConfig := serf.DefaultConfig()
-	serfConfig.NodeName = opts.Name
-	serfConfig.EventCh = serfEvents
-	serfConfig.MemberlistConfig = memberlistConfig
-	serfConfig.LogOutput = os.Stdout
-
-	// create serf
-	srf, err := serf.Create(serfConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	// prepare serf peers
-	var serfPeers []string
-	for _, peer := range opts.peerRoutes() {
-		serfPeers = append(serfPeers, peer.serfAddr())
-	}
-
-	// join other serf peers if available
-	if len(serfPeers) > 0 {
-		_, err = srf.Join(serfPeers, false)
-		if err != nil {
-			//	return nil, err
-		}
 	}
 
 	/* raft */
@@ -177,15 +134,11 @@ func CreateNode(opts Options) (*Node, error) {
 		opts: opts,
 		db:   db,
 		rsm:  fsm,
-		serf: srf,
 		raft: rft,
 	}
 
 	// run rpc server
 	go http.ListenAndServe(opts.nodeRoute().rpcAddr(), n.rpcEndpoint())
-
-	// run serf handler
-	go n.serfHandler(serfEvents)
 
 	// run config printer
 	go n.confPrinter()
@@ -257,7 +210,6 @@ func (n *Node) updateRemote(i Instruction) error {
 
 	// parse route
 	route := parseRoute(string(n.raft.Leader()))
-	route.port--
 
 	// prepare url
 	url := fmt.Sprintf("http://%s/update", route.rpcAddr())
@@ -313,7 +265,6 @@ func (n *Node) View(i Instruction, forward bool) error {
 
 	// parse route
 	route := parseRoute(string(n.raft.Leader()))
-	route.port--
 
 	// prepare url
 	url := fmt.Sprintf("http://%s/view", route.rpcAddr())
@@ -455,48 +406,5 @@ func (n *Node) confPrinter() {
 
 		// print state
 		fmt.Printf("State: %s | Peers: %s\n", n.raft.String(), peers)
-	}
-}
-
-func (n *Node) serfHandler(events <-chan serf.Event) {
-	for {
-		// await event
-		ev := <-events
-
-		// prepare leader check
-		err := n.raft.VerifyLeader().Error()
-		if err != nil {
-			println(err.Error())
-			continue
-		}
-
-		// coerce event
-		memberEvent, ok := ev.(serf.MemberEvent)
-		if !ok {
-			continue
-		}
-
-		// handle members
-		for _, member := range memberEvent.Members {
-			// raft port of peer
-			peerName := raft.ServerID(member.Name)
-			peerAddr := raft.ServerAddress(member.Addr.String() + ":" + strconv.Itoa(int(member.Port+1)))
-
-			// handle event
-			switch memberEvent.EventType() {
-			case serf.EventMemberJoin:
-				err = n.raft.AddVoter(peerName, peerAddr, 0, 0).Error()
-				if err != nil {
-					println(err.Error())
-					continue
-				}
-			case serf.EventMemberLeave, serf.EventMemberFailed, serf.EventMemberReap:
-				err = n.raft.RemoveServer(peerName, 0, 0).Error()
-				if err != nil {
-					println(err.Error())
-					continue
-				}
-			}
-		}
 	}
 }
