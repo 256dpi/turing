@@ -24,7 +24,7 @@ type Node struct {
 	opts Options
 
 	db   *badger.DB
-	fsm  *fsm
+	rsm  *rsm
 	serf *serf.Serf
 	raft *raft.Raft
 }
@@ -40,7 +40,7 @@ func CreateNode(opts Options) (*Node, error) {
 		return nil, err
 	}
 
-	/* fsm */
+	/* rsm */
 
 	// create instruction map
 	instructions := make(map[string]Instruction)
@@ -48,8 +48,8 @@ func CreateNode(opts Options) (*Node, error) {
 		instructions[i.Name()] = i
 	}
 
-	// create fsm
-	fsm := &fsm{
+	// create rsm
+	fsm := &rsm{
 		db:           db,
 		instructions: instructions,
 	}
@@ -176,7 +176,7 @@ func CreateNode(opts Options) (*Node, error) {
 	n := &Node{
 		opts: opts,
 		db:   db,
-		fsm:  fsm,
+		rsm:  fsm,
 		serf: srf,
 		raft: rft,
 	}
@@ -382,7 +382,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// get factory instruction
-		factory, ok := n.fsm.instructions[c.Name]
+		factory, ok := n.rsm.instructions[c.Name]
 		if !ok {
 			http.Error(w, "missing instruction", http.StatusInternalServerError)
 			return
