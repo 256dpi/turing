@@ -59,7 +59,7 @@ func (r route) string() string {
 	return fmt.Sprintf("%s@%s", r.name, r.raftAddr())
 }
 
-type Options struct {
+type Config struct {
 	// The node name.
 	Name string
 
@@ -79,26 +79,26 @@ type Options struct {
 	Instructions []Instruction
 }
 
-func (o Options) nodeRoute() route {
+func (c Config) nodeRoute() route {
 	return route{
-		name: o.Name,
-		host: o.Host,
-		port: o.Port,
+		name: c.Name,
+		host: c.Host,
+		port: c.Port,
 	}
 }
 
-func (o Options) raftDir() string {
-	return filepath.Join(o.Directory, "raft")
+func (c Config) raftDir() string {
+	return filepath.Join(c.Directory, "raft")
 }
 
-func (o Options) dbDir() string {
-	return filepath.Join(o.Directory, "db")
+func (c Config) dbDir() string {
+	return filepath.Join(c.Directory, "db")
 }
 
-func (o Options) peerRoutes() []route {
+func (c Config) peerRoutes() []route {
 	// prepare list
 	var list []route
-	for _, peer := range o.Peers {
+	for _, peer := range c.Peers {
 		list = append(list, parseRoute(peer))
 	}
 

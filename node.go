@@ -14,24 +14,21 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/hashicorp/raft"
 	"github.com/hashicorp/raft-boltdb"
-	"github.com/kr/pretty"
 )
 
 type Node struct {
-	opts Options
+	opts Config
 
 	db   *badger.DB
 	rsm  *rsm
 	raft *raft.Raft
 }
 
-func CreateNode(opts Options) (*Node, error) {
-	pretty.Println(opts)
-
+func CreateNode(config Config) (*Node, error) {
 	/* db */
 
 	// open db
-	db, err := openDB(opts.dbDir())
+	db, err := openDB(config.dbDir())
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +37,7 @@ func CreateNode(opts Options) (*Node, error) {
 
 	// create instruction map
 	instructions := make(map[string]Instruction)
-	for _, i := range opts.Instructions {
+	for _, i := range config.Instructions {
 		instructions[i.Name()] = i
 	}
 
@@ -53,31 +50,31 @@ func CreateNode(opts Options) (*Node, error) {
 	/* raft */
 
 	// prepare raft config
-	config := raft.DefaultConfig()
-	config.LocalID = raft.ServerID(opts.Name)
-	config.SnapshotThreshold = 1024
-	config.LogOutput = os.Stdout
+	raftConfig := raft.DefaultConfig()
+	raftConfig.LocalID = raft.ServerID(config.Name)
+	raftConfig.SnapshotThreshold = 1024
+	raftConfig.LogOutput = os.Stdout
 
 	// resolve raft binding
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", opts.nodeRoute().raftPort()))
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", config.nodeRoute().raftPort()))
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft transport
-	transport, err := raft.NewTCPTransport(opts.nodeRoute().raftAddr(), addr, 3, 10*time.Second, os.Stdout)
+	transport, err := raft.NewTCPTransport(config.nodeRoute().raftAddr(), addr, 3, 10*time.Second, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(opts.raftDir(), 2, os.Stdout)
+	snapshotStore, err := raft.NewFileSnapshotStore(config.raftDir(), 2, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create bolt db based raft store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(opts.raftDir(), "raft.db"))
+	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(config.raftDir(), "raft.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +86,7 @@ func CreateNode(opts Options) (*Node, error) {
 	}
 
 	// create raft instance
-	rft, err := raft.NewRaft(config, fsm, boltStore, boltStore, snapshotStore, transport)
+	rft, err := raft.NewRaft(raftConfig, fsm, boltStore, boltStore, snapshotStore, transport)
 	if err != nil {
 		return nil, err
 	}
@@ -99,15 +96,15 @@ func CreateNode(opts Options) (*Node, error) {
 		// prepare servers
 		servers := []raft.Server{
 			{
-				ID:      raft.ServerID(opts.Name),
+				ID:      raft.ServerID(config.Name),
 				Address: transport.LocalAddr(),
 			},
 		}
 
 		// add raft peers
-		for _, peer := range opts.peerRoutes() {
+		for _, peer := range config.peerRoutes() {
 			// check if self
-			if peer.name == opts.Name {
+			if peer.name == config.Name {
 				continue
 			}
 
@@ -131,14 +128,14 @@ func CreateNode(opts Options) (*Node, error) {
 
 	// create node
 	n := &Node{
-		opts: opts,
+		opts: config,
 		db:   db,
 		rsm:  fsm,
 		raft: rft,
 	}
 
 	// run rpc server
-	go http.ListenAndServe(opts.nodeRoute().rpcAddr(), n.rpcEndpoint())
+	go http.ListenAndServe(config.nodeRoute().rpcAddr(), n.rpcEndpoint())
 
 	// run config printer
 	go n.confPrinter()
