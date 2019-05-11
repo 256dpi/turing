@@ -1,9 +1,5 @@
 package turing
 
-import (
-	"github.com/dgraph-io/badger"
-)
-
 // TODO: Writable instructions?
 
 // TODO: Batchable instructions?
@@ -22,5 +18,5 @@ type Instruction interface {
 	Decode([]byte) error
 
 	// Execute should execute the instruction.
-	Execute(txn *badger.Txn) error
+	Execute(*Transaction) error
 }

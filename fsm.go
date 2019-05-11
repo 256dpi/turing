@@ -45,7 +45,9 @@ func (m *fsm) Apply(l *raft.Log) interface{} {
 	}
 
 	// apply instruction
-	err = m.db.Update(instruction.Execute)
+	err = m.db.Update(func(txn *badger.Txn) error {
+		return instruction.Execute(&Transaction{txn: txn})
+	})
 	if err != nil {
 		panic("failed to apply instruction: " + c.Name)
 	}

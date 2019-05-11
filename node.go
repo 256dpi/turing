@@ -277,7 +277,9 @@ func (n *Node) updateRemote(i Instruction) error {
 func (n *Node) View(i Instruction, forward bool) error {
 	// execute instruction locally if leader or not forwarded
 	if !forward || n.raft.State() == raft.Leader {
-		err := n.db.View(i.Execute)
+		err := n.db.View(func(txn *badger.Txn) error {
+			return i.Execute(&Transaction{txn: txn})
+		})
 		if err != nil {
 			return err
 		}
@@ -397,7 +399,9 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// execute instruction locally
-		err = n.db.View(instruction.Execute)
+		err = n.db.View(func(txn *badger.Txn) error {
+			return instruction.Execute(&Transaction{txn: txn})
+		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

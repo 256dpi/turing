@@ -29,7 +29,7 @@ func (s *Set) Decode(data []byte) error {
 	return json.Unmarshal(data, s)
 }
 
-func (s *Set) Execute(txn *badger.Txn) error {
+func (s *Set) Execute(txn *turing.Transaction) error {
 	return txn.Set([]byte(s.Key), []byte(s.Value))
 }
 
@@ -54,9 +54,9 @@ func (g *Get) Decode(data []byte) error {
 	return json.Unmarshal(data, g)
 }
 
-func (g *Get) Execute(txn *badger.Txn) error {
+func (g *Get) Execute(txn *turing.Transaction) error {
 	// get value
-	item, err := txn.Get([]byte(g.Key))
+	val, err := txn.Get([]byte(g.Key))
 	if err == badger.ErrKeyNotFound {
 		return nil
 	} else if err != nil {
@@ -64,7 +64,7 @@ func (g *Get) Execute(txn *badger.Txn) error {
 	}
 
 	// copy value
-	value, err := item.ValueCopy(nil)
+	value, err := val.Copy(nil)
 	if err != nil {
 		return err
 	}
@@ -95,6 +95,6 @@ func (d *Del) Decode(data []byte) error {
 	return json.Unmarshal(data, d)
 }
 
-func (d *Del) Execute(txn *badger.Txn) error {
+func (d *Del) Execute(txn *turing.Transaction) error {
 	return txn.Delete([]byte(d.Key))
 }
