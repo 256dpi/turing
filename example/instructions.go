@@ -2,99 +2,116 @@ package main
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/dgraph-io/badger"
-
 	"github.com/256dpi/turing"
 )
 
-type Set struct {
-	Key   string `json:"key,omitempty"`
-	Value string `json:"val,omitempty"`
+type Increment struct {
+	Key string `json:"key,omitempty"`
 }
 
-func (s *Set) Name() string {
-	return "set"
+func (i *Increment) Name() string {
+	return "increment"
 }
 
-func (s *Set) Build() turing.Instruction {
-	return &Set{}
+func (i *Increment) Build() turing.Instruction {
+	return &Increment{}
 }
 
-func (s *Set) Encode() ([]byte, error) {
-	return json.Marshal(s)
+func (i *Increment) Encode() ([]byte, error) {
+	return json.Marshal(i)
 }
 
-func (s *Set) Decode(data []byte) error {
-	return json.Unmarshal(data, s)
+func (i *Increment) Decode(data []byte) error {
+	return json.Unmarshal(data, i)
 }
 
-func (s *Set) Execute(txn *turing.Transaction) error {
-	return txn.Set([]byte(s.Key), []byte(s.Value))
-}
+func (i *Increment) Execute(txn *turing.Transaction) error {
+	// make key
+	key := []byte(i.Key)
 
-type Get struct {
-	Key   string `json:"key,omitempty"`
-	Value string `json:"value,omitempty"`
-}
+	// prepare count
+	var count int
 
-func (g *Get) Name() string {
-	return "get"
-}
-
-func (g *Get) Build() turing.Instruction {
-	return &Get{}
-}
-
-func (g *Get) Encode() ([]byte, error) {
-	return json.Marshal(g)
-}
-
-func (g *Get) Decode(data []byte) error {
-	return json.Unmarshal(data, g)
-}
-
-func (g *Get) Execute(txn *turing.Transaction) error {
-	// get value
-	val, err := txn.Get([]byte(g.Key))
-	if err == badger.ErrKeyNotFound {
-		return nil
-	} else if err != nil {
+	// get existing value
+	value, err := txn.Get(key)
+	if err != nil && err != badger.ErrKeyNotFound {
 		return err
 	}
 
-	// copy value
-	value, err := val.Copy(nil)
+	// set current count
+	if value != nil {
+		err = value.Load(func(value []byte) error {
+			n, err := strconv.Atoi(string(value))
+			count = n
+			return err
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// increment
+	count++
+
+	// set value
+	err = txn.Set(key, []byte(strconv.Itoa(count)))
 	if err != nil {
 		return err
 	}
 
-	// save value
-	g.Value = string(value)
-
 	return nil
 }
 
-type Del struct {
-	Key string `json:"key,omitempty"`
+type KeyValue struct {
+	Key   string `json:"key,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
-func (d *Del) Name() string {
-	return "del"
+type List struct {
+	Values []KeyValue `json:"values,omitempty"`
 }
 
-func (d *Del) Build() turing.Instruction {
-	return &Del{}
+func (l *List) Name() string {
+	return "list"
 }
 
-func (d *Del) Encode() ([]byte, error) {
-	return json.Marshal(d)
+func (l *List) Build() turing.Instruction {
+	return &List{}
 }
 
-func (d *Del) Decode(data []byte) error {
-	return json.Unmarshal(data, d)
+func (l *List) Encode() ([]byte, error) {
+	return json.Marshal(l)
 }
 
-func (d *Del) Execute(txn *turing.Transaction) error {
-	return txn.Delete([]byte(d.Key))
+func (l *List) Decode(data []byte) error {
+	return json.Unmarshal(data, l)
+}
+
+func (l *List) Execute(txn *turing.Transaction) error {
+	// create iterator
+	iter := txn.Iterator(turing.IteratorConfig{
+		Prefetch: 10,
+	})
+
+	// ensure closing
+	defer iter.Close()
+
+	// iterate through all values
+	for iter.Seek(nil); iter.Valid(); iter.Next() {
+		err := iter.Value().Load(func(value []byte) error {
+			l.Values = append(l.Values, KeyValue{
+				Key:   string(iter.Value().Key()),
+				Value: string(value),
+			})
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

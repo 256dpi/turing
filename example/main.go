@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -41,7 +41,7 @@ func main() {
 		Directory: dir,
 		Peers:     strings.Split(*peers, ","),
 		Instructions: []turing.Instruction{
-			&Set{}, &Get{}, &Del{},
+			&Increment{}, &List{},
 		},
 	})
 	if err != nil {
@@ -51,35 +51,30 @@ func main() {
 	// ensure closing
 	defer node.Close()
 
-	// prepare counter
-	counter := 0
-
 	for {
 		// sleep
 		time.Sleep(time.Second)
 
-		// get value
-		value := strconv.Itoa(counter)
-
-		// set key
-		println("set key: ", *name, "=", value)
-		err = node.Update(&Set{Key: *name, Value: value})
+		// set value
+		set := &Increment{Key: *name}
+		err = node.Update(set)
 		if err != nil {
 			println(err.Error())
 			continue
 		}
 
-		// get key
-		get := &Get{Key: *name}
-		err = node.View(get, true)
+		// print instruction
+		fmt.Printf("==> %+v\n", set)
+
+		// list values
+		list := &List{}
+		err = node.View(list, true)
 		if err != nil {
 			println(err.Error())
 			continue
 		}
 
-		println("get key: ", *name, "=", get.Value)
-
-		// increment
-		counter++
+		// print instruction
+		fmt.Printf("==> %+v\n", list)
 	}
 }
