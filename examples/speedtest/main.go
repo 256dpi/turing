@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/256dpi/god"
+	"github.com/montanaflynn/stats"
 
 	"github.com/256dpi/turing"
 )
@@ -22,6 +23,7 @@ var wg sync.WaitGroup
 
 var send int64
 var recv int64
+var diffs []float64
 var mutex sync.Mutex
 
 func main() {
@@ -92,9 +94,14 @@ func main() {
 	// create control channel
 	done := make(chan struct{})
 
-	// run routines
-	wg.Add(2)
-	go writer(machine, done)
+	// run writers
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go writer(machine, done)
+	}
+
+	// run printer
+	wg.Add(1)
 	go printer(machine, done)
 
 	// prepare exit
@@ -120,6 +127,9 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 			return
 		}
 
+		// measure start
+		start := time.Now()
+
 		// prepare instruction
 		increment := &increment{
 			Key:   strconv.Itoa(rand.Intn(20)),
@@ -135,9 +145,13 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 			panic(err)
 		}
 
+		// calculate diff
+		diff := float64(time.Since(start)) / float64(time.Millisecond)
+
 		// increment
 		mutex.Lock()
 		send += 1
+		diffs = append(diffs, diff)
 		mutex.Unlock()
 	}
 }
@@ -161,13 +175,29 @@ func printer(machine *turing.Machine, done <-chan struct{}) {
 		mutex.Lock()
 		r := recv
 		s := send
+		d := diffs
 		recv = 0
 		send = 0
+		diffs = nil
 		mutex.Unlock()
+
+		// get stats
+		min, _ := stats.Min(d)
+		max, _ := stats.Max(d)
+		mean, _ := stats.Mean(d)
+		p90, _ := stats.Percentile(d, 90)
+		p95, _ := stats.Percentile(d, 95)
+		p99, _ := stats.Percentile(d, 99)
 
 		// print rate
 		fmt.Printf("state: %s, ", machine.State())
 		fmt.Printf("send: %d msg/s, ", s)
-		fmt.Printf("recv %d msgs/s\n", r)
+		fmt.Printf("recv %d msgs/s, ", r)
+		fmt.Printf("min: %.2fms, ", min)
+		fmt.Printf("mean: %.2fms, ", mean)
+		fmt.Printf("p90: %.2fms, ", p90)
+		fmt.Printf("p95: %.2fms, ", p95)
+		fmt.Printf("p99: %.2fms, ", p99)
+		fmt.Printf("max: %.2fms\n", max)
 	}
 }
