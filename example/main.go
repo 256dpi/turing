@@ -15,19 +15,14 @@ func main() {
 	// prepare flags
 	var serverFlag = flag.String("server", "n1@0.0.0.0:42000", "the server")
 	var peersFlag = flag.String("peers", "", "the cluster peers")
-	var dirFlag = flag.String("dir", "./data/", "the data directory")
+	var dirFlag = flag.String("dir", "data", "the data directory")
+	var cleanFlag = flag.Bool("clean", false, "remove existing data")
 
 	// parse flags
 	flag.Parse()
 
 	// parse server route
 	server, err := turing.ParseRoute(*serverFlag)
-	if err != nil {
-		panic(err)
-	}
-
-	// prepare directory
-	directory, err := filepath.Abs(*dirFlag + server.Name)
 	if err != nil {
 		panic(err)
 	}
@@ -45,10 +40,21 @@ func main() {
 		peers = append(peers, route)
 	}
 
-	// remove all previous data
-	err = os.RemoveAll(directory)
+	// resolve directory
+	directory, err := filepath.Abs(*dirFlag)
 	if err != nil {
 		panic(err)
+	}
+
+	// add server name
+	directory = filepath.Join(directory, server.Name)
+
+	// remove all previous data if requested
+	if *cleanFlag {
+		err = os.RemoveAll(directory)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// prepare config
