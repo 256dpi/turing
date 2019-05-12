@@ -93,7 +93,7 @@ func createCoordinator(sm *stateMachine, dir string, server Route, peers []Route
 			})
 		}
 
-		// bootstrap raft node
+		// bootstrap cluster
 		err = rft.BootstrapCluster(raft.Configuration{
 			Servers: servers,
 		}).Error()
@@ -102,7 +102,7 @@ func createCoordinator(sm *stateMachine, dir string, server Route, peers []Route
 		}
 	}
 
-	// create raft node
+	// create coordinator
 	rn := &coordinator{
 		raft:  rft,
 		peers: peers,

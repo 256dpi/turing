@@ -46,7 +46,7 @@ func main() {
 		panic(err)
 	}
 
-	// add server name
+	// append server name
 	directory = filepath.Join(directory, server.Name)
 
 	// remove all previous data if requested
@@ -58,7 +58,7 @@ func main() {
 	}
 
 	// prepare config
-	config := turing.NodeConfig{
+	config := turing.MachineConfig{
 		Server:    server,
 		Peers:     peers,
 		Directory: directory,
@@ -67,17 +67,17 @@ func main() {
 		},
 	}
 
-	// create node
-	node, err := turing.CreateNode(config)
+	// create machine
+	machine, err := turing.CreateMachine(config)
 	if err != nil {
 		panic(err)
 	}
 
 	// ensure closing
-	defer node.Close()
+	defer machine.Close()
 
 	// run printer
-	go printer(node, config)
+	go printer(machine, config)
 
 	for {
 		// sleep
@@ -85,7 +85,7 @@ func main() {
 
 		// set value
 		set := &Increment{Key: server.Name}
-		err = node.Update(set)
+		err = machine.Update(set)
 		if err != nil {
 			println(err.Error())
 			continue
@@ -96,7 +96,7 @@ func main() {
 
 		// list values
 		list := &List{}
-		err = node.View(list, true)
+		err = machine.View(list, true)
 		if err != nil {
 			println(err.Error())
 			continue
@@ -107,7 +107,7 @@ func main() {
 	}
 }
 
-func printer(node *turing.Node, config turing.NodeConfig) {
+func printer(machine *turing.Machine, config turing.MachineConfig) {
 	for {
 		// wait some time
 		time.Sleep(time.Second)
@@ -120,11 +120,11 @@ func printer(node *turing.Node, config turing.NodeConfig) {
 
 		// get leader
 		var leader string
-		if node.Leader() != nil {
-			leader = node.Leader().Name
+		if machine.Leader() != nil {
+			leader = machine.Leader().Name
 		}
 
-		// print state
-		fmt.Printf("Node: %s | State: %s | Leader: %s | peers: %s\n", config.Server.Name, node.State(), leader, strings.Join(list, ", "))
+		// print info
+		fmt.Printf("[%s] State: %s | Leader: %s | Peers: %s\n", config.Server.Name, machine.State(), leader, strings.Join(list, ", "))
 	}
 }

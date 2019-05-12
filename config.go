@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-type NodeConfig struct {
+type MachineConfig struct {
 	// The server route.
 	Server Route
 
@@ -28,7 +28,7 @@ type NodeConfig struct {
 	Logger io.Writer
 }
 
-func (c *NodeConfig) check() error {
+func (c *MachineConfig) check() error {
 	// TODO: Check route validity.
 
 	// check directory
@@ -44,11 +44,11 @@ func (c *NodeConfig) check() error {
 	return nil
 }
 
-func (c NodeConfig) raftDir() string {
+func (c MachineConfig) raftDir() string {
 	return filepath.Join(c.Directory, "raft")
 }
 
-func (c NodeConfig) dbDir() string {
+func (c MachineConfig) dbDir() string {
 	return filepath.Join(c.Directory, "db")
 }
 

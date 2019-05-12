@@ -10,13 +10,13 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-type Node struct {
+type Machine struct {
 	database     *database
 	stateMachine *stateMachine
 	coordinator  *coordinator
 }
 
-func CreateNode(config NodeConfig) (*Node, error) {
+func CreateMachine(config MachineConfig) (*Machine, error) {
 	// check config
 	err := config.check()
 	if err != nil {
@@ -38,8 +38,8 @@ func CreateNode(config NodeConfig) (*Node, error) {
 		return nil, err
 	}
 
-	// create node
-	n := &Node{
+	// create machine
+	n := &Machine{
 		database:     database,
 		stateMachine: stateMachine,
 		coordinator:  coordinator,
@@ -51,22 +51,22 @@ func CreateNode(config NodeConfig) (*Node, error) {
 	return n, nil
 }
 
-func (n *Node) IsLeader() bool {
-	return n.coordinator.isLeader()
+func (m *Machine) IsLeader() bool {
+	return m.coordinator.isLeader()
 }
 
-func (n *Node) Leader() *Route {
-	return n.coordinator.leader()
+func (m *Machine) Leader() *Route {
+	return m.coordinator.leader()
 }
 
-func (n *Node) State() string {
-	return n.coordinator.state()
+func (m *Machine) State() string {
+	return m.coordinator.state()
 }
 
-func (n *Node) Update(i Instruction) error {
+func (m *Machine) Update(i Instruction) error {
 	// update on remote if not leader
-	if !n.coordinator.isLeader() {
-		return n.updateRemote(i)
+	if !m.coordinator.isLeader() {
+		return m.updateRemote(i)
 	}
 
 	// encode instruction
@@ -88,7 +88,7 @@ func (n *Node) Update(i Instruction) error {
 	}
 
 	// apply command
-	err = n.coordinator.apply(cd)
+	err = m.coordinator.apply(cd)
 	if err != nil {
 		return err
 	}
@@ -96,9 +96,9 @@ func (n *Node) Update(i Instruction) error {
 	return nil
 }
 
-func (n *Node) updateRemote(i Instruction) error {
+func (m *Machine) updateRemote(i Instruction) error {
 	// get leader route
-	leader := n.coordinator.leader()
+	leader := m.coordinator.leader()
 	if leader == nil {
 		return fmt.Errorf("no leader")
 	}
@@ -139,10 +139,10 @@ func (n *Node) updateRemote(i Instruction) error {
 	return nil
 }
 
-func (n *Node) View(i Instruction, forward bool) error {
+func (m *Machine) View(i Instruction, forward bool) error {
 	// execute instruction locally if leader or not forwarded
-	if !forward || n.coordinator.isLeader() {
-		err := n.database.View(func(txn *badger.Txn) error {
+	if !forward || m.coordinator.isLeader() {
+		err := m.database.View(func(txn *badger.Txn) error {
 			return i.Execute(&Transaction{txn: txn})
 		})
 		if err != nil {
@@ -153,7 +153,7 @@ func (n *Node) View(i Instruction, forward bool) error {
 	}
 
 	// get leader
-	leader := n.coordinator.leader()
+	leader := m.coordinator.leader()
 	if leader == nil {
 		return fmt.Errorf("no leader")
 	}
@@ -207,11 +207,11 @@ func (n *Node) View(i Instruction, forward bool) error {
 	return nil
 }
 
-func (n *Node) Close() {
+func (m *Machine) Close() {
 	// TODO: Implement close.
 }
 
-func (n *Node) rpcEndpoint() http.Handler {
+func (m *Machine) rpcEndpoint() http.Handler {
 	// create mux
 	mux := http.NewServeMux()
 
@@ -225,7 +225,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// apply command
-		err = n.coordinator.apply(cmd)
+		err = m.coordinator.apply(cmd)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -243,7 +243,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// get factory instruction
-		factory, ok := n.stateMachine.instructions[c.Name]
+		factory, ok := m.stateMachine.instructions[c.Name]
 		if !ok {
 			http.Error(w, "missing instruction", http.StatusInternalServerError)
 			return
@@ -260,7 +260,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// execute instruction locally
-		err = n.database.View(func(txn *badger.Txn) error {
+		err = m.database.View(func(txn *badger.Txn) error {
 			return instruction.Execute(&Transaction{txn: txn})
 		})
 		if err != nil {
