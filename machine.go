@@ -3,12 +3,15 @@ package turing
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/dgraph-io/badger"
 )
+
+var ErrNoLeader = errors.New("no leader")
 
 type Machine struct {
 	database    *database
@@ -108,7 +111,7 @@ func (m *Machine) updateRemote(i Instruction) error {
 	// get leader route
 	leader := m.coordinator.leader()
 	if leader == nil {
-		return fmt.Errorf("no leader")
+		return ErrNoLeader
 	}
 
 	// encode instruction
@@ -169,7 +172,7 @@ func (m *Machine) View(i Instruction, forward bool) error {
 	// get leader
 	leader := m.coordinator.leader()
 	if leader == nil {
-		return fmt.Errorf("no leader")
+		return ErrNoLeader
 	}
 
 	// encode instruction
