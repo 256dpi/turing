@@ -68,7 +68,13 @@ func (m *replicator) Apply(l *raft.Log) interface{} {
 		panic("failed to apply instruction: " + c.Name)
 	}
 
-	return nil
+	// encode instruction
+	bytes, err := json.Marshal(instruction)
+	if err != nil {
+		panic("failed to encode instruction: " + c.Name)
+	}
+
+	return bytes
 }
 
 func (m *replicator) Snapshot() (raft.FSMSnapshot, error) {

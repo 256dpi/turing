@@ -8,7 +8,8 @@ import (
 )
 
 type Increment struct {
-	Key string `json:"key,omitempty"`
+	Key   string `json:"key,omitempty"`
+	Value int    `json:"value,omitempty"`
 }
 
 func (i *Increment) Name() string {
@@ -60,6 +61,9 @@ func (i *Increment) Execute(txn *turing.Transaction) error {
 	if err != nil {
 		return err
 	}
+
+	// set count
+	i.Value = count
 
 	return nil
 }

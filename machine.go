@@ -88,9 +88,17 @@ func (m *Machine) Update(i Instruction) error {
 	}
 
 	// apply command
-	err = m.coordinator.apply(cd)
+	result, err := m.coordinator.apply(cd)
 	if err != nil {
 		return err
+	}
+
+	// decode result
+	if result != nil {
+		err = json.Unmarshal(result, i)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -135,6 +143,12 @@ func (m *Machine) updateRemote(i Instruction) error {
 
 	// ensure closing
 	defer res.Body.Close()
+
+	// unmarshal instruction
+	err = json.NewDecoder(res.Body).Decode(i)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -225,7 +239,14 @@ func (m *Machine) rpcEndpoint() http.Handler {
 		}
 
 		// apply command
-		err = m.coordinator.apply(cmd)
+		result, err := m.coordinator.apply(cmd)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// write result
+		_, err = w.Write(result)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -289,7 +310,11 @@ func (m *Machine) rpcEndpoint() http.Handler {
 		}
 
 		// write result
-		_, _ = w.Write(cd)
+		_, err = w.Write(cd)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	return mux

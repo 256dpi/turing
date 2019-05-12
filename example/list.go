@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/256dpi/turing"
 )
 
 type List struct {
-	Pairs map[string]string `json:"pairs,omitempty"`
+	Pairs map[string]int `json:"pairs,omitempty"`
 }
 
 func (l *List) Name() string {
@@ -28,7 +29,7 @@ func (l *List) Decode(data []byte) error {
 
 func (l *List) Execute(txn *turing.Transaction) error {
 	// create map
-	l.Pairs = make(map[string]string)
+	l.Pairs = make(map[string]int)
 
 	// create iterator
 	iter := txn.Iterator(turing.IteratorConfig{
@@ -40,8 +41,17 @@ func (l *List) Execute(txn *turing.Transaction) error {
 
 	// iterate through all pairs
 	for iter.Seek(nil); iter.Valid(); iter.Next() {
+		// load value
 		err := iter.Pair().LoadValue(func(value []byte) error {
-			l.Pairs[string(iter.Pair().Key())] = string(value)
+			// parse value
+			count, err := strconv.Atoi(string(value))
+			if err != nil {
+				return err
+			}
+
+			// set count
+			l.Pairs[string(iter.Pair().Key())] = count
+
 			return nil
 		})
 		if err != nil {
@@ -51,4 +61,3 @@ func (l *List) Execute(txn *turing.Transaction) error {
 
 	return nil
 }
-

@@ -111,8 +111,17 @@ func createCoordinator(replicator *replicator, directory string, server Route, p
 	return rn, nil
 }
 
-func (n *coordinator) apply(cmd []byte) error {
-	return n.raft.Apply(cmd, 10*time.Second).Error()
+func (n *coordinator) apply(cmd []byte) ([]byte, error) {
+	// apply command
+	future := n.raft.Apply(cmd, 10*time.Second)
+	if future.Error() != nil {
+		return nil, future.Error()
+	}
+
+	// safely get result
+	bytes, _ := future.Response().([]byte)
+
+	return bytes, nil
 }
 
 func (n *coordinator) isLeader() bool {
