@@ -42,7 +42,7 @@ func (i *Increment) Execute(txn *turing.Transaction) error {
 
 	// set current count if available
 	if value != nil {
-		err = value.Load(func(value []byte) error {
+		err = value.LoadValue(func(value []byte) error {
 			n, err := strconv.Atoi(string(value))
 			count = n
 			return err
@@ -64,13 +64,8 @@ func (i *Increment) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-type KeyValue struct {
-	Key   string `json:"key,omitempty"`
-	Value string `json:"value,omitempty"`
-}
-
 type List struct {
-	Values []KeyValue `json:"values,omitempty"`
+	Pairs map[string]string `json:"pairs,omitempty"`
 }
 
 func (l *List) Name() string {
@@ -98,13 +93,10 @@ func (l *List) Execute(txn *turing.Transaction) error {
 	// ensure closing
 	defer iter.Close()
 
-	// iterate through all values
+	// iterate through all pairs
 	for iter.Seek(nil); iter.Valid(); iter.Next() {
-		err := iter.Value().Load(func(value []byte) error {
-			l.Values = append(l.Values, KeyValue{
-				Key:   string(iter.Value().Key()),
-				Value: string(value),
-			})
+		err := iter.Pair().LoadValue(func(value []byte) error {
+			l.Pairs[string(iter.Pair().Key())] = string(value)
 			return nil
 		})
 		if err != nil {

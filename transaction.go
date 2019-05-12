@@ -4,35 +4,39 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-type Value struct {
+type Pair struct {
 	item *badger.Item
 }
 
-func (v *Value) Key() []byte {
-	return v.item.Key()
+func (p *Pair) Key() []byte {
+	return p.item.Key()
 }
 
-func (v *Value) CopyKey(buf []byte) []byte {
-	return v.item.KeyCopy(buf)
+func (p *Pair) CopyKey(buf []byte) []byte {
+	return p.item.KeyCopy(buf)
 }
 
-func (v *Value) Load(fn func([]byte) error) error {
-	return v.item.Value(fn)
+func (p *Pair) LoadValue(fn func([]byte) error) error {
+	return p.item.Value(fn)
 }
 
-func (v *Value) Copy(buf []byte) ([]byte, error) {
-	return v.item.ValueCopy(buf)
+func (p *Pair) CopyValue(buf []byte) ([]byte, error) {
+	return p.item.ValueCopy(buf)
 }
 
-func (v *Value) Size() int {
-	return int(v.item.ValueSize())
+func (p *Pair) KeySize() int {
+	return int(p.item.KeySize())
+}
+
+func (p *Pair) ValueSize() int {
+	return int(p.item.ValueSize())
 }
 
 type Transaction struct {
 	txn *badger.Txn
 }
 
-func (t *Transaction) Get(key []byte) (*Value, error) {
+func (t *Transaction) Get(key []byte) (*Pair, error) {
 	// get item
 	item, err := t.txn.Get(key)
 	if err == badger.ErrKeyNotFound {
@@ -41,16 +45,16 @@ func (t *Transaction) Get(key []byte) (*Value, error) {
 		return nil, err
 	}
 
-	// wrap item
-	v := &Value{
+	// create pair
+	p := &Pair{
 		item: item,
 	}
 
-	return v, nil
+	return p, nil
 }
 
 func (t *Transaction) Set(key, value []byte) error {
-	// set value
+	// set key to value
 	err := t.txn.Set(key, value)
 	if err != nil {
 		return err
@@ -98,17 +102,19 @@ func (i *Iterator) Valid() bool {
 	return i.iter.Valid()
 }
 
-func (i *Iterator) Value() *Value {
+func (i *Iterator) Pair() *Pair {
 	// get item
 	item := i.iter.Item()
 	if item == nil {
 		return nil
 	}
 
-	// wrap item
-	v := &Value{item: item}
+	// create pair
+	p := &Pair{
+		item: item,
+	}
 
-	return v
+	return p
 }
 
 func (i *Iterator) Next() {
