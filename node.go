@@ -292,6 +292,8 @@ func (n *Node) rpcEndpoint() http.Handler {
 	return mux
 }
 
+// TODO: Move to example.
+
 func (n *Node) confPrinter(local route, peers []route) {
 	for {
 		// wait some time
