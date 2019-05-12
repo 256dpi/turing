@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -29,7 +28,6 @@ func createCoordinator(replicator *replicator, config MachineConfig) (*coordinat
 	// prepare raft config
 	raftConfig := raft.DefaultConfig()
 	raftConfig.LocalID = raft.ServerID(config.Server.Name)
-	raftConfig.SnapshotThreshold = 1024
 	raftConfig.Logger = log.New(config.Logger, "", log.LstdFlags)
 
 	// resolve local address for advertisements
@@ -39,13 +37,13 @@ func createCoordinator(replicator *replicator, config MachineConfig) (*coordinat
 	}
 
 	// create raft transport
-	transport, err := raft.NewTCPTransport(config.Server.raftAddr(), localAddr, 3, 10*time.Second, config.Logger)
+	transport, err := raft.NewTCPTransport(config.Server.raftAddr(), localAddr, 3, time.Second, config.Logger)
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(config.raftDir(), 2, os.Stdout)
+	snapshotStore, err := raft.NewFileSnapshotStore(config.raftDir(), 3, config.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +110,7 @@ func createCoordinator(replicator *replicator, config MachineConfig) (*coordinat
 
 func (n *coordinator) apply(cmd []byte) ([]byte, error) {
 	// apply command
-	future := n.raft.Apply(cmd, 10*time.Second)
+	future := n.raft.Apply(cmd, time.Second)
 	if future.Error() != nil {
 		return nil, future.Error()
 	}
