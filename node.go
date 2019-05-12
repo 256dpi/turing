@@ -54,7 +54,7 @@ func CreateNode(config Config) (*Node, error) {
 	return n, nil
 }
 
-func (n *Node) Leader() bool {
+func (n *Node) IsLeader() bool {
 	return n.coordinator.isLeader()
 }
 
@@ -308,6 +308,6 @@ func (n *Node) confPrinter(local route, peers []route) {
 		}
 
 		// print state
-		fmt.Printf("Node: %s | State: %s | Leader: %s | peers: %s\n", local.name, n.coordinator.state(), leader, strings.Join(list, ", "))
+		fmt.Printf("Node: %s | State: %s | IsLeader: %s | peers: %s\n", local.name, n.coordinator.state(), leader, strings.Join(list, ", "))
 	}
 }
