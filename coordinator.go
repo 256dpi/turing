@@ -30,33 +30,33 @@ type coordinator struct {
 	}
 }
 
-func createCoordinator(rsm *rsm, config coordinatorConfig) (*coordinator, error) {
+func createCoordinator(sm *stateMachine, cfg coordinatorConfig) (*coordinator, error) {
 	// prepare raft config
 	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(config.server.name)
+	raftConfig.LocalID = raft.ServerID(cfg.server.name)
 	raftConfig.SnapshotThreshold = 1024
 	raftConfig.LogOutput = os.Stdout
 
 	// resolve local address for advertisements
-	localAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", config.server.raftPort()))
+	localAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", cfg.server.raftPort()))
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft transport
-	transport, err := raft.NewTCPTransport(config.server.raftAddr(), localAddr, 3, 10*time.Second, os.Stdout)
+	transport, err := raft.NewTCPTransport(cfg.server.raftAddr(), localAddr, 3, 10*time.Second, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(config.directory, 2, os.Stdout)
+	snapshotStore, err := raft.NewFileSnapshotStore(cfg.directory, 2, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create bolt db based raft store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(config.directory, "coordinator.db"))
+	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(cfg.directory, "coordinator.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func createCoordinator(rsm *rsm, config coordinatorConfig) (*coordinator, error)
 	}
 
 	// create raft instance
-	rft, err := raft.NewRaft(raftConfig, rsm, boltStore, boltStore, snapshotStore, transport)
+	rft, err := raft.NewRaft(raftConfig, sm, boltStore, boltStore, snapshotStore, transport)
 	if err != nil {
 		return nil, err
 	}
@@ -78,15 +78,15 @@ func createCoordinator(rsm *rsm, config coordinatorConfig) (*coordinator, error)
 		// prepare servers
 		servers := []raft.Server{
 			{
-				ID:      raft.ServerID(config.server.name),
-				Address: raft.ServerAddress(config.server.raftAddr()),
+				ID:      raft.ServerID(cfg.server.name),
+				Address: raft.ServerAddress(cfg.server.raftAddr()),
 			},
 		}
 
 		// add raft peers
-		for _, peer := range config.peers {
+		for _, peer := range cfg.peers {
 			// check if self
-			if peer.name == config.server.name {
+			if peer.name == cfg.server.name {
 				continue
 			}
 
@@ -108,7 +108,7 @@ func createCoordinator(rsm *rsm, config coordinatorConfig) (*coordinator, error)
 
 	// create raft node
 	rn := &coordinator{
-		config: config,
+		config: cfg,
 		raft:   rft,
 	}
 

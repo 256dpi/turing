@@ -13,13 +13,13 @@ type command struct {
 	Data []byte `json:"data"`
 }
 
-type rsm struct {
+type stateMachine struct {
 	db *badger.DB
 
 	instructions map[string]Instruction
 }
 
-func (m *rsm) Apply(l *raft.Log) interface{} {
+func (m *stateMachine) Apply(l *raft.Log) interface{} {
 	// TODO: Handle errors.
 
 	// parse command
@@ -55,11 +55,11 @@ func (m *rsm) Apply(l *raft.Log) interface{} {
 	return nil
 }
 
-func (m *rsm) Snapshot() (raft.FSMSnapshot, error) {
+func (m *stateMachine) Snapshot() (raft.FSMSnapshot, error) {
 	return m, nil
 }
 
-func (m *rsm) Persist(sink raft.SnapshotSink) error {
+func (m *stateMachine) Persist(sink raft.SnapshotSink) error {
 	// backup database
 	_, err := m.db.Backup(sink, 0)
 	if err != nil {
@@ -69,11 +69,11 @@ func (m *rsm) Persist(sink raft.SnapshotSink) error {
 	return nil
 }
 
-func (m *rsm) Release() {
+func (m *stateMachine) Release() {
 	// do nothing
 }
 
-func (m *rsm) Restore(rc io.ReadCloser) error {
+func (m *stateMachine) Restore(rc io.ReadCloser) error {
 	// TODO: Clear database beforehand?
 
 	// load backup

@@ -15,9 +15,9 @@ import (
 type Node struct {
 	opts Config
 
-	db          *badger.DB
-	rsm         *rsm
-	coordinator *coordinator
+	db           *badger.DB
+	stateMachine *stateMachine
+	coordinator  *coordinator
 }
 
 func CreateNode(config Config) (*Node, error) {
@@ -29,7 +29,7 @@ func CreateNode(config Config) (*Node, error) {
 		return nil, err
 	}
 
-	/* rsm */
+	/* state machine */
 
 	// create instruction map
 	instructions := make(map[string]Instruction)
@@ -37,8 +37,8 @@ func CreateNode(config Config) (*Node, error) {
 		instructions[i.Name()] = i
 	}
 
-	// create rsm
-	fsm := &rsm{
+	// create state machine
+	stateMachine := &stateMachine{
 		db:           db,
 		instructions: instructions,
 	}
@@ -46,7 +46,7 @@ func CreateNode(config Config) (*Node, error) {
 	/* coordinator */
 
 	// create coordinator
-	coordinator, err := createCoordinator(fsm, coordinatorConfig{
+	coordinator, err := createCoordinator(stateMachine, coordinatorConfig{
 		directory: config.raftDir(),
 		server:    config.nodeRoute(),
 		peers:     config.peerRoutes(),
@@ -59,10 +59,10 @@ func CreateNode(config Config) (*Node, error) {
 
 	// create node
 	n := &Node{
-		opts:        config,
-		db:          db,
-		rsm:         fsm,
-		coordinator: coordinator,
+		opts:         config,
+		db:           db,
+		stateMachine: stateMachine,
+		coordinator:  coordinator,
 	}
 
 	// run rpc server
@@ -255,7 +255,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// get factory instruction
-		factory, ok := n.rsm.instructions[c.Name]
+		factory, ok := n.stateMachine.instructions[c.Name]
 		if !ok {
 			http.Error(w, "missing instruction", http.StatusInternalServerError)
 			return
