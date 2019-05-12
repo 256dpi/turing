@@ -3,6 +3,7 @@ module github.com/256dpi/turing
 go 1.12
 
 require (
+	github.com/256dpi/god v0.1.0
 	github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9 // indirect
 	github.com/armon/go-metrics v0.0.0-20190430140413-ec5e00d3c878 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
