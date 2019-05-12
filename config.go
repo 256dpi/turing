@@ -1,6 +1,7 @@
 package turing
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"path/filepath"
@@ -26,6 +27,30 @@ type NodeConfig struct {
 
 	// The used instructions.
 	Instructions []Instruction
+}
+
+func (c NodeConfig) check() error {
+	// check name
+	if c.Name == "" {
+		return errors.New("turing: missing name")
+	}
+
+	// check host
+	if c.Host == "" {
+		return errors.New("turing: missing host")
+	}
+
+	// check port
+	if c.Port == 0 {
+		return errors.New("turing: missing port")
+	}
+
+	// check directory
+	if c.Directory == "" {
+		return errors.New("turing: missing directory")
+	}
+
+	return nil
 }
 
 func (c NodeConfig) nodeRoute() route {

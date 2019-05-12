@@ -19,6 +19,12 @@ type Node struct {
 }
 
 func CreateNode(config NodeConfig) (*Node, error) {
+	// check config
+	err := config.check()
+	if err != nil {
+		return nil, err
+	}
+
 	// open database
 	database, err := openDatabase(config.dbDir())
 	if err != nil {
