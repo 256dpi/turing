@@ -205,15 +205,8 @@ func (m *Machine) View(i Instruction, forward bool) error {
 	// ensure closing
 	defer res.Body.Close()
 
-	// parse command
-	var c command
-	err = json.NewDecoder(res.Body).Decode(&c)
-	if err != nil {
-		return err
-	}
-
 	// decode instruction
-	err = i.Decode(c.Data)
+	err = json.NewDecoder(res.Body).Decode(i)
 	if err != nil {
 		return err
 	}
@@ -296,21 +289,8 @@ func (m *Machine) rpcEndpoint() http.Handler {
 			return
 		}
 
-		// prepare command
-		cmd := &command{
-			Name: instruction.Name(),
-			Data: id,
-		}
-
-		// encode command
-		cd, err := json.Marshal(cmd)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		// write result
-		_, err = w.Write(cd)
+		_, err = w.Write(id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
