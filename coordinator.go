@@ -2,7 +2,6 @@ package turing
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -26,33 +25,33 @@ type coordinator struct {
 	}
 }
 
-func createCoordinator(replicator *replicator, directory string, server Route, peers []Route, logger io.Writer) (*coordinator, error) {
+func createCoordinator(replicator *replicator, config MachineConfig) (*coordinator, error) {
 	// prepare raft config
 	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(server.Name)
+	raftConfig.LocalID = raft.ServerID(config.Server.Name)
 	raftConfig.SnapshotThreshold = 1024
-	raftConfig.Logger = log.New(logger, "", log.LstdFlags)
+	raftConfig.Logger = log.New(config.Logger, "", log.LstdFlags)
 
 	// resolve local address for advertisements
-	localAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", server.raftPort()))
+	localAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", config.Server.raftPort()))
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft transport
-	transport, err := raft.NewTCPTransport(server.raftAddr(), localAddr, 3, 10*time.Second, logger)
+	transport, err := raft.NewTCPTransport(config.Server.raftAddr(), localAddr, 3, 10*time.Second, config.Logger)
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(directory, 2, os.Stdout)
+	snapshotStore, err := raft.NewFileSnapshotStore(config.raftDir(), 2, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create bolt db based raft store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(directory, "raft.db"))
+	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(config.raftDir(), "raft.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -74,15 +73,15 @@ func createCoordinator(replicator *replicator, directory string, server Route, p
 		// prepare servers
 		servers := []raft.Server{
 			{
-				ID:      raft.ServerID(server.Name),
-				Address: raft.ServerAddress(server.raftAddr()),
+				ID:      raft.ServerID(config.Server.Name),
+				Address: raft.ServerAddress(config.Server.raftAddr()),
 			},
 		}
 
 		// add raft peers
-		for _, peer := range peers {
+		for _, peer := range config.Peers {
 			// check if self
-			if peer.Name == server.Name {
+			if peer.Name == config.Server.Name {
 				continue
 			}
 
@@ -105,7 +104,7 @@ func createCoordinator(replicator *replicator, directory string, server Route, p
 	// create coordinator
 	rn := &coordinator{
 		raft:  rft,
-		peers: peers,
+		peers: config.Peers,
 	}
 
 	return rn, nil

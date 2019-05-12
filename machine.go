@@ -36,7 +36,7 @@ func CreateMachine(config MachineConfig) (*Machine, error) {
 	replicator := newReplicator(database, config.Instructions)
 
 	// create coordinator
-	coordinator, err := createCoordinator(replicator, config.raftDir(), config.Server, config.Peers, config.Logger)
+	coordinator, err := createCoordinator(replicator, config)
 	if err != nil {
 		return nil, err
 	}
