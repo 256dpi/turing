@@ -13,48 +13,50 @@ import (
 	"github.com/hashicorp/raft-boltdb"
 )
 
-type raftNodeConfig struct {
-	Dir    string
-	Server route
-	Peers  []route
+type coordinatorConfig struct {
+	directory string
+	server    route
+	peers     []route
 }
 
-type raftNode struct {
-	config raftNodeConfig
+type coordinator struct {
+	config coordinatorConfig
 	raft   *raft.Raft
 
-	leaderMutex  sync.Mutex
-	currentRoute *route
-	lastLeader   string
+	leaderRouteCache struct {
+		sync.Mutex
+		current  *route
+		lastAddr string
+	}
 }
 
-func newRaftNode(rsm *rsm, config raftNodeConfig) (*raftNode, error) {
+func createCoordinator(rsm *rsm, config coordinatorConfig) (*coordinator, error) {
 	// prepare raft config
 	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(config.Server.name)
+	raftConfig.LocalID = raft.ServerID(config.server.name)
 	raftConfig.SnapshotThreshold = 1024
 	raftConfig.LogOutput = os.Stdout
 
 	// resolve local address for advertisements
-	localAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", config.Server.raftPort()))
+	localAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", config.server.raftPort()))
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft transport
-	transport, err := raft.NewTCPTransport(config.Server.raftAddr(), localAddr, 3, 10*time.Second, os.Stdout)
+	transport, err := raft.NewTCPTransport(config.server.raftAddr(), localAddr, 3, 10*time.Second, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(config.Dir, 2, os.Stdout)
+	snapshotStore, err := raft.NewFileSnapshotStore(config.directory, 2, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create bolt db based raft store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(config.Dir, "raft.db"))
+	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(config.directory, "coordinator.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -76,15 +78,15 @@ func newRaftNode(rsm *rsm, config raftNodeConfig) (*raftNode, error) {
 		// prepare servers
 		servers := []raft.Server{
 			{
-				ID:      raft.ServerID(config.Server.name),
-				Address: raft.ServerAddress(config.Server.raftAddr()),
+				ID:      raft.ServerID(config.server.name),
+				Address: raft.ServerAddress(config.server.raftAddr()),
 			},
 		}
 
 		// add raft peers
-		for _, peer := range config.Peers {
+		for _, peer := range config.peers {
 			// check if self
-			if peer.name == config.Server.name {
+			if peer.name == config.server.name {
 				continue
 			}
 
@@ -105,7 +107,7 @@ func newRaftNode(rsm *rsm, config raftNodeConfig) (*raftNode, error) {
 	}
 
 	// create raft node
-	rn := &raftNode{
+	rn := &coordinator{
 		config: config,
 		raft:   rft,
 	}
@@ -113,18 +115,18 @@ func newRaftNode(rsm *rsm, config raftNodeConfig) (*raftNode, error) {
 	return rn, nil
 }
 
-func (n *raftNode) apply(cmd []byte) error {
+func (n *coordinator) apply(cmd []byte) error {
 	return n.raft.Apply(cmd, 10*time.Second).Error()
 }
 
-func (n *raftNode) isLeader() bool {
+func (n *coordinator) isLeader() bool {
 	return n.raft.State() == raft.Leader
 }
 
-func (n *raftNode) leaderRoute() *route {
+func (n *coordinator) leaderRoute() *route {
 	// acquire mutex
-	n.leaderMutex.Lock()
-	defer n.leaderMutex.Unlock()
+	n.leaderRouteCache.Lock()
+	defer n.leaderRouteCache.Unlock()
 
 	// get leader address
 	addr := string(n.raft.Leader())
@@ -133,9 +135,9 @@ func (n *raftNode) leaderRoute() *route {
 	}
 
 	// return existing route if leader has not changed
-	if addr == n.lastLeader {
+	if addr == n.leaderRouteCache.lastAddr {
 		println("fast path")
-		return n.currentRoute
+		return n.leaderRouteCache.current
 	}
 
 	// parse addr
@@ -156,11 +158,11 @@ func (n *raftNode) leaderRoute() *route {
 	}
 
 	// select peer
-	for _, peer := range n.config.Peers {
+	for _, peer := range n.config.peers {
 		if peer.host == host && peer.raftPort() == port {
 			// set current route
-			n.currentRoute = &peer
-			n.lastLeader = addr
+			n.leaderRouteCache.current = &peer
+			n.leaderRouteCache.lastAddr = addr
 
 			return &peer
 		}
@@ -169,7 +171,7 @@ func (n *raftNode) leaderRoute() *route {
 	return nil
 }
 
-func (n *raftNode) state() string {
+func (n *coordinator) state() string {
 	switch n.raft.State() {
 	case raft.Follower:
 		return "follower"

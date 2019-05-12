@@ -88,7 +88,7 @@ func (c Config) nodeRoute() route {
 }
 
 func (c Config) raftDir() string {
-	return filepath.Join(c.Directory, "raft")
+	return filepath.Join(c.Directory, "coordinator")
 }
 
 func (c Config) dbDir() string {

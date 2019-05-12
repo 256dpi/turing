@@ -15,9 +15,9 @@ import (
 type Node struct {
 	opts Config
 
-	db   *badger.DB
-	rsm  *rsm
-	raft *raftNode
+	db          *badger.DB
+	rsm         *rsm
+	coordinator *coordinator
 }
 
 func CreateNode(config Config) (*Node, error) {
@@ -43,13 +43,13 @@ func CreateNode(config Config) (*Node, error) {
 		instructions: instructions,
 	}
 
-	/* raft */
+	/* coordinator */
 
-	// create raft node
-	rn, err := newRaftNode(fsm, raftNodeConfig{
-		Dir:    config.raftDir(),
-		Server: config.nodeRoute(),
-		Peers:  config.peerRoutes(),
+	// create coordinator
+	coordinator, err := createCoordinator(fsm, coordinatorConfig{
+		directory: config.raftDir(),
+		server:    config.nodeRoute(),
+		peers:     config.peerRoutes(),
 	})
 	if err != nil {
 		return nil, err
@@ -59,10 +59,10 @@ func CreateNode(config Config) (*Node, error) {
 
 	// create node
 	n := &Node{
-		opts: config,
-		db:   db,
-		rsm:  fsm,
-		raft: rn,
+		opts:        config,
+		db:          db,
+		rsm:         fsm,
+		coordinator: coordinator,
 	}
 
 	// run rpc server
@@ -75,12 +75,12 @@ func CreateNode(config Config) (*Node, error) {
 }
 
 func (n *Node) Leader() bool {
-	return n.raft.isLeader()
+	return n.coordinator.isLeader()
 }
 
 func (n *Node) Update(i Instruction) error {
 	// update on remote if not leader
-	if !n.raft.isLeader() {
+	if !n.coordinator.isLeader() {
 		return n.updateRemote(i)
 	}
 
@@ -103,7 +103,7 @@ func (n *Node) Update(i Instruction) error {
 	}
 
 	// apply command
-	err = n.raft.apply(cd)
+	err = n.coordinator.apply(cd)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (n *Node) Update(i Instruction) error {
 
 func (n *Node) updateRemote(i Instruction) error {
 	// get leader route
-	leader := n.raft.leaderRoute()
+	leader := n.coordinator.leaderRoute()
 	if leader == nil {
 		return fmt.Errorf("no leader")
 	}
@@ -153,7 +153,7 @@ func (n *Node) updateRemote(i Instruction) error {
 
 func (n *Node) View(i Instruction, forward bool) error {
 	// execute instruction locally if leader or not forwarded
-	if !forward || n.raft.isLeader() {
+	if !forward || n.coordinator.isLeader() {
 		err := n.db.View(func(txn *badger.Txn) error {
 			return i.Execute(&Transaction{txn: txn})
 		})
@@ -165,7 +165,7 @@ func (n *Node) View(i Instruction, forward bool) error {
 	}
 
 	// get leader
-	leader := n.raft.leaderRoute()
+	leader := n.coordinator.leaderRoute()
 	if leader == nil {
 		return fmt.Errorf("no leader")
 	}
@@ -237,7 +237,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// apply command
-		err = n.raft.apply(cmd)
+		err = n.coordinator.apply(cmd)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -320,11 +320,11 @@ func (n *Node) confPrinter(local route, peers []route) {
 
 		// get leader
 		var leader string
-		if n.raft.leaderRoute() != nil {
-			leader = n.raft.leaderRoute().name
+		if n.coordinator.leaderRoute() != nil {
+			leader = n.coordinator.leaderRoute().name
 		}
 
 		// print state
-		fmt.Printf("Node: %s | State: %s | Leader: %s | Peers: %s\n", local.name, n.raft.state(), leader, strings.Join(list, ", "))
+		fmt.Printf("Node: %s | State: %s | Leader: %s | peers: %s\n", local.name, n.coordinator.state(), leader, strings.Join(list, ", "))
 	}
 }
