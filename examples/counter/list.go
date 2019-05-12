@@ -7,27 +7,27 @@ import (
 	"github.com/256dpi/turing"
 )
 
-type List struct {
+type list struct {
 	Pairs map[string]int `json:"pairs,omitempty"`
 }
 
-func (l *List) Name() string {
+func (l *list) Name() string {
 	return "list"
 }
 
-func (l *List) Build() turing.Instruction {
-	return &List{}
+func (l *list) Build() turing.Instruction {
+	return &list{}
 }
 
-func (l *List) Encode() ([]byte, error) {
+func (l *list) Encode() ([]byte, error) {
 	return json.Marshal(l)
 }
 
-func (l *List) Decode(data []byte) error {
+func (l *list) Decode(data []byte) error {
 	return json.Unmarshal(data, l)
 }
 
-func (l *List) Execute(txn *turing.Transaction) error {
+func (l *list) Execute(txn *turing.Transaction) error {
 	// create map
 	l.Pairs = make(map[string]int)
 

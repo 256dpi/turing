@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/256dpi/turing"
@@ -63,7 +65,7 @@ func main() {
 		Peers:     peers,
 		Directory: directory,
 		Instructions: []turing.Instruction{
-			&Increment{}, &List{},
+			&increment{}, &list{},
 		},
 	}
 
@@ -79,27 +81,37 @@ func main() {
 	// run printer
 	go printer(machine, config)
 
+	// prepare exit
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
+
 	for {
 		// sleep
-		time.Sleep(time.Second)
+		select {
+		case <-time.After(time.Second):
+		case <-exit:
+			return
+		}
 
 		// set value
-		set := &Increment{Key: server.Name}
+		set := &increment{Key: server.Name}
 		err = machine.Update(set)
-		if err != nil {
-			println(err.Error())
+		if err == turing.ErrNoLeader {
 			continue
+		} else if err != nil {
+			panic(err)
 		}
 
 		// print instruction
 		fmt.Printf("==> %+v\n", set)
 
 		// list values
-		list := &List{}
+		list := &list{}
 		err = machine.View(list, true)
-		if err != nil {
-			println(err.Error())
+		if err == turing.ErrNoLeader {
 			continue
+		} else if err != nil {
+			panic(err)
 		}
 
 		// print instruction

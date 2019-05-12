@@ -7,28 +7,28 @@ import (
 	"github.com/256dpi/turing"
 )
 
-type Increment struct {
+type increment struct {
 	Key   string `json:"key,omitempty"`
 	Value int    `json:"value,omitempty"`
 }
 
-func (i *Increment) Name() string {
+func (i *increment) Name() string {
 	return "increment"
 }
 
-func (i *Increment) Build() turing.Instruction {
-	return &Increment{}
+func (i *increment) Build() turing.Instruction {
+	return &increment{}
 }
 
-func (i *Increment) Encode() ([]byte, error) {
+func (i *increment) Encode() ([]byte, error) {
 	return json.Marshal(i)
 }
 
-func (i *Increment) Decode(data []byte) error {
+func (i *increment) Decode(data []byte) error {
 	return json.Unmarshal(data, i)
 }
 
-func (i *Increment) Execute(txn *turing.Transaction) error {
+func (i *increment) Execute(txn *turing.Transaction) error {
 	// make key
 	key := []byte(i.Key)
 
