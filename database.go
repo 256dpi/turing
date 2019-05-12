@@ -7,7 +7,7 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-func openDB(dir string) (*badger.DB, error) {
+func openDatabase(dir string) (*badger.DB, error) {
 	// ensure directory
 	err := os.MkdirAll(dir, 0777)
 	if err != nil {
@@ -20,7 +20,7 @@ func openDB(dir string) (*badger.DB, error) {
 	bo.ValueDir = dir
 	// bo.Logger = nil
 
-	// open db
+	// open database
 	db, err := badger.Open(bo)
 	if err != nil {
 		return nil, err

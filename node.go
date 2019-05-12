@@ -15,35 +15,20 @@ import (
 type Node struct {
 	opts Config
 
-	db           *badger.DB
+	database     *badger.DB
 	stateMachine *stateMachine
 	coordinator  *coordinator
 }
 
 func CreateNode(config Config) (*Node, error) {
-	/* db */
-
-	// open db
-	db, err := openDB(config.dbDir())
+	// open database
+	database, err := openDatabase(config.dbDir())
 	if err != nil {
 		return nil, err
 	}
 
-	/* state machine */
-
-	// create instruction map
-	instructions := make(map[string]Instruction)
-	for _, i := range config.Instructions {
-		instructions[i.Name()] = i
-	}
-
 	// create state machine
-	stateMachine := &stateMachine{
-		db:           db,
-		instructions: instructions,
-	}
-
-	/* coordinator */
+	stateMachine := newStateMachine(database, config.Instructions)
 
 	// create coordinator
 	coordinator, err := createCoordinator(stateMachine, coordinatorConfig{
@@ -55,12 +40,10 @@ func CreateNode(config Config) (*Node, error) {
 		return nil, err
 	}
 
-	/* node */
-
 	// create node
 	n := &Node{
 		opts:         config,
-		db:           db,
+		database:     database,
 		stateMachine: stateMachine,
 		coordinator:  coordinator,
 	}
@@ -154,7 +137,7 @@ func (n *Node) updateRemote(i Instruction) error {
 func (n *Node) View(i Instruction, forward bool) error {
 	// execute instruction locally if leader or not forwarded
 	if !forward || n.coordinator.isLeader() {
-		err := n.db.View(func(txn *badger.Txn) error {
+		err := n.database.View(func(txn *badger.Txn) error {
 			return i.Execute(&Transaction{txn: txn})
 		})
 		if err != nil {
@@ -272,7 +255,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// execute instruction locally
-		err = n.db.View(func(txn *badger.Txn) error {
+		err = n.database.View(func(txn *badger.Txn) error {
 			return instruction.Execute(&Transaction{txn: txn})
 		})
 		if err != nil {

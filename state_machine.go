@@ -14,9 +14,25 @@ type command struct {
 }
 
 type stateMachine struct {
-	db *badger.DB
+	database *badger.DB
 
 	instructions map[string]Instruction
+}
+
+func newStateMachine(db *badger.DB, instructions []Instruction) *stateMachine {
+	// create instruction map
+	im := make(map[string]Instruction)
+	for _, i := range instructions {
+		im[i.Name()] = i
+	}
+
+	// create state machine
+	stateMachine := &stateMachine{
+		database:     db,
+		instructions: im,
+	}
+
+	return stateMachine
 }
 
 func (m *stateMachine) Apply(l *raft.Log) interface{} {
@@ -45,7 +61,7 @@ func (m *stateMachine) Apply(l *raft.Log) interface{} {
 	}
 
 	// apply instruction
-	err = m.db.Update(func(txn *badger.Txn) error {
+	err = m.database.Update(func(txn *badger.Txn) error {
 		return instruction.Execute(&Transaction{txn: txn})
 	})
 	if err != nil {
@@ -61,7 +77,7 @@ func (m *stateMachine) Snapshot() (raft.FSMSnapshot, error) {
 
 func (m *stateMachine) Persist(sink raft.SnapshotSink) error {
 	// backup database
-	_, err := m.db.Backup(sink, 0)
+	_, err := m.database.Backup(sink, 0)
 	if err != nil {
 		return err
 	}
@@ -77,7 +93,7 @@ func (m *stateMachine) Restore(rc io.ReadCloser) error {
 	// TODO: Clear database beforehand?
 
 	// load backup
-	err := m.db.Load(rc)
+	err := m.database.Load(rc)
 	if err != nil {
 		return err
 	}
