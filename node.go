@@ -5,15 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
-	"os"
-	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/dgraph-io/badger"
-	"github.com/hashicorp/raft"
-	"github.com/hashicorp/raft-boltdb"
 )
 
 type Node struct {
@@ -21,7 +17,7 @@ type Node struct {
 
 	db   *badger.DB
 	rsm  *rsm
-	raft *raft.Raft
+	raft *raftNode
 }
 
 func CreateNode(config Config) (*Node, error) {
@@ -49,79 +45,14 @@ func CreateNode(config Config) (*Node, error) {
 
 	/* raft */
 
-	// prepare raft config
-	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(config.Name)
-	raftConfig.SnapshotThreshold = 1024
-	raftConfig.LogOutput = os.Stdout
-
-	// resolve raft binding
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", config.nodeRoute().raftPort()))
+	// create raft node
+	rn, err := newRaftNode(fsm, raftNodeConfig{
+		Dir:    config.raftDir(),
+		Server: config.nodeRoute(),
+		Peers:  config.peerRoutes(),
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	// create raft transport
-	transport, err := raft.NewTCPTransport(config.nodeRoute().raftAddr(), addr, 3, 10*time.Second, os.Stdout)
-	if err != nil {
-		return nil, err
-	}
-
-	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(config.raftDir(), 2, os.Stdout)
-	if err != nil {
-		return nil, err
-	}
-
-	// create bolt db based raft store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(config.raftDir(), "raft.db"))
-	if err != nil {
-		return nil, err
-	}
-
-	// check if already bootstrapped
-	bootstrapped, err := raft.HasExistingState(boltStore, boltStore, snapshotStore)
-	if err != nil {
-		return nil, err
-	}
-
-	// create raft instance
-	rft, err := raft.NewRaft(raftConfig, fsm, boltStore, boltStore, snapshotStore, transport)
-	if err != nil {
-		return nil, err
-	}
-
-	// bootstrap cluster
-	if !bootstrapped {
-		// prepare servers
-		servers := []raft.Server{
-			{
-				ID:      raft.ServerID(config.Name),
-				Address: transport.LocalAddr(),
-			},
-		}
-
-		// add raft peers
-		for _, peer := range config.peerRoutes() {
-			// check if self
-			if peer.name == config.Name {
-				continue
-			}
-
-			// add peer
-			servers = append(servers, raft.Server{
-				ID:      raft.ServerID(peer.name),
-				Address: raft.ServerAddress(peer.raftAddr()),
-			})
-		}
-
-		// bootstrap raft node
-		err = rft.BootstrapCluster(raft.Configuration{
-			Servers: servers,
-		}).Error()
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	/* node */
@@ -131,25 +62,25 @@ func CreateNode(config Config) (*Node, error) {
 		opts: config,
 		db:   db,
 		rsm:  fsm,
-		raft: rft,
+		raft: rn,
 	}
 
 	// run rpc server
 	go http.ListenAndServe(config.nodeRoute().rpcAddr(), n.rpcEndpoint())
 
 	// run config printer
-	go n.confPrinter()
+	go n.confPrinter(config.nodeRoute(), config.peerRoutes())
 
 	return n, nil
 }
 
 func (n *Node) Leader() bool {
-	return n.raft.State() == raft.Leader
+	return n.raft.isLeader()
 }
 
 func (n *Node) Update(i Instruction) error {
-	// check if leader
-	if n.raft.State() != raft.Leader {
+	// update on remote if not leader
+	if !n.raft.isLeader() {
 		return n.updateRemote(i)
 	}
 
@@ -172,7 +103,7 @@ func (n *Node) Update(i Instruction) error {
 	}
 
 	// apply command
-	err = n.raft.Apply(cd, 10*time.Second).Error()
+	err = n.raft.apply(cd)
 	if err != nil {
 		return err
 	}
@@ -181,9 +112,9 @@ func (n *Node) Update(i Instruction) error {
 }
 
 func (n *Node) updateRemote(i Instruction) error {
-	// get leader
-	leader := string(n.raft.Leader())
-	if leader == "" {
+	// get leader route
+	leader := n.raft.leaderRoute()
+	if leader == nil {
 		return fmt.Errorf("no leader")
 	}
 
@@ -205,11 +136,8 @@ func (n *Node) updateRemote(i Instruction) error {
 		return err
 	}
 
-	// parse route
-	route := parseRoute(string(n.raft.Leader()))
-
 	// prepare url
-	url := fmt.Sprintf("http://%s/update", route.rpcAddr())
+	url := fmt.Sprintf("http://%s/update", leader.rpcAddr())
 
 	// create client
 	client := http.Client{}
@@ -225,7 +153,7 @@ func (n *Node) updateRemote(i Instruction) error {
 
 func (n *Node) View(i Instruction, forward bool) error {
 	// execute instruction locally if leader or not forwarded
-	if !forward || n.raft.State() == raft.Leader {
+	if !forward || n.raft.isLeader() {
 		err := n.db.View(func(txn *badger.Txn) error {
 			return i.Execute(&Transaction{txn: txn})
 		})
@@ -237,8 +165,8 @@ func (n *Node) View(i Instruction, forward bool) error {
 	}
 
 	// get leader
-	leader := string(n.raft.Leader())
-	if leader == "" {
+	leader := n.raft.leaderRoute()
+	if leader == nil {
 		return fmt.Errorf("no leader")
 	}
 
@@ -260,11 +188,8 @@ func (n *Node) View(i Instruction, forward bool) error {
 		return err
 	}
 
-	// parse route
-	route := parseRoute(string(n.raft.Leader()))
-
 	// prepare url
-	url := fmt.Sprintf("http://%s/view", route.rpcAddr())
+	url := fmt.Sprintf("http://%s/view", leader.rpcAddr())
 
 	// create client
 	client := http.Client{}
@@ -312,7 +237,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 
 		// apply command
-		err = n.raft.Apply(cmd, 0).Error()
+		err = n.raft.apply(cmd)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -382,26 +307,24 @@ func (n *Node) rpcEndpoint() http.Handler {
 	return mux
 }
 
-func (n *Node) confPrinter() {
+func (n *Node) confPrinter(local route, peers []route) {
 	for {
 		// wait some time
 		time.Sleep(time.Second)
 
-		// get configuration
-		future := n.raft.GetConfiguration()
-		err := future.Error()
-		if err != nil {
-			println(err.Error())
-			continue
+		// collect peers
+		var list []string
+		for _, peer := range peers {
+			list = append(list, peer.name)
 		}
 
-		// collect peers
-		var peers []string
-		for _, server := range future.Configuration().Servers {
-			peers = append(peers, fmt.Sprintf("%s@%s", server.ID, server.Address))
+		// get leader
+		var leader string
+		if n.raft.leaderRoute() != nil {
+			leader = n.raft.leaderRoute().name
 		}
 
 		// print state
-		fmt.Printf("State: %s | Peers: %s\n", n.raft.String(), peers)
+		fmt.Printf("Node: %s | State: %s | Leader: %s | Peers: %s\n", local.name, n.raft.state(), leader, strings.Join(list, ", "))
 	}
 }

@@ -76,8 +76,8 @@ func (t *Transaction) Iterator(config IteratorConfig) *Iterator {
 			PrefetchValues: config.Prefetch > 0,
 			PrefetchSize:   config.Prefetch,
 			Reverse:        config.Reverse,
-		},
-	)}
+		}),
+	}
 }
 
 type IteratorConfig struct {
