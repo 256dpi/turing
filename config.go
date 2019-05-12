@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type Config struct {
+type NodeConfig struct {
 	// The node name.
 	Name string
 
@@ -28,7 +28,7 @@ type Config struct {
 	Instructions []Instruction
 }
 
-func (c Config) nodeRoute() route {
+func (c NodeConfig) nodeRoute() route {
 	return route{
 		name: c.Name,
 		host: c.Host,
@@ -36,15 +36,15 @@ func (c Config) nodeRoute() route {
 	}
 }
 
-func (c Config) raftDir() string {
+func (c NodeConfig) raftDir() string {
 	return filepath.Join(c.Directory, "coordinator")
 }
 
-func (c Config) dbDir() string {
+func (c NodeConfig) dbDir() string {
 	return filepath.Join(c.Directory, "db")
 }
 
-func (c Config) peerRoutes() []route {
+func (c NodeConfig) peerRoutes() []route {
 	// prepare list
 	var list []route
 	for _, peer := range c.Peers {

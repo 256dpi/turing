@@ -34,7 +34,7 @@ func main() {
 	}
 
 	// create node
-	node, err := turing.CreateNode(turing.Config{
+	node, err := turing.CreateNode(turing.NodeConfig{
 		Name:      *name,
 		Host:      *host,
 		Port:      *port,

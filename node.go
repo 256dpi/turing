@@ -18,7 +18,7 @@ type Node struct {
 	coordinator  *coordinator
 }
 
-func CreateNode(config Config) (*Node, error) {
+func CreateNode(config NodeConfig) (*Node, error) {
 	// open database
 	database, err := openDatabase(config.dbDir())
 	if err != nil {
