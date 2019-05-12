@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// prepare flags
-	var serverFlag = flag.String("server", "n1@0.0.0.0:42000", "the server")
+	var serverFlag = flag.String("server", "n1@0.0.0.0:42010", "the server")
 	var peersFlag = flag.String("peers", "", "the cluster peers")
 	var dirFlag = flag.String("dir", "data", "the data directory")
 	var cleanFlag = flag.Bool("clean", false, "remove existing data")
