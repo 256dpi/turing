@@ -40,7 +40,7 @@ func createCoordinator(sm *stateMachine, dir string, server Route, peers []Route
 	}
 
 	// create raft transport
-	transport, err := raft.NewTCPTransport(server.raftAddr(), localAddr, 3, 10*time.Second, os.Stdout)
+	transport, err := raft.NewTCPTransport(server.raftAddr(), localAddr, 3, 10*time.Second, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,6 @@ func (n *coordinator) leader() *Route {
 
 	// return existing route if leader has not changed
 	if addr == n.leaderCache.lastAddr {
-		println("fast path")
 		return n.leaderCache.current
 	}
 

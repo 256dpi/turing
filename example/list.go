@@ -27,6 +27,9 @@ func (l *List) Decode(data []byte) error {
 }
 
 func (l *List) Execute(txn *turing.Transaction) error {
+	// create map
+	l.Pairs = make(map[string]string)
+
 	// create iterator
 	iter := txn.Iterator(turing.IteratorConfig{
 		Prefetch: 10,

@@ -12,17 +12,17 @@ import (
 )
 
 type NodeConfig struct {
-	// The storage directory.
-	Directory string
-
-	// The used instructions.
-	Instructions []Instruction
-
 	// The server route.
 	Server Route
 
 	// The cluster peers.
 	Peers []Route
+
+	// The storage directory.
+	Directory string
+
+	// The used instructions.
+	Instructions []Instruction
 
 	// The logger for internal logs (raft, badger).
 	Logger io.Writer

@@ -13,41 +13,49 @@ import (
 
 func main() {
 	// prepare flags
-	var name = flag.String("name", "n1", "the node name")
-	var host = flag.String("host", "0.0.0.0", "the node host")
-	var port = flag.Int("port", 42000, "the node port")
-	var peers = flag.String("peers", "", "the cluster peers")
+	var serverFlag = flag.String("server", "n1@0.0.0.0:42000", "the server")
+	var peersFlag = flag.String("peers", "", "the cluster peers")
+	var dirFlag = flag.String("dir", "./data/", "the data directory")
 
 	// parse flags
 	flag.Parse()
 
-	// prepare dir
-	dir, err := filepath.Abs("./data/" + *name)
+	// parse server route
+	server, err := turing.ParseRoute(*serverFlag)
 	if err != nil {
 		panic(err)
 	}
 
-	// remove all previous data
-	err = os.RemoveAll(dir)
+	// prepare directory
+	directory, err := filepath.Abs(*dirFlag + server.Name)
 	if err != nil {
 		panic(err)
 	}
 
 	// parse peer routes
-	var peerRoutes []turing.Route
-	for _, peer := range strings.Split(*peers, ",") {
+	var peers []turing.Route
+	for _, peer := range strings.Split(*peersFlag, ",") {
+		// parse route
 		route, err := turing.ParseRoute(peer)
 		if err != nil {
 			panic(err)
 		}
-		peerRoutes = append(peerRoutes, route)
+
+		// add peer
+		peers = append(peers, route)
+	}
+
+	// remove all previous data
+	err = os.RemoveAll(directory)
+	if err != nil {
+		panic(err)
 	}
 
 	// prepare config
 	config := turing.NodeConfig{
-		Server:    turing.NewRoute(*name, *host, *port),
-		Directory: dir,
-		Peers:     peerRoutes,
+		Server:    server,
+		Peers:     peers,
+		Directory: directory,
 		Instructions: []turing.Instruction{
 			&Increment{}, &List{},
 		},
@@ -70,7 +78,7 @@ func main() {
 		time.Sleep(time.Second)
 
 		// set value
-		set := &Increment{Key: *name}
+		set := &Increment{Key: server.Name}
 		err = node.Update(set)
 		if err != nil {
 			println(err.Error())
