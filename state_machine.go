@@ -14,7 +14,7 @@ type command struct {
 }
 
 type stateMachine struct {
-	database *badger.DB
+	database *database
 
 	instructions map[string]Instruction
 }

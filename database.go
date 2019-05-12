@@ -7,7 +7,9 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-func openDatabase(dir string) (*badger.DB, error) {
+type database = badger.DB
+
+func openDatabase(dir string) (*database, error) {
 	// ensure directory
 	err := os.MkdirAll(dir, 0777)
 	if err != nil {

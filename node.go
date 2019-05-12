@@ -13,9 +13,7 @@ import (
 )
 
 type Node struct {
-	opts Config
-
-	database     *badger.DB
+	database     *database
 	stateMachine *stateMachine
 	coordinator  *coordinator
 }
@@ -42,7 +40,6 @@ func CreateNode(config Config) (*Node, error) {
 
 	// create node
 	n := &Node{
-		opts:         config,
 		database:     database,
 		stateMachine: stateMachine,
 		coordinator:  coordinator,
