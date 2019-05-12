@@ -33,23 +33,37 @@ func main() {
 		panic(err)
 	}
 
-	// create node
-	node, err := turing.CreateNode(turing.NodeConfig{
-		Name:      *name,
-		Host:      *host,
-		Port:      *port,
+	// parse peer routes
+	var peerRoutes []turing.Route
+	for _, peer := range strings.Split(*peers, ",") {
+		route, err := turing.ParseRoute(peer)
+		if err != nil {
+			panic(err)
+		}
+		peerRoutes = append(peerRoutes, route)
+	}
+
+	// prepare config
+	config := turing.NodeConfig{
+		Server:    turing.NewRoute(*name, *host, *port),
 		Directory: dir,
-		Peers:     strings.Split(*peers, ","),
+		Peers:     peerRoutes,
 		Instructions: []turing.Instruction{
 			&Increment{}, &List{},
 		},
-	})
+	}
+
+	// create node
+	node, err := turing.CreateNode(config)
 	if err != nil {
 		panic(err)
 	}
 
 	// ensure closing
 	defer node.Close()
+
+	// run printer
+	go printer(node, config)
 
 	for {
 		// sleep
@@ -76,5 +90,27 @@ func main() {
 
 		// print instruction
 		fmt.Printf("==> %+v\n", list)
+	}
+}
+
+func printer(node *turing.Node, config turing.NodeConfig) {
+	for {
+		// wait some time
+		time.Sleep(time.Second)
+
+		// collect peers
+		var list []string
+		for _, peer := range config.Peers {
+			list = append(list, peer.Name)
+		}
+
+		// get leader
+		var leader string
+		if node.Leader() != nil {
+			leader = node.Leader().Name
+		}
+
+		// print state
+		fmt.Printf("Node: %s | State: %s | Leader: %s | peers: %s\n", config.Server.Name, node.State(), leader, strings.Join(list, ", "))
 	}
 }

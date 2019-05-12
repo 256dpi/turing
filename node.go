@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/dgraph-io/badger"
 )
@@ -35,7 +33,7 @@ func CreateNode(config NodeConfig) (*Node, error) {
 	stateMachine := newStateMachine(database, config.Instructions)
 
 	// create coordinator
-	coordinator, err := createCoordinator(stateMachine, config.raftDir(), config.nodeRoute(), config.peerRoutes(), config.Logger)
+	coordinator, err := createCoordinator(stateMachine, config.raftDir(), config.Server, config.Peers, config.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -48,16 +46,21 @@ func CreateNode(config NodeConfig) (*Node, error) {
 	}
 
 	// run rpc server
-	go http.ListenAndServe(config.nodeRoute().rpcAddr(), n.rpcEndpoint())
-
-	// run config printer
-	go n.confPrinter(config.nodeRoute(), config.peerRoutes())
+	go http.ListenAndServe(config.Server.rpcAddr(), n.rpcEndpoint())
 
 	return n, nil
 }
 
 func (n *Node) IsLeader() bool {
 	return n.coordinator.isLeader()
+}
+
+func (n *Node) Leader() *Route {
+	return n.coordinator.leader()
+}
+
+func (n *Node) State() string {
+	return n.coordinator.state()
 }
 
 func (n *Node) Update(i Instruction) error {
@@ -95,7 +98,7 @@ func (n *Node) Update(i Instruction) error {
 
 func (n *Node) updateRemote(i Instruction) error {
 	// get leader route
-	leader := n.coordinator.leaderRoute()
+	leader := n.coordinator.leader()
 	if leader == nil {
 		return fmt.Errorf("no leader")
 	}
@@ -150,7 +153,7 @@ func (n *Node) View(i Instruction, forward bool) error {
 	}
 
 	// get leader
-	leader := n.coordinator.leaderRoute()
+	leader := n.coordinator.leader()
 	if leader == nil {
 		return fmt.Errorf("no leader")
 	}
@@ -290,28 +293,4 @@ func (n *Node) rpcEndpoint() http.Handler {
 	})
 
 	return mux
-}
-
-// TODO: Move to example.
-
-func (n *Node) confPrinter(local route, peers []route) {
-	for {
-		// wait some time
-		time.Sleep(time.Second)
-
-		// collect peers
-		var list []string
-		for _, peer := range peers {
-			list = append(list, peer.name)
-		}
-
-		// get leader
-		var leader string
-		if n.coordinator.leaderRoute() != nil {
-			leader = n.coordinator.leaderRoute().name
-		}
-
-		// print state
-		fmt.Printf("Node: %s | State: %s | Leader: %s | peers: %s\n", local.name, n.coordinator.state(), leader, strings.Join(list, ", "))
-	}
 }

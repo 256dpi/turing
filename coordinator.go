@@ -17,19 +17,19 @@ import (
 
 type coordinator struct {
 	raft  *raft.Raft
-	peers []route
+	peers []Route
 
-	leaderRouteCache struct {
+	leaderCache struct {
 		sync.Mutex
-		current  *route
+		current  *Route
 		lastAddr string
 	}
 }
 
-func createCoordinator(sm *stateMachine, dir string, server route, peers []route, logger io.Writer) (*coordinator, error) {
+func createCoordinator(sm *stateMachine, dir string, server Route, peers []Route, logger io.Writer) (*coordinator, error) {
 	// prepare raft config
 	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(server.name)
+	raftConfig.LocalID = raft.ServerID(server.Name)
 	raftConfig.SnapshotThreshold = 1024
 	raftConfig.Logger = log.New(logger, "", log.LstdFlags)
 
@@ -74,7 +74,7 @@ func createCoordinator(sm *stateMachine, dir string, server route, peers []route
 		// prepare servers
 		servers := []raft.Server{
 			{
-				ID:      raft.ServerID(server.name),
+				ID:      raft.ServerID(server.Name),
 				Address: raft.ServerAddress(server.raftAddr()),
 			},
 		}
@@ -82,13 +82,13 @@ func createCoordinator(sm *stateMachine, dir string, server route, peers []route
 		// add raft peers
 		for _, peer := range peers {
 			// check if self
-			if peer.name == server.name {
+			if peer.Name == server.Name {
 				continue
 			}
 
 			// add peer
 			servers = append(servers, raft.Server{
-				ID:      raft.ServerID(peer.name),
+				ID:      raft.ServerID(peer.Name),
 				Address: raft.ServerAddress(peer.raftAddr()),
 			})
 		}
@@ -119,10 +119,10 @@ func (n *coordinator) isLeader() bool {
 	return n.raft.State() == raft.Leader
 }
 
-func (n *coordinator) leaderRoute() *route {
+func (n *coordinator) leader() *Route {
 	// acquire mutex
-	n.leaderRouteCache.Lock()
-	defer n.leaderRouteCache.Unlock()
+	n.leaderCache.Lock()
+	defer n.leaderCache.Unlock()
 
 	// get leader address
 	addr := string(n.raft.Leader())
@@ -131,9 +131,9 @@ func (n *coordinator) leaderRoute() *route {
 	}
 
 	// return existing route if leader has not changed
-	if addr == n.leaderRouteCache.lastAddr {
+	if addr == n.leaderCache.lastAddr {
 		println("fast path")
-		return n.leaderRouteCache.current
+		return n.leaderCache.current
 	}
 
 	// parse addr
@@ -155,10 +155,10 @@ func (n *coordinator) leaderRoute() *route {
 
 	// select peer
 	for _, peer := range n.peers {
-		if peer.host == host && peer.raftPort() == port {
+		if peer.Host == host && peer.raftPort() == port {
 			// set current route
-			n.leaderRouteCache.current = &peer
-			n.leaderRouteCache.lastAddr = addr
+			n.leaderCache.current = &peer
+			n.leaderCache.lastAddr = addr
 
 			return &peer
 		}
@@ -168,16 +168,5 @@ func (n *coordinator) leaderRoute() *route {
 }
 
 func (n *coordinator) state() string {
-	switch n.raft.State() {
-	case raft.Follower:
-		return "follower"
-	case raft.Candidate:
-		return "candidate"
-	case raft.Leader:
-		return "leader"
-	case raft.Shutdown:
-		return "shutdown"
-	default:
-		return "unknown"
-	}
+	return n.raft.State().String()
 }

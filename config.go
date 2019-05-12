@@ -12,43 +12,24 @@ import (
 )
 
 type NodeConfig struct {
-	// The node name.
-	Name string
-
-	// The host used for raft.
-	Host string
-
-	// The port used for raft.
-	Port int
-
 	// The storage directory.
 	Directory string
 
-	// The cluster peers e.g. "ns1@0.0.0.0:1410, ns2@0.0.0.0:1420".
-	Peers []string
-
 	// The used instructions.
 	Instructions []Instruction
+
+	// The server route.
+	Server Route
+
+	// The cluster peers.
+	Peers []Route
 
 	// The logger for internal logs (raft, badger).
 	Logger io.Writer
 }
 
 func (c *NodeConfig) check() error {
-	// check name
-	if c.Name == "" {
-		return errors.New("turing: missing name")
-	}
-
-	// check host
-	if c.Host == "" {
-		return errors.New("turing: missing host")
-	}
-
-	// check port
-	if c.Port == 0 {
-		return errors.New("turing: missing port")
-	}
+	// TODO: Check route validity.
 
 	// check directory
 	if c.Directory == "" {
@@ -63,39 +44,29 @@ func (c *NodeConfig) check() error {
 	return nil
 }
 
-func (c NodeConfig) nodeRoute() route {
-	return route{
-		name: c.Name,
-		host: c.Host,
-		port: c.Port,
-	}
-}
-
 func (c NodeConfig) raftDir() string {
-	return filepath.Join(c.Directory, "coordinator")
+	return filepath.Join(c.Directory, "raft")
 }
 
 func (c NodeConfig) dbDir() string {
 	return filepath.Join(c.Directory, "db")
 }
 
-func (c NodeConfig) peerRoutes() []route {
-	// prepare list
-	var list []route
-	for _, peer := range c.Peers {
-		list = append(list, parseRoute(peer))
+type Route struct {
+	Name string
+	Host string
+	Port int
+}
+
+func NewRoute(name, host string, port int) Route {
+	return Route{
+		Name: name,
+		Host: host,
+		Port: port,
 	}
-
-	return list
 }
 
-type route struct {
-	name string
-	host string
-	port int
-}
-
-func parseRoute(str string) route {
+func ParseRoute(str string) (Route, error) {
 	// split name and addr
 	s := strings.Split(str, "@")
 	if len(s) == 1 {
@@ -103,7 +74,10 @@ func parseRoute(str string) route {
 	}
 
 	// split addr
-	host, portString, _ := net.SplitHostPort(s[1])
+	host, portString, err := net.SplitHostPort(s[1])
+	if err != nil {
+		return Route{}, err
+	}
 
 	// set default host
 	if host == "" {
@@ -111,31 +85,37 @@ func parseRoute(str string) route {
 	}
 
 	// parse port
-	port, _ := strconv.Atoi(portString)
-
-	return route{
-		name: s[0],
-		host: host,
-		port: port,
+	port, err := strconv.Atoi(portString)
+	if err != nil {
+		return Route{}, err
 	}
+
+	// create route
+	r := Route{
+		Name: s[0],
+		Host: host,
+		Port: port,
+	}
+
+	return r, nil
 }
 
-func (r route) raftPort() int {
-	return r.port
+func (r Route) raftPort() int {
+	return r.Port
 }
 
-func (r route) raftAddr() string {
-	return net.JoinHostPort(r.host, strconv.Itoa(r.raftPort()))
+func (r Route) raftAddr() string {
+	return net.JoinHostPort(r.Host, strconv.Itoa(r.raftPort()))
 }
 
-func (r route) rpcPort() int {
-	return r.port + 1
+func (r Route) rpcPort() int {
+	return r.Port + 1
 }
 
-func (r route) rpcAddr() string {
-	return net.JoinHostPort(r.host, strconv.Itoa(r.rpcPort()))
+func (r Route) rpcAddr() string {
+	return net.JoinHostPort(r.Host, strconv.Itoa(r.rpcPort()))
 }
 
-func (r route) string() string {
-	return fmt.Sprintf("%s@%s", r.name, r.raftAddr())
+func (r Route) string() string {
+	return fmt.Sprintf("%s@%s", r.Name, r.raftAddr())
 }
