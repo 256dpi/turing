@@ -123,10 +123,13 @@ func (n *Node) updateRemote(i Instruction) error {
 	client := http.Client{}
 
 	// run request
-	_, err = client.Post(url, "application/json", bytes.NewReader(cd))
+	res, err := client.Post(url, "application/json", bytes.NewReader(cd))
 	if err != nil {
 		return err
 	}
+
+	// ensure closing
+	defer res.Body.Close()
 
 	return nil
 }
@@ -224,7 +227,7 @@ func (n *Node) rpcEndpoint() http.Handler {
 		}
 	})
 
-	// add update handler
+	// add view handler
 	mux.HandleFunc("/view", func(w http.ResponseWriter, r *http.Request) {
 		// parse command
 		var c command
