@@ -26,7 +26,7 @@ func CreateNode(config NodeConfig) (*Node, error) {
 	}
 
 	// open database
-	database, err := openDatabase(config.dbDir())
+	database, err := openDatabase(config.dbDir(), config.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -35,11 +35,7 @@ func CreateNode(config NodeConfig) (*Node, error) {
 	stateMachine := newStateMachine(database, config.Instructions)
 
 	// create coordinator
-	coordinator, err := createCoordinator(stateMachine, coordinatorConfig{
-		directory: config.raftDir(),
-		server:    config.nodeRoute(),
-		peers:     config.peerRoutes(),
-	})
+	coordinator, err := createCoordinator(stateMachine, config.raftDir(), config.nodeRoute(), config.peerRoutes(), config.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -314,6 +310,6 @@ func (n *Node) confPrinter(local route, peers []route) {
 		}
 
 		// print state
-		fmt.Printf("Node: %s | State: %s | IsLeader: %s | peers: %s\n", local.name, n.coordinator.state(), leader, strings.Join(list, ", "))
+		fmt.Printf("Node: %s | State: %s | Leader: %s | peers: %s\n", local.name, n.coordinator.state(), leader, strings.Join(list, ", "))
 	}
 }

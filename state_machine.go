@@ -19,7 +19,7 @@ type stateMachine struct {
 	instructions map[string]Instruction
 }
 
-func newStateMachine(db *badger.DB, instructions []Instruction) *stateMachine {
+func newStateMachine(db *database, instructions []Instruction) *stateMachine {
 	// create instruction map
 	im := make(map[string]Instruction)
 	for _, i := range instructions {

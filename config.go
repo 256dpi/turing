@@ -3,6 +3,8 @@ package turing
 import (
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net"
 	"path/filepath"
 	"strconv"
@@ -27,9 +29,12 @@ type NodeConfig struct {
 
 	// The used instructions.
 	Instructions []Instruction
+
+	// The logger for internal logs (raft, badger).
+	Logger io.Writer
 }
 
-func (c NodeConfig) check() error {
+func (c *NodeConfig) check() error {
 	// check name
 	if c.Name == "" {
 		return errors.New("turing: missing name")
@@ -48,6 +53,11 @@ func (c NodeConfig) check() error {
 	// check directory
 	if c.Directory == "" {
 		return errors.New("turing: missing directory")
+	}
+
+	// set default logger
+	if c.Logger == nil {
+		c.Logger = ioutil.Discard
 	}
 
 	return nil
