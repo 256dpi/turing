@@ -8,6 +8,52 @@ import (
 	"strings"
 )
 
+type Config struct {
+	// The node name.
+	Name string
+
+	// The host used for raft.
+	Host string
+
+	// The port used for raft.
+	Port int
+
+	// The storage directory.
+	Directory string
+
+	// The cluster peers e.g. "ns1@0.0.0.0:1410, ns2@0.0.0.0:1420".
+	Peers []string
+
+	// The used instructions.
+	Instructions []Instruction
+}
+
+func (c Config) nodeRoute() route {
+	return route{
+		name: c.Name,
+		host: c.Host,
+		port: c.Port,
+	}
+}
+
+func (c Config) raftDir() string {
+	return filepath.Join(c.Directory, "coordinator")
+}
+
+func (c Config) dbDir() string {
+	return filepath.Join(c.Directory, "db")
+}
+
+func (c Config) peerRoutes() []route {
+	// prepare list
+	var list []route
+	for _, peer := range c.Peers {
+		list = append(list, parseRoute(peer))
+	}
+
+	return list
+}
+
 type route struct {
 	name string
 	host string
@@ -57,50 +103,4 @@ func (r route) rpcAddr() string {
 
 func (r route) string() string {
 	return fmt.Sprintf("%s@%s", r.name, r.raftAddr())
-}
-
-type Config struct {
-	// The node name.
-	Name string
-
-	// The host used for raft.
-	Host string
-
-	// The port used for raft.
-	Port int
-
-	// The storage directory.
-	Directory string
-
-	// The cluster peers e.g. "ns1@0.0.0.0:1410, ns2@0.0.0.0:1420".
-	Peers []string
-
-	// The used instructions.
-	Instructions []Instruction
-}
-
-func (c Config) nodeRoute() route {
-	return route{
-		name: c.Name,
-		host: c.Host,
-		port: c.Port,
-	}
-}
-
-func (c Config) raftDir() string {
-	return filepath.Join(c.Directory, "coordinator")
-}
-
-func (c Config) dbDir() string {
-	return filepath.Join(c.Directory, "db")
-}
-
-func (c Config) peerRoutes() []route {
-	// prepare list
-	var list []route
-	for _, peer := range c.Peers {
-		list = append(list, parseRoute(peer))
-	}
-
-	return list
 }
