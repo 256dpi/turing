@@ -97,6 +97,7 @@ func main() {
 		set := &increment{Key: server.Name}
 		err = machine.Update(set)
 		if err == turing.ErrNoLeader {
+			time.Sleep(time.Second)
 			continue
 		} else if err != nil {
 			panic(err)
@@ -109,6 +110,7 @@ func main() {
 		list := &list{}
 		err = machine.View(list, true)
 		if err == turing.ErrNoLeader {
+			time.Sleep(time.Second)
 			continue
 		} else if err != nil {
 			panic(err)

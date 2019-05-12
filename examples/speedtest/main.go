@@ -129,6 +129,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		// run update
 		err := machine.Update(increment)
 		if err == turing.ErrNoLeader {
+			time.Sleep(time.Second)
 			continue
 		} else if err != nil {
 			panic(err)
