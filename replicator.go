@@ -13,29 +13,29 @@ type command struct {
 	Data []byte `json:"data"`
 }
 
-type stateMachine struct {
+type replicator struct {
 	database *database
 
 	instructions map[string]Instruction
 }
 
-func newStateMachine(db *database, instructions []Instruction) *stateMachine {
+func newReplicator(db *database, instructions []Instruction) *replicator {
 	// create instruction map
 	im := make(map[string]Instruction)
 	for _, i := range instructions {
 		im[i.Name()] = i
 	}
 
-	// create state machine
-	stateMachine := &stateMachine{
+	// create replicator
+	replicator := &replicator{
 		database:     db,
 		instructions: im,
 	}
 
-	return stateMachine
+	return replicator
 }
 
-func (m *stateMachine) Apply(l *raft.Log) interface{} {
+func (m *replicator) Apply(l *raft.Log) interface{} {
 	// TODO: Handle errors.
 
 	// parse command
@@ -71,11 +71,11 @@ func (m *stateMachine) Apply(l *raft.Log) interface{} {
 	return nil
 }
 
-func (m *stateMachine) Snapshot() (raft.FSMSnapshot, error) {
+func (m *replicator) Snapshot() (raft.FSMSnapshot, error) {
 	return m, nil
 }
 
-func (m *stateMachine) Persist(sink raft.SnapshotSink) error {
+func (m *replicator) Persist(sink raft.SnapshotSink) error {
 	// backup database
 	_, err := m.database.Backup(sink, 0)
 	if err != nil {
@@ -85,11 +85,11 @@ func (m *stateMachine) Persist(sink raft.SnapshotSink) error {
 	return nil
 }
 
-func (m *stateMachine) Release() {
+func (m *replicator) Release() {
 	// do nothing
 }
 
-func (m *stateMachine) Restore(rc io.ReadCloser) error {
+func (m *replicator) Restore(rc io.ReadCloser) error {
 	// TODO: Clear database beforehand?
 
 	// load backup

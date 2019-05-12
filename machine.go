@@ -11,9 +11,9 @@ import (
 )
 
 type Machine struct {
-	database     *database
-	stateMachine *stateMachine
-	coordinator  *coordinator
+	database    *database
+	replicator  *replicator
+	coordinator *coordinator
 }
 
 func CreateMachine(config MachineConfig) (*Machine, error) {
@@ -29,20 +29,20 @@ func CreateMachine(config MachineConfig) (*Machine, error) {
 		return nil, err
 	}
 
-	// create state machine
-	stateMachine := newStateMachine(database, config.Instructions)
+	// create replicator
+	replicator := newReplicator(database, config.Instructions)
 
 	// create coordinator
-	coordinator, err := createCoordinator(stateMachine, config.raftDir(), config.Server, config.Peers, config.Logger)
+	coordinator, err := createCoordinator(replicator, config.raftDir(), config.Server, config.Peers, config.Logger)
 	if err != nil {
 		return nil, err
 	}
 
 	// create machine
 	n := &Machine{
-		database:     database,
-		stateMachine: stateMachine,
-		coordinator:  coordinator,
+		database:    database,
+		replicator:  replicator,
+		coordinator: coordinator,
 	}
 
 	// run rpc server
@@ -243,7 +243,7 @@ func (m *Machine) rpcEndpoint() http.Handler {
 		}
 
 		// get factory instruction
-		factory, ok := m.stateMachine.instructions[c.Name]
+		factory, ok := m.replicator.instructions[c.Name]
 		if !ok {
 			http.Error(w, "missing instruction", http.StatusInternalServerError)
 			return

@@ -26,7 +26,7 @@ type coordinator struct {
 	}
 }
 
-func createCoordinator(sm *stateMachine, dir string, server Route, peers []Route, logger io.Writer) (*coordinator, error) {
+func createCoordinator(replicator *replicator, directory string, server Route, peers []Route, logger io.Writer) (*coordinator, error) {
 	// prepare raft config
 	raftConfig := raft.DefaultConfig()
 	raftConfig.LocalID = raft.ServerID(server.Name)
@@ -46,13 +46,13 @@ func createCoordinator(sm *stateMachine, dir string, server Route, peers []Route
 	}
 
 	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(dir, 2, os.Stdout)
+	snapshotStore, err := raft.NewFileSnapshotStore(directory, 2, os.Stdout)
 	if err != nil {
 		return nil, err
 	}
 
 	// create bolt db based raft store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(dir, "raft.db"))
+	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(directory, "raft.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func createCoordinator(sm *stateMachine, dir string, server Route, peers []Route
 	}
 
 	// create raft instance
-	rft, err := raft.NewRaft(raftConfig, sm, boltStore, boltStore, snapshotStore, transport)
+	rft, err := raft.NewRaft(raftConfig, replicator, boltStore, boltStore, snapshotStore, transport)
 	if err != nil {
 		return nil, err
 	}
