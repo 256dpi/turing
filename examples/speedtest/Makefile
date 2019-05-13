@@ -1,0 +1,2 @@
+run:
+	goreman start
