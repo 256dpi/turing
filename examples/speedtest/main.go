@@ -17,7 +17,9 @@ import (
 	"github.com/256dpi/turing"
 )
 
-const workers = 100
+const writers = 100
+const readers = 100
+const keySpace = 100
 
 var wg sync.WaitGroup
 
@@ -94,14 +96,14 @@ func main() {
 	done := make(chan struct{})
 
 	// run writers
-	wg.Add(workers)
-	for i := 0; i < workers; i++ {
+	wg.Add(writers)
+	for i := 0; i < writers; i++ {
 		go writer(machine, done)
 	}
 
 	// run readers
-	wg.Add(workers)
-	for i := 0; i < workers; i++ {
+	wg.Add(readers)
+	for i := 0; i < readers; i++ {
 		go reader(machine, done)
 	}
 
@@ -136,7 +138,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 
 		// prepare instruction
 		increment := &increment{
-			Key:   strconv.Itoa(rand.Intn(20)),
+			Key:   strconv.Itoa(rand.Intn(keySpace)),
 			Value: 1,
 		}
 
@@ -174,7 +176,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 
 		// prepare instruction
 		retrieve := &retrieve{
-			Key: strconv.Itoa(rand.Intn(20)),
+			Key: strconv.Itoa(rand.Intn(keySpace)),
 		}
 
 		// run update
