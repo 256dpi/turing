@@ -2,7 +2,6 @@ package turing
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/lni/dragonboat"
@@ -13,16 +12,9 @@ import (
 const clusterID uint64 = 1
 
 type coordinator struct {
-	raft *dragonboat.NodeHost
-
+	node   *dragonboat.NodeHost
 	server Route
 	peers  []Route
-
-	leaderCache struct {
-		sync.Mutex
-		current  *Route
-		lastAddr string
-	}
 }
 
 func createCoordinator(cfg MachineConfig) (*coordinator, error) {
@@ -74,7 +66,7 @@ func createCoordinator(cfg MachineConfig) (*coordinator, error) {
 
 	// create coordinator
 	rn := &coordinator{
-		raft:   nh,
+		node:   nh,
 		server: cfg.Server,
 		peers:  cfg.Peers,
 	}
@@ -82,16 +74,16 @@ func createCoordinator(cfg MachineConfig) (*coordinator, error) {
 	return rn, nil
 }
 
-func (n *coordinator) update(cmd []byte) ([]byte, error) {
+func (c *coordinator) update(cmd []byte) ([]byte, error) {
 	// prepare context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	// get session
-	session := n.raft.GetNoOPSession(clusterID)
+	session := c.node.GetNoOPSession(clusterID)
 
 	// update data
-	result, err := n.raft.SyncPropose(ctx, session, cmd)
+	result, err := c.node.SyncPropose(ctx, session, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -99,13 +91,13 @@ func (n *coordinator) update(cmd []byte) ([]byte, error) {
 	return result.Data, nil
 }
 
-func (n *coordinator) lookup(cmd []byte) ([]byte, error) {
+func (c *coordinator) lookup(cmd []byte) ([]byte, error) {
 	// prepare context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	// lookup data
-	result, err := n.raft.SyncRead(ctx, clusterID, cmd)
+	result, err := c.node.SyncRead(ctx, clusterID, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -113,20 +105,22 @@ func (n *coordinator) lookup(cmd []byte) ([]byte, error) {
 	return result, nil
 }
 
-func (n *coordinator) isLeader() bool {
-	id, ok, _ := n.raft.GetLeaderID(clusterID)
-	return ok && id == n.server.ID
+func (c *coordinator) isLeader() bool {
+	// get leader id
+	id, ok, _ := c.node.GetLeaderID(clusterID)
+
+	return ok && id == c.server.ID
 }
 
-func (n *coordinator) leader() *Route {
+func (c *coordinator) leader() *Route {
 	// get leader id
-	id, ok, _ := n.raft.GetLeaderID(clusterID)
+	id, ok, _ := c.node.GetLeaderID(clusterID)
 	if !ok {
 		return nil
 	}
 
 	// get route
-	for _, peer := range n.peers {
+	for _, peer := range c.peers {
 		if peer.ID == id {
 			return &peer
 		}
@@ -135,10 +129,16 @@ func (n *coordinator) leader() *Route {
 	return nil
 }
 
-func (n *coordinator) state() string {
-	if n.isLeader() {
-		return "leader"
+func (c *coordinator) state() string {
+	// return description
+	if c.isLeader() {
+		return "Leader"
 	} else {
-		return "follower"
+		return "Follower"
 	}
+}
+
+func (c *coordinator) close() {
+	// stop node
+	c.node.Stop()
 }

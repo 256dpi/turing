@@ -114,5 +114,5 @@ func (m *Machine) View(i Instruction) error {
 }
 
 func (m *Machine) Close() {
-	// TODO: Implement.
+	m.coordinator.close()
 }

@@ -120,12 +120,12 @@ func ParseRoute(str string) (Route, error) {
 func (r Route) check() error {
 	// check host
 	if r.Host == "" {
-		return errors.New("missing host")
+		return errors.New("turing: missing host")
 	}
 
 	// check port
 	if r.Port <= 0 {
-		return errors.New("invalid port")
+		return errors.New("turing: invalid port")
 	}
 
 	return nil
