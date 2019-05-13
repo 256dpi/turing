@@ -69,14 +69,6 @@ type Route struct {
 	Port int
 }
 
-func NewRoute(id uint64, host string, port int) Route {
-	return Route{
-		ID:   id,
-		Host: host,
-		Port: port,
-	}
-}
-
 func ParseRoute(str string) (Route, error) {
 	// split name and addr
 	s := strings.Split(str, "@")
