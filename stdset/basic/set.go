@@ -1,4 +1,4 @@
-package main
+package basic
 
 import (
 	"encoding/json"
@@ -28,7 +28,7 @@ func (s *Set) Decode(data []byte) error {
 }
 
 func (s *Set) Execute(txn *turing.Transaction) error {
-	// get pair
+	// set pair
 	err := txn.Set(s.Key, s.Value)
 	if err != nil {
 		return err
