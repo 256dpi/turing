@@ -17,6 +17,8 @@ import (
 	"github.com/256dpi/turing"
 )
 
+const workers = 100
+
 var wg sync.WaitGroup
 
 func main() {
@@ -92,14 +94,14 @@ func main() {
 	done := make(chan struct{})
 
 	// run writers
-	for i := 0; i < 50; i++ {
-		wg.Add(1)
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
 		go writer(machine, done)
 	}
 
 	// run readers
-	for i := 0; i < 50; i++ {
-		wg.Add(1)
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
 		go reader(machine, done)
 	}
 
