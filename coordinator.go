@@ -31,33 +31,34 @@ func createCoordinator(cfg MachineConfig) (*coordinator, error) {
 		peers[peer.ID] = peer.raftAddr()
 	}
 
-	// get node addr
-	var nodeAddr = cfg.Server.raftAddr()
-
 	// change the log verbosity
 	logger.GetLogger("dragonboat").SetLevel(logger.WARNING)
-	logger.GetLogger("raft").SetLevel(logger.CRITICAL)
+	logger.GetLogger("raft").SetLevel(logger.WARNING)
 	logger.GetLogger("rsm").SetLevel(logger.WARNING)
 	logger.GetLogger("transport").SetLevel(logger.WARNING)
 	logger.GetLogger("grpc").SetLevel(logger.WARNING)
+	logger.GetLogger("logdb").SetLevel(logger.WARNING)
+	logger.GetLogger("config").SetLevel(logger.WARNING)
+	logger.GetLogger("server").SetLevel(logger.WARNING)
 
 	// prepare config
 	rc := config.Config{
 		NodeID:             cfg.Server.ID,
 		ClusterID:          1,
+		CheckQuorum:        true,
 		ElectionRTT:        10,
 		HeartbeatRTT:       1,
-		CheckQuorum:        true,
-		SnapshotEntries:    10,
-		CompactionOverhead: 5,
+		SnapshotEntries:    1000,
+		CompactionOverhead: 1000,
 	}
 
 	// prepare node host config
 	nhc := config.NodeHostConfig{
+		DeploymentID:   1,
 		WALDir:         cfg.raftDir(),
 		NodeHostDir:    cfg.raftDir(),
-		RTTMillisecond: 20,
-		RaftAddress:    nodeAddr,
+		RTTMillisecond: 50,
+		RaftAddress:    cfg.Server.raftAddr(),
 	}
 
 	// create node host
