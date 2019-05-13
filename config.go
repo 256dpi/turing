@@ -28,7 +28,19 @@ type MachineConfig struct {
 }
 
 func (c *MachineConfig) check() error {
-	// TODO: Check route validity.
+	// check server route
+	err := c.Server.check()
+	if err != nil {
+		return err
+	}
+
+	// check peer route
+	for _, peer := range c.Peers {
+		err = peer.check()
+		if err != nil {
+			return err
+		}
+	}
 
 	// check directory
 	if c.Directory == "" {
@@ -103,6 +115,20 @@ func ParseRoute(str string) (Route, error) {
 	}
 
 	return r, nil
+}
+
+func (r Route) check() error {
+	// check host
+	if r.Host == "" {
+		return errors.New("missing host")
+	}
+
+	// check port
+	if r.Port <= 0 {
+		return errors.New("invalid port")
+	}
+
+	return nil
 }
 
 func (r Route) raftPort() int {
