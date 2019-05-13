@@ -30,6 +30,7 @@ func (l *retrieve) Decode(data []byte) error {
 	return json.Unmarshal(data, l)
 }
 
+var retrieveCounter = god.NewCounter("retrieve")
 var retrieveTimer = god.NewTimer("retrieve")
 
 func (l *retrieve) Execute(txn *turing.Transaction) error {
@@ -60,6 +61,9 @@ func (l *retrieve) Execute(txn *turing.Transaction) error {
 			return err
 		}
 	}
+
+	// count
+	retrieveCounter.Add(1)
 
 	return nil
 }

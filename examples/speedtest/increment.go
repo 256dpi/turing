@@ -30,6 +30,7 @@ func (i *increment) Decode(data []byte) error {
 	return json.Unmarshal(data, i)
 }
 
+var incrementCounter = god.NewCounter("increment")
 var incrementTimer = god.NewTimer("increment")
 
 func (i *increment) Execute(txn *turing.Transaction) error {
@@ -71,6 +72,9 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 
 	// set count
 	i.Value = count
+
+	// increment
+	incrementCounter.Add(1)
 
 	return nil
 }
