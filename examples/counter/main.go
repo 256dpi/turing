@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -15,7 +16,7 @@ import (
 
 func main() {
 	// prepare flags
-	var serverFlag = flag.String("server", "n1@0.0.0.0:42010", "the server")
+	var serverFlag = flag.String("server", "1@0.0.0.0:42010", "the server")
 	var peersFlag = flag.String("peers", "", "the cluster peers")
 	var dirFlag = flag.String("dir", "data", "the data directory")
 	var cleanFlag = flag.Bool("clean", false, "remove existing data")
@@ -49,7 +50,7 @@ func main() {
 	}
 
 	// append server name
-	directory = filepath.Join(directory, server.Name)
+	directory = filepath.Join(directory, strconv.FormatUint(server.ID, 10))
 
 	// remove all previous data if requested
 	if *cleanFlag {
@@ -94,13 +95,12 @@ func main() {
 		}
 
 		// set value
-		set := &increment{Key: server.Name}
+		set := &increment{Key: strconv.FormatUint(server.ID, 10)}
 		err = machine.Update(set)
-		if err == turing.ErrNoLeader {
+		if err != nil {
+			println(err.Error())
 			time.Sleep(time.Second)
 			continue
-		} else if err != nil {
-			panic(err)
 		}
 
 		// print instruction
@@ -108,12 +108,11 @@ func main() {
 
 		// list values
 		list := &list{}
-		err = machine.View(list, true)
-		if err == turing.ErrNoLeader {
+		err = machine.View(list)
+		if err != nil {
+			println(err.Error())
 			time.Sleep(time.Second)
 			continue
-		} else if err != nil {
-			panic(err)
 		}
 
 		// print instruction
@@ -126,19 +125,22 @@ func printer(machine *turing.Machine, config turing.MachineConfig) {
 		// wait some time
 		time.Sleep(time.Second)
 
+		// prepare ser er
+		server := strconv.FormatUint(config.Server.ID, 10)
+
 		// collect peers
-		var list []string
+		var peers []string
 		for _, peer := range config.Peers {
-			list = append(list, peer.Name)
+			peers = append(peers, strconv.FormatUint(peer.ID, 10))
 		}
 
 		// get leader
 		var leader string
 		if machine.Leader() != nil {
-			leader = machine.Leader().Name
+			leader = strconv.FormatUint(machine.Leader().ID, 10)
 		}
 
 		// print info
-		fmt.Printf("[%s] State: %s | Leader: %s | Peers: %s\n", config.Server.Name, machine.State(), leader, strings.Join(list, ", "))
+		fmt.Printf("[%s] State: %s | Leader: %s | Peers: %s\n", server, machine.State(), leader, strings.Join(peers, ", "))
 	}
 }

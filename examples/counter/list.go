@@ -61,3 +61,7 @@ func (l *list) Execute(txn *turing.Transaction) error {
 
 	return nil
 }
+
+func (l *list) Cardinality() int {
+	return 0
+}

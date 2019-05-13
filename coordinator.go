@@ -124,6 +124,23 @@ func (n *coordinator) isLeader() bool {
 	return ok && id == n.server.ID
 }
 
+func (n *coordinator) leader() *Route {
+	// get leader id
+	id, ok, _ := n.raft.GetLeaderID(1)
+	if !ok {
+		return nil
+	}
+
+	// get route
+	for _, peer := range n.peers {
+		if peer.ID == id {
+			return &peer
+		}
+	}
+
+	return nil
+}
+
 func (n *coordinator) state() string {
 	if n.isLeader() {
 		return "leader"

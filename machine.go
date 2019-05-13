@@ -36,6 +36,10 @@ func (m *Machine) IsLeader() bool {
 	return m.coordinator.isLeader()
 }
 
+func (m *Machine) Leader() *Route {
+	return m.coordinator.leader()
+}
+
 func (m *Machine) State() string {
 	return m.coordinator.state()
 }
