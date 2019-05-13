@@ -11,8 +11,6 @@ import (
 
 // TODO: Ignore index from all user operations.
 
-const maxCardinality = 5000
-
 var indexKey = []byte("!?idx")
 
 type command struct {
@@ -122,7 +120,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		cardinality += instruction.Cardinality()
 
 		// check if new transaction is needed
-		if cardinality > maxCardinality {
+		if cardinality >= int(r.database.MaxBatchCount()) {
 			// commit current transaction
 			err = txn.Commit()
 			if err != nil {
