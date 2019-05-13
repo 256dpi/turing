@@ -42,15 +42,15 @@ func newReplicator(config MachineConfig) *replicator {
 	return replicator
 }
 
-func (m *replicator) Open(stop <-chan struct{}) (uint64, error) {
+func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	// open database
-	database, err := openDatabase(m.config.dbDir(), m.config.Logger)
+	database, err := openDatabase(r.config.dbDir(), r.config.Logger)
 	if err != nil {
 		return 0, err
 	}
 
 	// set database
-	m.database = database
+	r.database = database
 
 	// prepare index
 	var index uint64
@@ -83,7 +83,7 @@ func (m *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	return index, nil
 }
 
-func (m *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
+func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 	// TODO: Handle errors.
 
 	// TODO: Improve batching.
@@ -92,7 +92,7 @@ func (m *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 	cardinality := 0
 
 	// create transaction
-	txn := m.database.NewTransaction(true)
+	txn := r.database.NewTransaction(true)
 
 	// handle all entries
 	for _, entry := range entries {
@@ -104,7 +104,7 @@ func (m *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		}
 
 		// get factory instruction
-		factory, ok := m.instructions[c.Name]
+		factory, ok := r.instructions[c.Name]
 		if !ok {
 			panic("missing instruction: " + c.Name)
 		}
@@ -130,7 +130,7 @@ func (m *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 			}
 
 			// create new transaction
-			txn = m.database.NewTransaction(true)
+			txn = r.database.NewTransaction(true)
 
 			// reset cardinality
 			cardinality = instruction.Cardinality()
@@ -169,7 +169,7 @@ func (m *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 	return entries
 }
 
-func (m *replicator) Lookup(data []byte) ([]byte, error) {
+func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	// TODO: Handle errors.
 
 	// parse command
@@ -180,7 +180,7 @@ func (m *replicator) Lookup(data []byte) ([]byte, error) {
 	}
 
 	// get factory instruction
-	factory, ok := m.instructions[c.Name]
+	factory, ok := r.instructions[c.Name]
 	if !ok {
 		panic("missing instruction: " + c.Name)
 	}
@@ -195,7 +195,7 @@ func (m *replicator) Lookup(data []byte) ([]byte, error) {
 	}
 
 	// apply instruction
-	err = m.database.View(func(txn *badger.Txn) error {
+	err = r.database.View(func(txn *badger.Txn) error {
 		return instruction.Execute(&Transaction{txn: txn})
 	})
 	if err != nil {
@@ -211,13 +211,13 @@ func (m *replicator) Lookup(data []byte) ([]byte, error) {
 	return bytes, nil
 }
 
-func (m *replicator) PrepareSnapshot() (interface{}, error) {
+func (r *replicator) PrepareSnapshot() (interface{}, error) {
 	return nil, nil
 }
 
-func (m *replicator) SaveSnapshot(checkpoint interface{}, sink io.Writer, abort <-chan struct{}) error {
+func (r *replicator) SaveSnapshot(checkpoint interface{}, sink io.Writer, abort <-chan struct{}) error {
 	// backup database
-	_, err := m.database.Backup(sink, 0)
+	_, err := r.database.Backup(sink, 0)
 	if err != nil {
 		return err
 	}
@@ -225,11 +225,11 @@ func (m *replicator) SaveSnapshot(checkpoint interface{}, sink io.Writer, abort 
 	return nil
 }
 
-func (m *replicator) RecoverFromSnapshot(source io.Reader, abort <-chan struct{}) error {
+func (r *replicator) RecoverFromSnapshot(source io.Reader, abort <-chan struct{}) error {
 	// TODO: Clear database beforehand?
 
 	// load backup
-	err := m.database.Load(source)
+	err := r.database.Load(source)
 	if err != nil {
 		return err
 	}
@@ -237,11 +237,11 @@ func (m *replicator) RecoverFromSnapshot(source io.Reader, abort <-chan struct{}
 	return nil
 }
 
-func (m *replicator) Close() {
+func (r *replicator) Close() {
 	// close database
-	_ = m.database.Close()
+	_ = r.database.Close()
 }
 
-func (m *replicator) GetHash() uint64 {
+func (r *replicator) GetHash() uint64 {
 	return 42
 }
