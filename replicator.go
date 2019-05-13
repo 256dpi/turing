@@ -11,6 +11,8 @@ import (
 
 // TODO: Ignore index from all user operations.
 
+const maxCardinality = 1000
+
 var indexKey = []byte("!?idx")
 
 type command struct {
@@ -84,13 +86,21 @@ func (m *replicator) Open(stop <-chan struct{}) (uint64, error) {
 func (m *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 	// TODO: Handle errors.
 
+	// TODO: Improve batching.
+
+	// prepare cardinality
+	cardinality := 0
+
+	// create transaction
+	txn := m.database.NewTransaction(true)
+
 	// handle all entries
 	for _, entry := range entries {
 		// parse command
 		var c command
 		err := json.Unmarshal(entry.Cmd, &c)
 		if err != nil {
-			panic("failed to unmarshal raft log")
+			panic(err.Error())
 		}
 
 		// get factory instruction
@@ -105,39 +115,55 @@ func (m *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		// decode instruction
 		err = instruction.Decode(c.Data)
 		if err != nil {
-			panic("failed to decode instruction: " + c.Name)
+			panic(err.Error())
 		}
 
-		// apply instruction
-		err = m.database.Update(func(txn *badger.Txn) error {
-			// execute transaction
-			err = instruction.Execute(&Transaction{txn: txn})
+		// increment cardinality
+		cardinality += instruction.Cardinality()
+
+		// check if new transaction is needed
+		if cardinality > maxCardinality {
+			// commit current transaction
+			err = txn.Commit()
 			if err != nil {
-				return err
+				panic(err.Error())
 			}
 
-			// set seq
-			err = txn.Set(indexKey, []byte(strconv.FormatUint(entry.Index, 10)))
-			if err != nil {
-				return err
-			}
+			// create new transaction
+			txn = m.database.NewTransaction(true)
 
-			return nil
-		})
+			// reset cardinality
+			cardinality = instruction.Cardinality()
+		}
+
+		// execute transaction
+		err = instruction.Execute(&Transaction{txn: txn})
 		if err != nil {
-			panic("failed to apply instruction: " + c.Name)
+			panic(err.Error())
+		}
+
+		// set seq
+		err = txn.Set(indexKey, []byte(strconv.FormatUint(entry.Index, 10)))
+		if err != nil {
+			panic(err.Error())
 		}
 
 		// encode instruction
 		bytes, err := json.Marshal(instruction)
 		if err != nil {
-			panic("failed to encode instruction: " + c.Name)
+			panic(err.Error())
 		}
 
 		// set result
 		entry.Result = statemachine.Result{
 			Data: bytes,
 		}
+	}
+
+	// commit transaction
+	err := txn.Commit()
+	if err != nil {
+		panic(err.Error())
 	}
 
 	return entries

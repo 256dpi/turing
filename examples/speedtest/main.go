@@ -95,7 +95,7 @@ func main() {
 	done := make(chan struct{})
 
 	// run writers
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 50; i++ {
 		wg.Add(1)
 		go writer(machine, done)
 	}
@@ -120,11 +120,11 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 
 	// write entries forever
 	for {
-		// limit rate
+		// check if done
 		select {
-		case <-time.After(5 * time.Microsecond):
 		case <-done:
 			return
+		default:
 		}
 
 		// measure start

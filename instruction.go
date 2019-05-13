@@ -1,9 +1,5 @@
 package turing
 
-// TODO: Writable instructions?
-
-// TODO: Batchable instructions?
-
 type Instruction interface {
 	// Name should return the name of the instruction.
 	Name() string
@@ -19,4 +15,8 @@ type Instruction interface {
 
 	// Execute should execute the instruction.
 	Execute(*Transaction) error
+
+	// Cardinality should return the number of changes introduced by the
+	// instruction.
+	Cardinality() int
 }

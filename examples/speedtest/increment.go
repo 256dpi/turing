@@ -72,3 +72,7 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 
 	return nil
 }
+
+func (i *increment) Cardinality() int {
+	return 1
+}
