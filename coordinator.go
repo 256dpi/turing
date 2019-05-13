@@ -7,9 +7,10 @@ import (
 
 	"github.com/lni/dragonboat"
 	"github.com/lni/dragonboat/config"
-	"github.com/lni/dragonboat/logger"
 	"github.com/lni/dragonboat/statemachine"
 )
+
+const clusterID uint64 = 1
 
 type coordinator struct {
 	raft *dragonboat.NodeHost
@@ -31,33 +32,26 @@ func createCoordinator(cfg MachineConfig) (*coordinator, error) {
 		peers[peer.ID] = peer.raftAddr()
 	}
 
-	// change the log verbosity
-	logger.GetLogger("dragonboat").SetLevel(logger.WARNING)
-	logger.GetLogger("raft").SetLevel(logger.WARNING)
-	logger.GetLogger("rsm").SetLevel(logger.WARNING)
-	logger.GetLogger("transport").SetLevel(logger.WARNING)
-	logger.GetLogger("grpc").SetLevel(logger.WARNING)
-	logger.GetLogger("logdb").SetLevel(logger.WARNING)
-	logger.GetLogger("config").SetLevel(logger.WARNING)
-	logger.GetLogger("server").SetLevel(logger.WARNING)
+	// calculate rrt in ms
+	var rttMS = uint64(cfg.RoundTripTime / time.Millisecond)
 
 	// prepare config
 	rc := config.Config{
 		NodeID:             cfg.Server.ID,
 		ClusterID:          1,
 		CheckQuorum:        true,
-		ElectionRTT:        10,
-		HeartbeatRTT:       1,
-		SnapshotEntries:    1000,
-		CompactionOverhead: 1000,
+		ElectionRTT:        10000 / rttMS, // 10s
+		HeartbeatRTT:       1000 / rttMS,  // 1s
+		SnapshotEntries:    10000,
+		CompactionOverhead: 10000,
 	}
 
 	// prepare node host config
 	nhc := config.NodeHostConfig{
-		DeploymentID:   1,
+		DeploymentID:   clusterID,
 		WALDir:         cfg.raftDir(),
 		NodeHostDir:    cfg.raftDir(),
-		RTTMillisecond: 50,
+		RTTMillisecond: rttMS,
 		RaftAddress:    cfg.Server.raftAddr(),
 	}
 
@@ -94,7 +88,7 @@ func (n *coordinator) update(cmd []byte) ([]byte, error) {
 	defer cancel()
 
 	// get session
-	session := n.raft.GetNoOPSession(1)
+	session := n.raft.GetNoOPSession(clusterID)
 
 	// update data
 	result, err := n.raft.SyncPropose(ctx, session, cmd)
@@ -111,7 +105,7 @@ func (n *coordinator) lookup(cmd []byte) ([]byte, error) {
 	defer cancel()
 
 	// lookup data
-	result, err := n.raft.SyncRead(ctx, 1, cmd)
+	result, err := n.raft.SyncRead(ctx, clusterID, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -120,13 +114,13 @@ func (n *coordinator) lookup(cmd []byte) ([]byte, error) {
 }
 
 func (n *coordinator) isLeader() bool {
-	id, ok, _ := n.raft.GetLeaderID(1)
+	id, ok, _ := n.raft.GetLeaderID(clusterID)
 	return ok && id == n.server.ID
 }
 
 func (n *coordinator) leader() *Route {
 	// get leader id
-	id, ok, _ := n.raft.GetLeaderID(1)
+	id, ok, _ := n.raft.GetLeaderID(clusterID)
 	if !ok {
 		return nil
 	}

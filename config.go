@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type MachineConfig struct {
@@ -21,6 +22,9 @@ type MachineConfig struct {
 
 	// The used instructions.
 	Instructions []Instruction
+
+	// The average round trip time.
+	RoundTripTime time.Duration
 }
 
 func (c *MachineConfig) check() error {
@@ -29,6 +33,11 @@ func (c *MachineConfig) check() error {
 	// check directory
 	if c.Directory == "" {
 		return errors.New("turing: missing directory")
+	}
+
+	// check round trip time
+	if c.RoundTripTime == 0 {
+		c.RoundTripTime = time.Millisecond
 	}
 
 	return nil
