@@ -1,5 +1,7 @@
 github.com/256dpi/god v0.1.0 h1:ULxn8bkFknwIgz2n0L1jif7iJi0nz/89mxM84Kcec8Y=
 github.com/256dpi/god v0.1.0/go.mod h1:NnaUpKrUtkIYa83034xtoQQZBU5AbQCrOcSwysD0BnE=
+github.com/256dpi/god v0.2.0 h1:1w7pdJQ5EhwtxR2XQrIiEcqmxqXCMGO2Mmy8U/vSzlE=
+github.com/256dpi/god v0.2.0/go.mod h1:NnaUpKrUtkIYa83034xtoQQZBU5AbQCrOcSwysD0BnE=
 github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9 h1:HD8gA2tkByhMAwYaFAX9w2l7vxvBQ5NMoxDrkhqhtn4=
 github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9/go.mod h1:bOvUY6CB00SOBii9/FifXqc0awNKxLFCL/+pkDPuyl8=
 github.com/DataDog/datadog-go v2.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
