@@ -17,9 +17,9 @@ import (
 	"github.com/256dpi/turing"
 )
 
-const writers = 100
-const readers = 100
-const keySpace = 100
+const writers = 1000
+const readers = 1000
+const keySpace = 1000
 
 var wg sync.WaitGroup
 
