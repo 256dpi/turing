@@ -1,21 +1,21 @@
 package turing
 
 import (
-	"fmt"
-	"log"
-	"net"
-	"path/filepath"
-	"strconv"
+	"context"
 	"sync"
 	"time"
 
-	"github.com/hashicorp/raft"
-	"github.com/hashicorp/raft-boltdb"
+	"github.com/lni/dragonboat"
+	"github.com/lni/dragonboat/config"
+	"github.com/lni/dragonboat/logger"
+	"github.com/lni/dragonboat/statemachine"
 )
 
 type coordinator struct {
-	raft  *raft.Raft
-	peers []Route
+	raft *dragonboat.NodeHost
+
+	server Route
+	peers  []Route
 
 	leaderCache struct {
 		sync.Mutex
@@ -24,154 +24,109 @@ type coordinator struct {
 	}
 }
 
-func createCoordinator(replicator *replicator, config MachineConfig) (*coordinator, error) {
-	// prepare raft config
-	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(config.Server.Name)
-	raftConfig.Logger = log.New(config.Logger, "", log.LstdFlags)
+func createCoordinator(cfg MachineConfig) (*coordinator, error) {
+	// prepare peers
+	peers := make(map[uint64]string)
+	for _, peer := range cfg.Peers {
+		peers[peer.ID] = peer.raftAddr()
+	}
 
-	// resolve local address for advertisements
-	localAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", config.Server.raftPort()))
+	// get node addr
+	var nodeAddr = cfg.Server.raftAddr()
+
+	// change the log verbosity
+	logger.GetLogger("dragonboat").SetLevel(logger.WARNING)
+	logger.GetLogger("raft").SetLevel(logger.CRITICAL)
+	logger.GetLogger("rsm").SetLevel(logger.WARNING)
+	logger.GetLogger("transport").SetLevel(logger.WARNING)
+	logger.GetLogger("grpc").SetLevel(logger.WARNING)
+
+	// prepare config
+	rc := config.Config{
+		NodeID:             cfg.Server.ID,
+		ClusterID:          1,
+		ElectionRTT:        10,
+		HeartbeatRTT:       1,
+		CheckQuorum:        true,
+		SnapshotEntries:    10,
+		CompactionOverhead: 5,
+	}
+
+	// prepare node host config
+	nhc := config.NodeHostConfig{
+		WALDir:         cfg.raftDir(),
+		NodeHostDir:    cfg.raftDir(),
+		RTTMillisecond: 20,
+		RaftAddress:    nodeAddr,
+	}
+
+	// create node host
+	nh, err := dragonboat.NewNodeHost(nhc)
 	if err != nil {
 		return nil, err
 	}
 
-	// create raft transport
-	transport, err := raft.NewTCPTransport(config.Server.raftAddr(), localAddr, 3, time.Second, config.Logger)
-	if err != nil {
-		return nil, err
+	// prepare replicator factory
+	factory := func(uint64, uint64) statemachine.IOnDiskStateMachine {
+		return newReplicator(cfg)
 	}
 
-	// create raft file snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(config.raftDir(), 3, config.Logger)
+	// start cluster
+	err = nh.StartOnDiskCluster(peers, false, factory, rc)
 	if err != nil {
 		return nil, err
-	}
-
-	// create bolt db based raft store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(config.raftDir(), "raft.db"))
-	if err != nil {
-		return nil, err
-	}
-
-	// check if already bootstrapped
-	bootstrapped, err := raft.HasExistingState(boltStore, boltStore, snapshotStore)
-	if err != nil {
-		return nil, err
-	}
-
-	// create raft instance
-	rft, err := raft.NewRaft(raftConfig, replicator, boltStore, boltStore, snapshotStore, transport)
-	if err != nil {
-		return nil, err
-	}
-
-	// bootstrap cluster
-	if !bootstrapped {
-		// prepare servers
-		servers := []raft.Server{
-			{
-				ID:      raft.ServerID(config.Server.Name),
-				Address: raft.ServerAddress(config.Server.raftAddr()),
-			},
-		}
-
-		// add raft peers
-		for _, peer := range config.Peers {
-			// check if self
-			if peer.Name == config.Server.Name {
-				continue
-			}
-
-			// add peer
-			servers = append(servers, raft.Server{
-				ID:      raft.ServerID(peer.Name),
-				Address: raft.ServerAddress(peer.raftAddr()),
-			})
-		}
-
-		// bootstrap cluster
-		err = rft.BootstrapCluster(raft.Configuration{
-			Servers: servers,
-		}).Error()
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// create coordinator
 	rn := &coordinator{
-		raft:  rft,
-		peers: config.Peers,
+		raft:   nh,
+		server: cfg.Server,
+		peers:  cfg.Peers,
 	}
 
 	return rn, nil
 }
 
-func (n *coordinator) apply(cmd []byte) ([]byte, error) {
-	// apply command
-	future := n.raft.Apply(cmd, time.Second)
-	if future.Error() != nil {
-		return nil, future.Error()
+func (n *coordinator) update(cmd []byte) ([]byte, error) {
+	// prepare context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	// get session
+	session := n.raft.GetNoOPSession(1)
+
+	// update data
+	result, err := n.raft.SyncPropose(ctx, session, cmd)
+	if err != nil {
+		return nil, err
 	}
 
-	// safely get result
-	bytes, _ := future.Response().([]byte)
+	return result.Data, nil
+}
 
-	return bytes, nil
+func (n *coordinator) lookup(cmd []byte) ([]byte, error) {
+	// prepare context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	// lookup data
+	result, err := n.raft.SyncRead(ctx, 1, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (n *coordinator) isLeader() bool {
-	return n.raft.State() == raft.Leader
-}
-
-func (n *coordinator) leader() *Route {
-	// acquire mutex
-	n.leaderCache.Lock()
-	defer n.leaderCache.Unlock()
-
-	// get leader address
-	addr := string(n.raft.Leader())
-	if addr == "" {
-		return nil
-	}
-
-	// return existing route if leader has not changed
-	if addr == n.leaderCache.lastAddr {
-		return n.leaderCache.current
-	}
-
-	// parse addr
-	host, portString, _ := net.SplitHostPort(addr)
-	if portString == "" {
-		return nil
-	}
-
-	// default to 0.0.0.0
-	if host == "" {
-		host = "0.0.0.0"
-	}
-
-	// parse port
-	port, _ := strconv.Atoi(portString)
-	if port == 0 {
-		return nil
-	}
-
-	// select peer
-	for _, peer := range n.peers {
-		if peer.Host == host && peer.raftPort() == port {
-			// set current route
-			n.leaderCache.current = &peer
-			n.leaderCache.lastAddr = addr
-
-			return &peer
-		}
-	}
-
-	return nil
+	id, ok, _ := n.raft.GetLeaderID(1)
+	return ok && id == n.server.ID
 }
 
 func (n *coordinator) state() string {
-	return n.raft.State().String()
+	if n.isLeader() {
+		return "leader"
+	} else {
+		return "follower"
+	}
 }

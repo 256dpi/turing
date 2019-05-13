@@ -53,14 +53,14 @@ func (c MachineConfig) dbDir() string {
 }
 
 type Route struct {
-	Name string
+	ID   uint64
 	Host string
 	Port int
 }
 
-func NewRoute(name, host string, port int) Route {
+func NewRoute(id uint64, host string, port int) Route {
 	return Route{
-		Name: name,
+		ID:   id,
 		Host: host,
 		Port: port,
 	}
@@ -71,6 +71,12 @@ func ParseRoute(str string) (Route, error) {
 	s := strings.Split(str, "@")
 	if len(s) == 1 {
 		s = []string{"", s[0]}
+	}
+
+	// get id
+	id, err := strconv.ParseUint(s[0], 10, 64)
+	if err != nil {
+		return Route{}, err
 	}
 
 	// split addr
@@ -92,7 +98,7 @@ func ParseRoute(str string) (Route, error) {
 
 	// create route
 	r := Route{
-		Name: s[0],
+		ID:   id,
 		Host: host,
 		Port: port,
 	}
@@ -117,5 +123,5 @@ func (r Route) rpcAddr() string {
 }
 
 func (r Route) string() string {
-	return fmt.Sprintf("%s@%s", r.Name, r.raftAddr())
+	return fmt.Sprintf("%d@%s", r.ID, r.raftAddr())
 }

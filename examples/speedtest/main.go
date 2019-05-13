@@ -31,7 +31,7 @@ func main() {
 	god.Debug()
 
 	// prepare flags
-	var serverFlag = flag.String("server", "n1@0.0.0.0:42010", "the server")
+	var serverFlag = flag.String("server", "1@0.0.0.0:42010", "the server")
 	var peersFlag = flag.String("peers", "", "the cluster peers")
 	var dirFlag = flag.String("dir", "data", "the data directory")
 
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	// append server name
-	directory = filepath.Join(directory, server.Name)
+	directory = filepath.Join(directory, strconv.FormatUint(server.ID, 10))
 
 	// remove all previous data
 	err = os.RemoveAll(directory)
@@ -142,7 +142,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 			time.Sleep(time.Second)
 			continue
 		} else if err != nil {
-			panic(err)
+			println(err.Error())
 		}
 
 		// calculate diff
