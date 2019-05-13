@@ -3,8 +3,6 @@ package turing
 import (
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net"
 	"path/filepath"
 	"strconv"
@@ -23,9 +21,6 @@ type MachineConfig struct {
 
 	// The used instructions.
 	Instructions []Instruction
-
-	// The logger for internal logs (raft, badger).
-	Logger io.Writer
 }
 
 func (c *MachineConfig) check() error {
@@ -34,11 +29,6 @@ func (c *MachineConfig) check() error {
 	// check directory
 	if c.Directory == "" {
 		return errors.New("turing: missing directory")
-	}
-
-	// set default logger
-	if c.Logger == nil {
-		c.Logger = ioutil.Discard
 	}
 
 	return nil

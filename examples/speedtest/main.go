@@ -24,6 +24,9 @@ func main() {
 	god.Debug()
 	god.Metrics()
 
+	// disable logging
+	turing.SetLogger(nil)
+
 	// prepare flags
 	var serverFlag = flag.String("server", "1@0.0.0.0:42010", "the server")
 	var peersFlag = flag.String("peers", "", "the cluster peers")
@@ -138,7 +141,6 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		// run update
 		err := machine.Update(increment)
 		if err != nil {
-			println(err.Error())
 			time.Sleep(time.Second)
 			continue
 		}
@@ -176,7 +178,6 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		// run update
 		err := machine.View(retrieve)
 		if err != nil {
-			println(err.Error())
 			time.Sleep(time.Second)
 			continue
 		}

@@ -44,7 +44,7 @@ func newReplicator(config MachineConfig) *replicator {
 
 func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	// open database
-	database, err := openDatabase(r.config.dbDir(), r.config.Logger)
+	database, err := openDatabase(r.config.dbDir(), logSink)
 	if err != nil {
 		return 0, err
 	}
