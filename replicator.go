@@ -13,8 +13,6 @@ import (
 
 // TODO: Handle too big transactions.
 
-// TODO: Ignore index from all user operations.
-
 var indexKey = []byte("$index")
 
 type command struct {
