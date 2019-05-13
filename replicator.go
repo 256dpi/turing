@@ -9,6 +9,10 @@ import (
 	"github.com/lni/dragonboat/statemachine"
 )
 
+// TODO: Handle conflicts.
+
+// TODO: Handle too big transactions.
+
 // TODO: Ignore index from all user operations.
 
 var indexKey = []byte("!?idx")
@@ -174,7 +178,7 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	var c command
 	err := json.Unmarshal(data, &c)
 	if err != nil {
-		panic("failed to unmarshal raft log")
+		panic(err.Error())
 	}
 
 	// get factory instruction
@@ -189,7 +193,7 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	// decode instruction
 	err = instruction.Decode(c.Data)
 	if err != nil {
-		panic("failed to decode instruction: " + c.Name)
+		panic(err.Error())
 	}
 
 	// apply instruction
@@ -197,13 +201,13 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 		return instruction.Execute(&Transaction{txn: txn})
 	})
 	if err != nil {
-		panic("failed to apply instruction: " + c.Name)
+		panic(err.Error())
 	}
 
 	// encode instruction
 	bytes, err := json.Marshal(instruction)
 	if err != nil {
-		panic("failed to encode instruction: " + c.Name)
+		panic(err.Error())
 	}
 
 	return bytes, nil
@@ -213,7 +217,7 @@ func (r *replicator) PrepareSnapshot() (interface{}, error) {
 	return nil, nil
 }
 
-func (r *replicator) SaveSnapshot(checkpoint interface{}, sink io.Writer, abort <-chan struct{}) error {
+func (r *replicator) SaveSnapshot(_ interface{}, sink io.Writer, abort <-chan struct{}) error {
 	// backup database
 	_, err := r.database.Backup(sink, 0)
 	if err != nil {
