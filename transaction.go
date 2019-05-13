@@ -9,11 +9,11 @@ type Pair struct {
 }
 
 func (p *Pair) Key() []byte {
-	return p.item.Key()
+	return userTrim(p.item.Key())
 }
 
 func (p *Pair) CopyKey(buf []byte) []byte {
-	return p.item.KeyCopy(buf)
+	return userTrim(p.item.KeyCopy(buf))
 }
 
 func (p *Pair) LoadValue(fn func([]byte) error) error {
@@ -24,21 +24,13 @@ func (p *Pair) CopyValue(buf []byte) ([]byte, error) {
 	return p.item.ValueCopy(buf)
 }
 
-func (p *Pair) KeySize() int {
-	return int(p.item.KeySize())
-}
-
-func (p *Pair) ValueSize() int {
-	return int(p.item.ValueSize())
-}
-
 type Transaction struct {
 	txn *badger.Txn
 }
 
 func (t *Transaction) Get(key []byte) (*Pair, error) {
 	// get item
-	item, err := t.txn.Get(key)
+	item, err := t.txn.Get(userPrefix(key))
 	if err == badger.ErrKeyNotFound {
 		return nil, nil
 	} else if err != nil {
@@ -55,7 +47,7 @@ func (t *Transaction) Get(key []byte) (*Pair, error) {
 
 func (t *Transaction) Set(key, value []byte) error {
 	// set key to value
-	err := t.txn.Set(key, value)
+	err := t.txn.Set(userPrefix(key), value)
 	if err != nil {
 		return err
 	}
@@ -65,7 +57,7 @@ func (t *Transaction) Set(key, value []byte) error {
 
 func (t *Transaction) Delete(key []byte) error {
 	// delete key
-	err := t.txn.Delete(key)
+	err := t.txn.Delete(userPrefix(key))
 	if err != nil {
 		return err
 	}
@@ -76,7 +68,7 @@ func (t *Transaction) Delete(key []byte) error {
 func (t *Transaction) Iterator(config IteratorConfig) *Iterator {
 	return &Iterator{
 		iter: t.txn.NewIterator(badger.IteratorOptions{
-			Prefix:         config.Prefix,
+			Prefix:         userPrefix(config.Prefix),
 			PrefetchValues: config.Prefetch > 0,
 			PrefetchSize:   config.Prefetch,
 			Reverse:        config.Reverse,
@@ -95,7 +87,7 @@ type Iterator struct {
 }
 
 func (i *Iterator) Seek(key []byte) {
-	i.iter.Seek(key)
+	i.iter.Seek(userPrefix(key))
 }
 
 func (i *Iterator) Valid() bool {
@@ -123,4 +115,12 @@ func (i *Iterator) Next() {
 
 func (i *Iterator) Close() {
 	i.iter.Close()
+}
+
+func userPrefix(key []byte) []byte {
+	return append([]byte{'#'}, key...)
+}
+
+func userTrim(key []byte) []byte {
+	return key[1:]
 }

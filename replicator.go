@@ -15,7 +15,7 @@ import (
 
 // TODO: Ignore index from all user operations.
 
-var indexKey = []byte("!?idx")
+var indexKey = []byte("$index")
 
 type command struct {
 	Name string `json:"name"`
