@@ -2,10 +2,7 @@ package turing
 
 import (
 	"encoding/json"
-	"errors"
 )
-
-var ErrNoLeader = errors.New("no leader")
 
 type Machine struct {
 	coordinator *coordinator

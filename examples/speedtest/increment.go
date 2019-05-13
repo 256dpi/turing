@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 	"strconv"
-	"time"
+
+	"github.com/256dpi/god"
 
 	"github.com/256dpi/turing"
 )
@@ -29,9 +30,11 @@ func (i *increment) Decode(data []byte) error {
 	return json.Unmarshal(data, i)
 }
 
+var incrementTimer = god.NewTimer("increment")
+
 func (i *increment) Execute(txn *turing.Transaction) error {
-	// get start
-	start := time.Now()
+	// measure execution
+	defer incrementTimer.Measure()()
 
 	// make key
 	key := []byte(i.Key)
@@ -68,11 +71,6 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 
 	// set count
 	i.Value = count
-
-	// increment
-	mutex.Lock()
-	incrementTimer.Add(time.Since(start))
-	mutex.Unlock()
 
 	return nil
 }

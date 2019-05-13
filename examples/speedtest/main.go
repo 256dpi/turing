@@ -18,16 +18,6 @@ import (
 )
 
 var wg sync.WaitGroup
-var mutex sync.Mutex
-
-var writeCounter = god.NewCounter("write")
-var writeTimer = god.NewTimer("write")
-
-var readCounter = god.NewCounter("read")
-var readTimer = god.NewTimer("read")
-
-var incrementTimer = god.NewTimer("increment")
-var retrieveTimer = god.NewTimer("retrieve")
 
 func main() {
 	// enable debugging
@@ -120,6 +110,9 @@ func main() {
 	wg.Wait()
 }
 
+var writeCounter = god.NewCounter("write")
+var writeTimer = god.NewTimer("write")
+
 func writer(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
 	defer wg.Done()
@@ -151,12 +144,13 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// increment
-		mutex.Lock()
 		writeCounter.Add(1)
 		writeTimer.Add(time.Since(start))
-		mutex.Unlock()
 	}
 }
+
+var readCounter = god.NewCounter("read")
+var readTimer = god.NewTimer("read")
 
 func reader(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
@@ -188,9 +182,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// retrieve
-		mutex.Lock()
 		readCounter.Add(1)
 		readTimer.Add(time.Since(start))
-		mutex.Unlock()
 	}
 }

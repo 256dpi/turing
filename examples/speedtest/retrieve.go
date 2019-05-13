@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 	"strconv"
-	"time"
+
+	"github.com/256dpi/god"
 
 	"github.com/256dpi/turing"
 )
@@ -29,9 +30,11 @@ func (l *retrieve) Decode(data []byte) error {
 	return json.Unmarshal(data, l)
 }
 
+var retrieveTimer = god.NewTimer("retrieve")
+
 func (l *retrieve) Execute(txn *turing.Transaction) error {
-	// get start
-	start := time.Now()
+	// measure execution
+	retrieveTimer.Measure()()
 
 	// get key
 	pair, err := txn.Get([]byte(l.Key))
@@ -57,11 +60,6 @@ func (l *retrieve) Execute(txn *turing.Transaction) error {
 			return err
 		}
 	}
-
-	// increment
-	mutex.Lock()
-	retrieveTimer.Add(time.Since(start))
-	mutex.Unlock()
 
 	return nil
 }

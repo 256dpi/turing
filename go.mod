@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	git.apache.org/thrift.git v0.12.0 // indirect
-	github.com/256dpi/god v0.2.0
+	github.com/256dpi/god v0.2.1
 	github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9 // indirect
 	github.com/biogo/store v0.0.0-20190426020002-884f370e325d // indirect
 	github.com/cenk/backoff v2.1.1+incompatible // indirect
