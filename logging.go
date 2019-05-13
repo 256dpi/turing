@@ -4,11 +4,12 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/lni/dragonboat/logger"
 )
 
-var logSink io.Writer
+var logSink io.Writer = os.Stdout
 
 func SetLogger(sink io.Writer) {
 	// set silent logger if nil

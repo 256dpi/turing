@@ -11,7 +11,7 @@ import (
 
 // TODO: Ignore index from all user operations.
 
-const maxCardinality = 1000
+const maxCardinality = 5000
 
 var indexKey = []byte("!?idx")
 
