@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -14,21 +13,26 @@ import (
 	"time"
 
 	"github.com/256dpi/god"
-	"github.com/montanaflynn/stats"
 
 	"github.com/256dpi/turing"
 )
 
 var wg sync.WaitGroup
-
-var send int64
-var recv int64
-var diffs []float64
 var mutex sync.Mutex
+
+var writeCounter = god.NewCounter("write")
+var writeTimer = god.NewTimer("write")
+
+var readCounter = god.NewCounter("read")
+var readTimer = god.NewTimer("read")
+
+var incrementTimer = god.NewTimer("increment")
+var retrieveTimer = god.NewTimer("retrieve")
 
 func main() {
 	// enable debugging
 	god.Debug()
+	god.Metrics()
 
 	// prepare flags
 	var serverFlag = flag.String("server", "1@0.0.0.0:42010", "the server")
@@ -78,7 +82,7 @@ func main() {
 		Peers:     peers,
 		Directory: directory,
 		Instructions: []turing.Instruction{
-			&increment{},
+			&increment{}, &retrieve{},
 		},
 	}
 
@@ -100,9 +104,11 @@ func main() {
 		go writer(machine, done)
 	}
 
-	// run printer
-	wg.Add(1)
-	go printer(machine, done)
+	// run readers
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go reader(machine, done)
+	}
 
 	// prepare exit
 	exit := make(chan os.Signal, 1)
@@ -138,66 +144,53 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 
 		// run update
 		err := machine.Update(increment)
-		if err == turing.ErrNoLeader {
+		if err != nil {
+			println(err.Error())
 			time.Sleep(time.Second)
 			continue
-		} else if err != nil {
-			println(err.Error())
 		}
-
-		// calculate diff
-		diff := float64(time.Since(start)) / float64(time.Millisecond)
 
 		// increment
 		mutex.Lock()
-		send += 1
-		diffs = append(diffs, diff)
+		writeCounter.Add(1)
+		writeTimer.Add(time.Since(start))
 		mutex.Unlock()
 	}
 }
 
-func printer(machine *turing.Machine, done <-chan struct{}) {
+func reader(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
 	defer wg.Done()
 
-	// create ticker
-	ticker := time.Tick(time.Second)
-
+	// write entries forever
 	for {
-		// await signal
+		// check if done
 		select {
-		case <-ticker:
 		case <-done:
 			return
+		default:
 		}
 
-		// get data
+		// measure start
+		start := time.Now()
+
+		// prepare instruction
+		retrieve := &retrieve{
+			Key: strconv.Itoa(rand.Intn(20)),
+		}
+
+		// run update
+		err := machine.View(retrieve)
+		if err != nil {
+			println(err.Error())
+			time.Sleep(time.Second)
+			continue
+		}
+
+		// retrieve
 		mutex.Lock()
-		r := recv
-		s := send
-		d := diffs
-		recv = 0
-		send = 0
-		diffs = nil
+		readCounter.Add(1)
+		readTimer.Add(time.Since(start))
 		mutex.Unlock()
-
-		// get stats
-		min, _ := stats.Min(d)
-		max, _ := stats.Max(d)
-		mean, _ := stats.Mean(d)
-		p90, _ := stats.Percentile(d, 90)
-		p95, _ := stats.Percentile(d, 95)
-		p99, _ := stats.Percentile(d, 99)
-
-		// print rate
-		fmt.Printf("state: %s, ", machine.State())
-		fmt.Printf("send: %d msg/s, ", s)
-		fmt.Printf("recv %d msgs/s, ", r)
-		fmt.Printf("min: %.2fms, ", min)
-		fmt.Printf("mean: %.2fms, ", mean)
-		fmt.Printf("p90: %.2fms, ", p90)
-		fmt.Printf("p95: %.2fms, ", p95)
-		fmt.Printf("p99: %.2fms, ", p99)
-		fmt.Printf("max: %.2fms\n", max)
 	}
 }

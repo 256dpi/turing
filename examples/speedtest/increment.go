@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/256dpi/turing"
 )
@@ -29,6 +30,9 @@ func (i *increment) Decode(data []byte) error {
 }
 
 func (i *increment) Execute(txn *turing.Transaction) error {
+	// get start
+	start := time.Now()
+
 	// make key
 	key := []byte(i.Key)
 
@@ -67,7 +71,7 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 
 	// increment
 	mutex.Lock()
-	recv += 1
+	incrementTimer.Add(time.Since(start))
 	mutex.Unlock()
 
 	return nil
