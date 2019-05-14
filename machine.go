@@ -78,7 +78,7 @@ func (m *Machine) Execute(i Instruction) error {
 
 	// decode result
 	if result != nil {
-		err = i.Decode(result, i)
+		err = i.Decode(result)
 		if err != nil {
 			return err
 		}
