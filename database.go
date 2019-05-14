@@ -88,6 +88,9 @@ func openDatabase(dir string) (*database, uint64, error) {
 }
 
 func (d *database) update(list []Instruction, index uint64) error {
+	// calculate max effect (90% of max batch count)
+	maxEffect := int(float64(d.bdb.MaxBatchCount())*0.9)
+
 	// prepare total effect
 	totalEffect := 0
 
@@ -96,13 +99,13 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 	// execute all instructions
 	for _, instruction := range list {
-		// get effect of instruction
-		effect := instruction.Describe().Effect
+		// get estimated effect of instruction
+		estimatedEffect := instruction.Describe().Effect
 
 		// TODO: Run unbounded instructions in multiple runs.
 
 		// check if new transaction is needed
-		if effect < 0 || totalEffect+effect >= int(d.bdb.MaxBatchCount()) {
+		if estimatedEffect < 0 || totalEffect+estimatedEffect >= maxEffect {
 			// commit current transaction
 			err := txn.Commit()
 			if err != nil {
