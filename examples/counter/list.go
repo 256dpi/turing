@@ -21,9 +21,7 @@ func (l *list) Execute(txn *turing.Transaction) error {
 	l.Pairs = make(map[string]int)
 
 	// create iterator
-	iter := txn.Iterator(turing.IteratorConfig{
-		Prefetch: 10,
-	})
+	iter := txn.Iterator(nil, true, false)
 
 	// ensure closing
 	defer iter.Close()

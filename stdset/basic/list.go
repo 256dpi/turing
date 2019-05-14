@@ -21,10 +21,7 @@ func (l *List) Execute(txn *turing.Transaction) error {
 	l.Keys = make([][]byte, 0)
 
 	// create iterator
-	iter := txn.Iterator(turing.IteratorConfig{
-		Prefix:  l.Prefix,
-		Reverse: l.Reverse,
-	})
+	iter := txn.Iterator(l.Prefix, false, l.Reverse)
 
 	// ensure closing
 	defer iter.Close()

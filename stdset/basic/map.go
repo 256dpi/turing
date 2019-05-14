@@ -20,10 +20,7 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 	m.Pairs = make(map[string][]byte)
 
 	// create iterator
-	iter := txn.Iterator(turing.IteratorConfig{
-		Prefix:   m.Prefix,
-		Prefetch: 100,
-	})
+	iter := txn.Iterator(m.Prefix, true, false)
 
 	// ensure closing
 	defer iter.Close()

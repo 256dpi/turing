@@ -76,21 +76,15 @@ func (t *Transaction) Effect() int {
 	return t.effect
 }
 
-func (t *Transaction) Iterator(config IteratorConfig) *Iterator {
+func (t *Transaction) Iterator(prefix []byte, prefetch, reverse bool) *Iterator {
 	return &Iterator{
 		iter: t.txn.NewIterator(badger.IteratorOptions{
-			Prefix:         userPrefix(config.Prefix),
-			PrefetchValues: config.Prefetch > 0,
-			PrefetchSize:   config.Prefetch,
-			Reverse:        config.Reverse,
+			Prefix:         userPrefix(prefix),
+			PrefetchValues: prefetch,
+			PrefetchSize:   100, // recommended value
+			Reverse:        reverse,
 		}),
 	}
-}
-
-type IteratorConfig struct {
-	Prefix   []byte
-	Prefetch int
-	Reverse  bool
 }
 
 type Iterator struct {
