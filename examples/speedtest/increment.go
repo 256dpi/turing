@@ -8,6 +8,9 @@ import (
 	"github.com/256dpi/turing"
 )
 
+var incrementCounter = god.NewCounter("increment")
+var incrementTimer = god.NewTimer("increment")
+
 type increment struct {
 	Key   string `json:"key,omitempty"`
 	Value int    `json:"value,omitempty"`
@@ -19,9 +22,6 @@ func (i *increment) Describe() turing.Description {
 		Cardinality: 1,
 	}
 }
-
-var incrementCounter = god.NewCounter("increment")
-var incrementTimer = god.NewTimer("increment")
 
 func (i *increment) Execute(txn *turing.Transaction) error {
 	// measure execution

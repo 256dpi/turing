@@ -8,6 +8,9 @@ import (
 	"github.com/256dpi/turing"
 )
 
+var retrieveCounter = god.NewCounter("retrieve")
+var retrieveTimer = god.NewTimer("retrieve")
+
 type retrieve struct {
 	Key   string
 	Value int
@@ -19,9 +22,6 @@ func (r *retrieve) Describe() turing.Description {
 		ReadOnly: true,
 	}
 }
-
-var retrieveCounter = god.NewCounter("retrieve")
-var retrieveTimer = god.NewTimer("retrieve")
 
 func (r *retrieve) Execute(txn *turing.Transaction) error {
 	// measure execution
