@@ -2,8 +2,11 @@ package turing
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 )
+
+const MaxEffect = 1000
 
 type Instruction interface {
 	// Describe should return a description of the instruction.
@@ -35,6 +38,20 @@ type Description struct {
 	// The decoder can tbe set to implement a custom decoding. If not set, the
 	// standard JSON decoder will be used.
 	Decoder func([]byte, Instruction) error
+}
+
+func (d *Description) Validate() error {
+	// check name
+	if d.Name == "" {
+		return errors.New("turing: missing instruction name")
+	}
+
+	// check effect
+	if d.Effect > MaxEffect {
+		return errors.New("turing: instruction effect too high")
+	}
+
+	return nil
 }
 
 func buildInstruction(i Instruction) Instruction {

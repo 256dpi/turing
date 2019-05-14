@@ -30,6 +30,12 @@ func Create(config Config) (*Machine, error) {
 }
 
 func (m *Machine) Execute(i Instruction) error {
+	// validate instruction
+	err := i.Describe().Validate()
+	if err != nil {
+		return err
+	}
+
 	// encode instruction
 	id, err := encodeInstruction(i)
 	if err != nil {
