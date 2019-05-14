@@ -41,27 +41,27 @@ type customLogger struct {
 }
 
 func (*customLogger) SetLevel(logger.LogLevel) {
-	panic("implement me")
+	// do nothing
 }
 
 func (l *customLogger) Debugf(format string, args ...interface{}) {
-	l.logger.Printf(format, args)
+	l.logger.Printf(format, args...)
 }
 
 func (l *customLogger) Infof(format string, args ...interface{}) {
-	l.logger.Printf(format, args)
+	l.logger.Printf(format, args...)
 }
 
 func (l *customLogger) Warningf(format string, args ...interface{}) {
-	l.logger.Printf(format, args)
+	l.logger.Printf(format, args...)
 }
 
 func (l *customLogger) Errorf(format string, args ...interface{}) {
-	l.logger.Printf(format, args)
+	l.logger.Printf(format, args...)
 }
 
 func (l *customLogger) Panicf(format string, args ...interface{}) {
-	l.logger.Panicf(format, args)
+	l.logger.Panicf(format, args...)
 }
 
 type silentLogger struct{}
