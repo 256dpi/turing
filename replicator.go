@@ -2,18 +2,15 @@ package turing
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
-	"strconv"
 
-	"github.com/dgraph-io/badger"
 	"github.com/lni/dragonboat/statemachine"
 )
 
 // TODO: Handle conflicts.
 
 // TODO: Handle too big transactions.
-
-var indexKey = []byte("$index")
 
 type command struct {
 	Name string `json:"name"`
@@ -44,7 +41,7 @@ func newReplicator(config MachineConfig) *replicator {
 
 func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	// open database
-	database, err := openDatabase(r.config.dbDir())
+	database, index, err := openDatabase(r.config.dbDir())
 	if err != nil {
 		return 0, err
 	}
@@ -52,53 +49,21 @@ func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	// set database
 	r.database = database
 
-	// prepare index
-	var index uint64
-
-	// get last committed index
-	err = database.View(func(txn *badger.Txn) error {
-		// get key
-		item, err := txn.Get(indexKey)
-		if err == badger.ErrKeyNotFound {
-			return nil
-		} else if err != nil {
-			return err
-		}
-
-		// parse value
-		err = item.Value(func(val []byte) error {
-			index, err = strconv.ParseUint(string(val), 10, 64)
-			return err
-		})
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-	if err != nil {
-		return 0, err
-	}
-
 	return index, nil
 }
 
 func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
-	// TODO: Handle errors.
+	// prepare instruction list
+	list := make([]Instruction, len(entries))
 
-	// TODO: Improve batching.
+	// prepare index
+	var index uint64
 
-	// prepare total effect
-	totalEffect := 0
-
-	// create transaction
-	txn := r.database.NewTransaction(true)
-
-	// handle all entries
-	for _, entry := range entries {
+	// decode instructions
+	for i := range entries {
 		// parse command
 		var cmd command
-		err := json.Unmarshal(entry.Cmd, &cmd)
+		err := json.Unmarshal(entries[i].Cmd, &cmd)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -118,76 +83,48 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 			panic(err.Error())
 		}
 
-		// get effect of instruction
-		effect := instruction.Describe().Effect
+		// add instruction
+		list[i] = instruction
 
-		// TODO: Run unbounded instructions in multiple runs.
+		// set last index
+		index = entries[i].Index
+	}
 
-		// check if new transaction is needed
-		if effect < 0 || totalEffect+effect >= int(r.database.MaxBatchCount()) {
-			// commit current transaction
-			err = txn.Commit()
-			if err != nil {
-				panic(err.Error())
-			}
+	// execute instructions
+	err := r.database.update(list, index)
+	if err != nil {
+		panic(err.Error())
+	}
 
-			// create new transaction
-			txn = r.database.NewTransaction(true)
-
-			// reset total effect
-			totalEffect = 0
-		}
-
-		// execute transaction
-		err = instruction.Execute(&Transaction{txn: txn})
-		if err != nil {
-			panic(err.Error())
-		}
-
-		// set seq
-		err = txn.Set(indexKey, []byte(strconv.FormatUint(entry.Index, 10)))
-		if err != nil {
-			panic(err.Error())
-		}
-
+	// encode instructions
+	for i := range entries {
 		// encode instruction
-		bytes, err := encodeInstruction(instruction)
+		bytes, err := encodeInstruction(list[i])
 		if err != nil {
 			panic(err.Error())
 		}
 
 		// set result
-		entry.Result = statemachine.Result{
+		entries[i].Result = statemachine.Result{
 			Data: bytes,
 		}
-
-		// increment effect counter
-		totalEffect += effect
-	}
-
-	// commit transaction
-	err := txn.Commit()
-	if err != nil {
-		panic(err.Error())
 	}
 
 	return entries
 }
 
 func (r *replicator) Lookup(data []byte) ([]byte, error) {
-	// TODO: Handle errors.
-
 	// parse command
 	var cmd command
 	err := json.Unmarshal(data, &cmd)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	// get factory instruction
 	factory, ok := r.instructions[cmd.Name]
 	if !ok {
-		panic("missing instruction: " + cmd.Name)
+		return nil, errors.New("missing instruction: " + cmd.Name)
 	}
 
 	// create new instruction
@@ -196,21 +133,19 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	// decode instruction
 	err = decodeInstruction(cmd.Data, instruction)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
-	// apply instruction
-	err = r.database.View(func(txn *badger.Txn) error {
-		return instruction.Execute(&Transaction{txn: txn})
-	})
+	// perform lookup
+	err = r.database.lookup(instruction)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	// encode instruction
 	bytes, err := encodeInstruction(instruction)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	return bytes, nil
@@ -221,30 +156,15 @@ func (r *replicator) PrepareSnapshot() (interface{}, error) {
 }
 
 func (r *replicator) SaveSnapshot(_ interface{}, sink io.Writer, abort <-chan struct{}) error {
-	// backup database
-	_, err := r.database.Backup(sink, 0)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r.database.backup(sink)
 }
 
 func (r *replicator) RecoverFromSnapshot(source io.Reader, abort <-chan struct{}) error {
-	// TODO: Clear database beforehand?
-
-	// load backup
-	err := r.database.Load(source)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r.database.restore(source)
 }
 
 func (r *replicator) Close() {
-	// close database
-	_ = r.database.Close()
+	_ = r.database.close()
 }
 
 func (r *replicator) GetHash() uint64 {
