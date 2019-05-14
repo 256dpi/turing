@@ -5,6 +5,14 @@ import (
 	"reflect"
 )
 
+type Instruction interface {
+	// Describe should return a description of the instruction.
+	Describe() Description
+
+	// Execute should execute the instruction.
+	Execute(*Transaction) error
+}
+
 type Description struct {
 	// The unique name of the function.
 	Name string
@@ -27,14 +35,6 @@ type Description struct {
 	// The decoder can tbe set to implement a custom decoding. If not set, the
 	// standard JSON decoder will be used.
 	Decoder func([]byte, Instruction) error
-}
-
-type Instruction interface {
-	// Describe should return a description of the instruction.
-	Describe() Description
-
-	// Execute should execute the instruction.
-	Execute(*Transaction) error
 }
 
 func buildInstruction(i Instruction) Instruction {
