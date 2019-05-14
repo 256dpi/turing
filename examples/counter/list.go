@@ -22,10 +22,6 @@ func (l *list) Name() string {
 	return "list"
 }
 
-func (l *list) Build() turing.Instruction {
-	return &list{}
-}
-
 func (l *list) Encode() ([]byte, error) {
 	return json.Marshal(l)
 }

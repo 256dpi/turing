@@ -19,10 +19,6 @@ func (l *List) Describe() turing.Description {
 	}
 }
 
-func (l *List) Build() turing.Instruction {
-	return &List{}
-}
-
 func (l *List) Encode() ([]byte, error) {
 	return json.Marshal(l)
 }

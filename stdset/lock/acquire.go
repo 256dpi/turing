@@ -27,10 +27,6 @@ func (a *Acquire) Describe() turing.Description {
 	}
 }
 
-func (a *Acquire) Build() turing.Instruction {
-	return &Acquire{}
-}
-
 func (a *Acquire) Encode() ([]byte, error) {
 	return json.Marshal(a)
 }

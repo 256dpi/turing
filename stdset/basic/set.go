@@ -18,10 +18,6 @@ func (s *Set) Describe() turing.Description {
 	}
 }
 
-func (s *Set) Build() turing.Instruction {
-	return &Set{}
-}
-
 func (s *Set) Encode() ([]byte, error) {
 	return json.Marshal(s)
 }

@@ -19,10 +19,6 @@ func (i *increment) Describe() turing.Description {
 	}
 }
 
-func (i *increment) Build() turing.Instruction {
-	return &increment{}
-}
-
 func (i *increment) Encode() ([]byte, error) {
 	return json.Marshal(i)
 }

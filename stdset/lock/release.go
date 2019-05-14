@@ -21,10 +21,6 @@ func (r *Release) Describe() turing.Description {
 	}
 }
 
-func (r *Release) Build() turing.Instruction {
-	return &Release{}
-}
-
 func (r *Release) Encode() ([]byte, error) {
 	return json.Marshal(r)
 }

@@ -110,7 +110,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		}
 
 		// create new instruction
-		instruction := factory.Build()
+		instruction := buildInstruction(factory)
 
 		// decode instruction
 		err = instruction.Decode(cmd.Data)
@@ -186,7 +186,7 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	}
 
 	// create new instruction
-	instruction := factory.Build()
+	instruction := buildInstruction(factory)
 
 	// decode instruction
 	err = instruction.Decode(cmd.Data)

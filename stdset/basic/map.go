@@ -18,10 +18,6 @@ func (m *Map) Describe() turing.Description {
 	}
 }
 
-func (m *Map) Build() turing.Instruction {
-	return &Map{}
-}
-
 func (m *Map) Encode() ([]byte, error) {
 	return json.Marshal(m)
 }

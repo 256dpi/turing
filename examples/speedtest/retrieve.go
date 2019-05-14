@@ -25,10 +25,6 @@ func (r *retrieve) Name() string {
 	return "retrieve"
 }
 
-func (r *retrieve) Build() turing.Instruction {
-	return &retrieve{}
-}
-
 func (r *retrieve) Encode() ([]byte, error) {
 	return json.Marshal(r)
 }

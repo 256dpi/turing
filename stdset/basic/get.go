@@ -19,10 +19,6 @@ func (g *Get) Describe() turing.Description {
 	}
 }
 
-func (g *Get) Build() turing.Instruction {
-	return &Get{}
-}
-
 func (g *Get) Encode() ([]byte, error) {
 	return json.Marshal(g)
 }
