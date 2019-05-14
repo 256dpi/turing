@@ -97,23 +97,23 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 	// handle all entries
 	for _, entry := range entries {
 		// parse command
-		var c command
-		err := json.Unmarshal(entry.Cmd, &c)
+		var cmd command
+		err := json.Unmarshal(entry.Cmd, &cmd)
 		if err != nil {
 			panic(err.Error())
 		}
 
 		// get factory instruction
-		factory, ok := r.instructions[c.Name]
+		factory, ok := r.instructions[cmd.Name]
 		if !ok {
-			panic("missing instruction: " + c.Name)
+			panic("missing instruction: " + cmd.Name)
 		}
 
 		// create new instruction
 		instruction := factory.Build()
 
 		// decode instruction
-		err = instruction.Decode(c.Data)
+		err = instruction.Decode(cmd.Data)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -149,7 +149,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		}
 
 		// encode instruction
-		bytes, err := json.Marshal(instruction)
+		bytes, err := instruction.Encode()
 		if err != nil {
 			panic(err.Error())
 		}
@@ -173,23 +173,23 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	// TODO: Handle errors.
 
 	// parse command
-	var c command
-	err := json.Unmarshal(data, &c)
+	var cmd command
+	err := json.Unmarshal(data, &cmd)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	// get factory instruction
-	factory, ok := r.instructions[c.Name]
+	factory, ok := r.instructions[cmd.Name]
 	if !ok {
-		panic("missing instruction: " + c.Name)
+		panic("missing instruction: " + cmd.Name)
 	}
 
 	// create new instruction
 	instruction := factory.Build()
 
 	// decode instruction
-	err = instruction.Decode(c.Data)
+	err = instruction.Decode(cmd.Data)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -203,7 +203,7 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	}
 
 	// encode instruction
-	bytes, err := json.Marshal(instruction)
+	bytes, err := instruction.Encode()
 	if err != nil {
 		panic(err.Error())
 	}

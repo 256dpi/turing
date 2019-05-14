@@ -78,7 +78,7 @@ func (m *Machine) Execute(i Instruction) error {
 
 	// decode result
 	if result != nil {
-		err = json.Unmarshal(result, i)
+		err = i.Decode(result, i)
 		if err != nil {
 			return err
 		}
