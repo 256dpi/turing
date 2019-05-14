@@ -143,7 +143,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// run update
-		err := machine.Update(increment)
+		err := machine.Execute(increment)
 		if err != nil {
 			time.Sleep(time.Second)
 			continue
@@ -180,7 +180,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// run update
-		err := machine.View(retrieve)
+		err := machine.Execute(retrieve)
 		if err != nil {
 			time.Sleep(time.Second)
 			continue

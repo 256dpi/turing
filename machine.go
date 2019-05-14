@@ -41,7 +41,7 @@ func (m *Machine) State() string {
 	return m.coordinator.state()
 }
 
-func (m *Machine) Update(i Instruction) error {
+func (m *Machine) Execute(i Instruction) error {
 	// encode instruction
 	id, err := i.Encode()
 	if err != nil {
@@ -55,51 +55,25 @@ func (m *Machine) Update(i Instruction) error {
 	}
 
 	// encode command
-	cd, err := json.Marshal(cmd)
+	bytes, err := json.Marshal(cmd)
 	if err != nil {
 		return err
 	}
+
+	// prepare result
+	var result []byte
 
 	// apply command
-	result, err := m.coordinator.update(cd)
-	if err != nil {
-		return err
-	}
-
-	// decode result
-	if result != nil {
-		err = json.Unmarshal(result, i)
+	if i.ReadOnly() {
+		result, err = m.coordinator.lookup(bytes)
 		if err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *Machine) View(i Instruction) error {
-	// encode instruction
-	id, err := i.Encode()
-	if err != nil {
-		return err
-	}
-
-	// prepare command
-	cmd := &command{
-		Name: i.Name(),
-		Data: id,
-	}
-
-	// encode command
-	cd, err := json.Marshal(cmd)
-	if err != nil {
-		return err
-	}
-
-	// apply command
-	result, err := m.coordinator.lookup(cd)
-	if err != nil {
-		return err
+	} else {
+		result, err = m.coordinator.update(bytes)
+		if err != nil {
+			return err
+		}
 	}
 
 	// decode result

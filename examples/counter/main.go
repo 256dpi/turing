@@ -96,7 +96,7 @@ func main() {
 
 		// set value
 		set := &increment{Key: strconv.FormatUint(server.ID, 10)}
-		err = machine.Update(set)
+		err = machine.Execute(set)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
@@ -108,7 +108,7 @@ func main() {
 
 		// list values
 		list := &list{}
-		err = machine.View(list)
+		err = machine.Execute(list)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
