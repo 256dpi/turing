@@ -12,16 +12,14 @@ import (
 const clusterID uint64 = 1
 
 type coordinator struct {
-	node   *dragonboat.NodeHost
-	server Route
-	peers  []Route
+	node *dragonboat.NodeHost
 }
 
 func createCoordinator(cfg MachineConfig) (*coordinator, error) {
-	// prepare peers
-	peers := make(map[uint64]string)
-	for _, peer := range cfg.Peers {
-		peers[peer.ID] = peer.raftAddr()
+	// prepare members
+	members := make(map[uint64]string)
+	for _, member := range cfg.Members {
+		members[member.ID] = member.raftAddr()
 	}
 
 	// calculate rrt in ms
@@ -47,8 +45,8 @@ func createCoordinator(cfg MachineConfig) (*coordinator, error) {
 		RaftAddress:    cfg.Server.raftAddr(),
 	}
 
-	// create node host
-	nh, err := dragonboat.NewNodeHost(nhc)
+	// create node
+	node, err := dragonboat.NewNodeHost(nhc)
 	if err != nil {
 		return nil, err
 	}
@@ -59,16 +57,14 @@ func createCoordinator(cfg MachineConfig) (*coordinator, error) {
 	}
 
 	// start cluster
-	err = nh.StartOnDiskCluster(peers, false, factory, rc)
+	err = node.StartOnDiskCluster(members, false, factory, rc)
 	if err != nil {
 		return nil, err
 	}
 
 	// create coordinator
 	rn := &coordinator{
-		node:   nh,
-		server: cfg.Server,
-		peers:  cfg.Peers,
+		node: node,
 	}
 
 	return rn, nil
@@ -113,8 +109,8 @@ func (c *coordinator) status() Status {
 	var id uint64
 	role := Follower
 
-	// prepare peers
-	var peers []Route
+	// prepare members
+	var members []Route
 
 	// check info
 	if len(info.ClusterInfoList) > 0 {
@@ -131,11 +127,11 @@ func (c *coordinator) status() Status {
 			role = Leader
 		}
 
-		// parse peers
+		// parse members
 		for id, addr := range info.ClusterInfoList[0].Nodes {
-			peer, _ := ParseRoute(addr)
-			peer.ID = id
-			peers = append(peers, peer)
+			member, _ := ParseRoute(addr)
+			member.ID = id
+			members = append(members, member)
 		}
 	}
 
@@ -146,19 +142,19 @@ func (c *coordinator) status() Status {
 	lid, ok, _ := c.node.GetLeaderID(clusterID)
 	if ok {
 		// find route
-		for _, peer := range c.peers {
-			if peer.ID == lid {
-				leader = &peer
+		for _, member := range members {
+			if member.ID == lid {
+				leader = &member
 			}
 		}
 	}
 
 	// create status
 	status := Status{
-		ID:     id,
-		Role:   role,
-		Leader: leader,
-		Peers:  peers,
+		ID:      id,
+		Role:    role,
+		Leader:  leader,
+		Members: members,
 	}
 
 	return status

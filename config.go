@@ -14,8 +14,8 @@ type MachineConfig struct {
 	// The server route.
 	Server Route
 
-	// The cluster peers.
-	Peers []Route
+	// The cluster members.
+	Members []Route
 
 	// The storage directory.
 	Directory string
@@ -34,9 +34,9 @@ func (c *MachineConfig) check() error {
 		return err
 	}
 
-	// check peer route
-	for _, peer := range c.Peers {
-		err = peer.check()
+	// check member route
+	for _, member := range c.Members {
+		err = member.check()
 		if err != nil {
 			return err
 		}

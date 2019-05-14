@@ -17,7 +17,7 @@ import (
 func main() {
 	// prepare flags
 	var serverFlag = flag.String("server", "1@0.0.0.0:42010", "the server")
-	var peersFlag = flag.String("peers", "", "the cluster peers")
+	var membersFlag = flag.String("members", "", "the cluster members")
 	var dirFlag = flag.String("dir", "data", "the data directory")
 	var cleanFlag = flag.Bool("clean", false, "remove existing data")
 
@@ -30,17 +30,17 @@ func main() {
 		panic(err)
 	}
 
-	// parse peer routes
-	var peers []turing.Route
-	for _, peer := range strings.Split(*peersFlag, ",") {
+	// parse member routes
+	var members []turing.Route
+	for _, member := range strings.Split(*membersFlag, ",") {
 		// parse route
-		route, err := turing.ParseRoute(peer)
+		route, err := turing.ParseRoute(member)
 		if err != nil {
 			panic(err)
 		}
 
-		// add peer
-		peers = append(peers, route)
+		// add member
+		members = append(members, route)
 	}
 
 	// resolve directory
@@ -63,7 +63,7 @@ func main() {
 	// prepare config
 	config := turing.MachineConfig{
 		Server:    server,
-		Peers:     peers,
+		Members:   members,
 		Directory: directory,
 		Instructions: []turing.Instruction{
 			&increment{}, &list{},

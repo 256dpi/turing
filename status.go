@@ -29,5 +29,5 @@ type Status struct {
 
 	Leader *Route
 
-	Peers []Route
+	Members []Route
 }
