@@ -27,7 +27,7 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 
 	// prepare config
 	rc := config.Config{
-		NodeID:             cfg.Server.ID,
+		NodeID:             cfg.Local.ID,
 		ClusterID:          1,
 		CheckQuorum:        true,
 		ElectionRTT:        10000 / rttMS, // 10s
@@ -42,7 +42,7 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 		WALDir:         cfg.raftDir(),
 		NodeHostDir:    cfg.raftDir(),
 		RTTMillisecond: rttMS,
-		RaftAddress:    cfg.Server.raftAddr(),
+		RaftAddress:    cfg.Local.raftAddr(),
 	}
 
 	// create node
@@ -110,7 +110,7 @@ func (c *coordinator) status() Status {
 	role := Follower
 
 	// prepare members
-	var members []Route
+	var members []Member
 
 	// check info
 	if len(info.ClusterInfoList) > 0 {
@@ -129,19 +129,18 @@ func (c *coordinator) status() Status {
 
 		// parse members
 		for id, addr := range info.ClusterInfoList[0].Nodes {
-			member, _ := ParseRoute(addr)
+			member, _ := ParseMember(addr)
 			member.ID = id
 			members = append(members, member)
 		}
 	}
 
 	// prepare leader
-	var leader *Route
+	var leader *Member
 
-	// get leader id
+	// get leader
 	lid, ok, _ := c.node.GetLeaderID(clusterID)
 	if ok {
-		// find route
 		for _, member := range members {
 			if member.ID == lid {
 				leader = &member

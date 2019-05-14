@@ -9,10 +9,10 @@ type Status struct {
 	Role Role
 
 	// The cluster leader.
-	Leader *Route
+	Leader *Member
 
 	// The cluster members.
-	Members []Route
+	Members []Member
 }
 
 // Role specifies the role of a cluster member.

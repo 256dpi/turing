@@ -39,23 +39,23 @@ func main() {
 	// parse flags
 	flag.Parse()
 
-	// parse server route
-	server, err := turing.ParseRoute(*serverFlag)
+	// parse member
+	server, err := turing.ParseMember(*serverFlag)
 	if err != nil {
 		panic(err)
 	}
 
-	// parse member routes
-	var members []turing.Route
+	// parse members
+	var members []turing.Member
 	for _, member := range strings.Split(*membersFlag, ",") {
-		// parse route
-		route, err := turing.ParseRoute(member)
+		// parse member
+		member, err := turing.ParseMember(member)
 		if err != nil {
 			panic(err)
 		}
 
 		// add member
-		members = append(members, route)
+		members = append(members, member)
 	}
 
 	// resolve directory

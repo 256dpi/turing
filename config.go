@@ -12,11 +12,11 @@ import (
 
 // Config is used to configure a machine.
 type Config struct {
-	// The server route.
-	Server Route
+	// The server id.
+	ID uint64
 
 	// The cluster members.
-	Members []Route
+	Members []Member
 
 	// The storage directory.
 	Directory string
@@ -28,16 +28,26 @@ type Config struct {
 	RoundTripTime time.Duration
 }
 
-func (c *Config) check() error {
-	// check server route
-	err := c.Server.check()
-	if err != nil {
-		return err
+func (c *Config) Local() *Member {
+	// find member
+	for _, member := range c.Members {
+		if member.ID == c.ID {
+			return &member
+		}
 	}
 
-	// check member route
+	return nil
+}
+
+func (c *Config) check() error {
+	// check local member
+	if c.Local() == nil {
+		return errors.New("turing: missing local member")
+	}
+
+	// check members
 	for _, member := range c.Members {
-		err = member.check()
+		err := member.check()
 		if err != nil {
 			return err
 		}
@@ -64,16 +74,16 @@ func (c Config) dbDir() string {
 	return filepath.Join(c.Directory, "db")
 }
 
-// Route is custom type to represent a cluster member.
-type Route struct {
+// Member specifies a cluster member.
+type Member struct {
 	ID   uint64
 	Host string
 	Port int
 }
 
-// ParseRoute will parse the provided string in the form of "7@0.0.0.0:1337" and
-// return a route.
-func ParseRoute(str string) (Route, error) {
+// ParseMember will parse the provided string in the form of "7@0.0.0.0:1337"
+// and return a member.
+func ParseMember(str string) (Member, error) {
 	// split name and addr
 	s := strings.Split(str, "@")
 	if len(s) == 1 {
@@ -83,13 +93,13 @@ func ParseRoute(str string) (Route, error) {
 	// get id
 	id, err := strconv.ParseUint(s[0], 10, 64)
 	if err != nil {
-		return Route{}, err
+		return Member{}, err
 	}
 
 	// split addr
 	host, portString, err := net.SplitHostPort(s[1])
 	if err != nil {
-		return Route{}, err
+		return Member{}, err
 	}
 
 	// set default host
@@ -100,11 +110,11 @@ func ParseRoute(str string) (Route, error) {
 	// parse port
 	port, err := strconv.Atoi(portString)
 	if err != nil {
-		return Route{}, err
+		return Member{}, err
 	}
 
-	// create route
-	r := Route{
+	// create member
+	r := Member{
 		ID:   id,
 		Host: host,
 		Port: port,
@@ -113,36 +123,36 @@ func ParseRoute(str string) (Route, error) {
 	return r, nil
 }
 
-func (r Route) check() error {
+func (m Member) check() error {
 	// check host
-	if r.Host == "" {
+	if m.Host == "" {
 		return errors.New("turing: missing host")
 	}
 
 	// check port
-	if r.Port <= 0 {
+	if m.Port <= 0 {
 		return errors.New("turing: invalid port")
 	}
 
 	return nil
 }
 
-func (r Route) raftPort() int {
-	return r.Port
+func (m Member) raftPort() int {
+	return m.Port
 }
 
-func (r Route) raftAddr() string {
-	return net.JoinHostPort(r.Host, strconv.Itoa(r.raftPort()))
+func (m Member) raftAddr() string {
+	return net.JoinHostPort(m.Host, strconv.Itoa(m.raftPort()))
 }
 
-func (r Route) rpcPort() int {
-	return r.Port + 1
+func (m Member) rpcPort() int {
+	return m.Port + 1
 }
 
-func (r Route) rpcAddr() string {
-	return net.JoinHostPort(r.Host, strconv.Itoa(r.rpcPort()))
+func (m Member) rpcAddr() string {
+	return net.JoinHostPort(m.Host, strconv.Itoa(m.rpcPort()))
 }
 
-func (r Route) string() string {
-	return fmt.Sprintf("%d@%s", r.ID, r.raftAddr())
+func (m Member) string() string {
+	return fmt.Sprintf("%d@%s", m.ID, m.raftAddr())
 }

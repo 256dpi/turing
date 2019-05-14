@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-// Machine maintains a raft cluster with peers and maintains consensus about the
+// Machine maintains a raft cluster with members and maintains consensus about the
 // execute instructions on the distributed data store.
 type Machine struct {
 	coordinator *coordinator
