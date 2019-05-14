@@ -80,7 +80,7 @@ func main() {
 	defer machine.Close()
 
 	// run printer
-	go printer(machine, config)
+	go printer(machine)
 
 	// prepare exit
 	exit := make(chan os.Signal, 1)
@@ -120,27 +120,12 @@ func main() {
 	}
 }
 
-func printer(machine *turing.Machine, config turing.MachineConfig) {
+func printer(machine *turing.Machine) {
 	for {
 		// wait some time
 		time.Sleep(time.Second)
 
-		// prepare ser er
-		server := strconv.FormatUint(config.Server.ID, 10)
-
-		// collect peers
-		var peers []string
-		for _, peer := range config.Peers {
-			peers = append(peers, strconv.FormatUint(peer.ID, 10))
-		}
-
-		// get leader
-		var leader string
-		if machine.Leader() != nil {
-			leader = strconv.FormatUint(machine.Leader().ID, 10)
-		}
-
 		// print info
-		fmt.Printf("[%s] State: %s | Leader: %s | Peers: %s\n", server, machine.State(), leader, strings.Join(peers, ", "))
+		fmt.Printf("%+v\n", machine.Status())
 	}
 }

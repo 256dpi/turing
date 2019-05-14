@@ -89,7 +89,7 @@ func openDatabase(dir string) (*database, uint64, error) {
 
 func (d *database) update(list []Instruction, index uint64) error {
 	// calculate max effect (90% of max batch count)
-	maxEffect := int(float64(d.bdb.MaxBatchCount())*0.9)
+	maxEffect := int(float64(d.bdb.MaxBatchCount()) * 0.9)
 
 	// prepare total effect
 	totalEffect := 0

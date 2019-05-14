@@ -29,18 +29,6 @@ func CreateMachine(config MachineConfig) (*Machine, error) {
 	return n, nil
 }
 
-func (m *Machine) IsLeader() bool {
-	return m.coordinator.isLeader()
-}
-
-func (m *Machine) Leader() *Route {
-	return m.coordinator.leader()
-}
-
-func (m *Machine) State() string {
-	return m.coordinator.state()
-}
-
 func (m *Machine) Execute(i Instruction) error {
 	// encode instruction
 	id, err := encodeInstruction(i)
@@ -85,6 +73,10 @@ func (m *Machine) Execute(i Instruction) error {
 	}
 
 	return nil
+}
+
+func (m *Machine) Status() Status {
+	return m.coordinator.status()
 }
 
 func (m *Machine) Close() {

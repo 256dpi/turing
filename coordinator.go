@@ -105,37 +105,63 @@ func (c *coordinator) lookup(cmd []byte) ([]byte, error) {
 	return result, nil
 }
 
-func (c *coordinator) isLeader() bool {
-	// get leader id
-	id, ok, _ := c.node.GetLeaderID(clusterID)
+func (c *coordinator) status() Status {
+	// get info
+	info := c.node.GetNodeHostInfo()
 
-	return ok && id == c.server.ID
-}
+	// prepare id and role
+	var id uint64
+	role := Follower
 
-func (c *coordinator) leader() *Route {
-	// get leader id
-	id, ok, _ := c.node.GetLeaderID(clusterID)
-	if !ok {
-		return nil
-	}
+	// prepare peers
+	var peers []Route
 
-	// get route
-	for _, peer := range c.peers {
-		if peer.ID == id {
-			return &peer
+	// check info
+	if len(info.ClusterInfoList) > 0 {
+		// set id
+		id = info.ClusterInfoList[0].NodeID
+
+		// set observer
+		if info.ClusterInfoList[0].IsObserver {
+			role = Observer
+		}
+
+		// set leader
+		if info.ClusterInfoList[0].IsLeader {
+			role = Leader
+		}
+
+		// parse peers
+		for id, addr := range info.ClusterInfoList[0].Nodes {
+			peer, _ := ParseRoute(addr)
+			peer.ID = id
+			peers = append(peers, peer)
 		}
 	}
 
-	return nil
-}
+	// prepare leader
+	var leader *Route
 
-func (c *coordinator) state() string {
-	// return description
-	if c.isLeader() {
-		return "Leader"
-	} else {
-		return "Follower"
+	// get leader id
+	lid, ok, _ := c.node.GetLeaderID(clusterID)
+	if ok {
+		// find route
+		for _, peer := range c.peers {
+			if peer.ID == lid {
+				leader = &peer
+			}
+		}
 	}
+
+	// create status
+	status := Status{
+		ID:     id,
+		Role:   role,
+		Leader: leader,
+		Peers:  peers,
+	}
+
+	return status
 }
 
 func (c *coordinator) close() {
