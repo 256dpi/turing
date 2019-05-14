@@ -18,12 +18,12 @@ type command struct {
 }
 
 type replicator struct {
-	config       MachineConfig
+	config       Config
 	database     *database
 	instructions map[string]Instruction
 }
 
-func newReplicator(config MachineConfig) *replicator {
+func newReplicator(config Config) *replicator {
 	// create instruction map
 	instructions := make(map[string]Instruction)
 	for _, i := range config.Instructions {

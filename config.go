@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type MachineConfig struct {
+type Config struct {
 	// The server route.
 	Server Route
 
@@ -27,7 +27,7 @@ type MachineConfig struct {
 	RoundTripTime time.Duration
 }
 
-func (c *MachineConfig) check() error {
+func (c *Config) check() error {
 	// check server route
 	err := c.Server.check()
 	if err != nil {
@@ -55,11 +55,11 @@ func (c *MachineConfig) check() error {
 	return nil
 }
 
-func (c MachineConfig) raftDir() string {
+func (c Config) raftDir() string {
 	return filepath.Join(c.Directory, "raft")
 }
 
-func (c MachineConfig) dbDir() string {
+func (c Config) dbDir() string {
 	return filepath.Join(c.Directory, "db")
 }
 

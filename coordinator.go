@@ -15,7 +15,7 @@ type coordinator struct {
 	node *dragonboat.NodeHost
 }
 
-func createCoordinator(cfg MachineConfig) (*coordinator, error) {
+func createCoordinator(cfg Config) (*coordinator, error) {
 	// prepare members
 	members := make(map[uint64]string)
 	for _, member := range cfg.Members {

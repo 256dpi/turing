@@ -73,18 +73,15 @@ func main() {
 		panic(err)
 	}
 
-	// prepare config
-	config := turing.MachineConfig{
+	// create machine
+	machine, err := turing.Create(turing.Config{
 		Server:    server,
 		Members:   members,
 		Directory: directory,
 		Instructions: []turing.Instruction{
 			&increment{}, &retrieve{},
 		},
-	}
-
-	// create machine
-	machine, err := turing.CreateMachine(config)
+	})
 	if err != nil {
 		panic(err)
 	}

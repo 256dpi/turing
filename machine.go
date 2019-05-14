@@ -8,7 +8,7 @@ type Machine struct {
 	coordinator *coordinator
 }
 
-func CreateMachine(config MachineConfig) (*Machine, error) {
+func Create(config Config) (*Machine, error) {
 	// check config
 	err := config.check()
 	if err != nil {
