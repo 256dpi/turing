@@ -1,9 +1,14 @@
 package turing
 
 type Description struct {
-	Name        string
+	// The unique name of the function.
+	Name string
+
+	// If the instruction only reads data.
+	ReadOnly bool
+
+	// The cardinality of the function.
 	Cardinality int
-	ReadOnly    bool
 }
 
 type Instruction interface {
