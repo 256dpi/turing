@@ -1,17 +1,16 @@
 package turing
 
 import (
-	"io"
-	"log"
 	"os"
 	"time"
 
 	"github.com/dgraph-io/badger"
+	"github.com/lni/dragonboat/logger"
 )
 
 type database = badger.DB
 
-func openDatabase(dir string, logger io.Writer) (*database, error) {
+func openDatabase(dir string) (*database, error) {
 	// ensure directory
 	err := os.MkdirAll(dir, 0777)
 	if err != nil {
@@ -22,7 +21,7 @@ func openDatabase(dir string, logger io.Writer) (*database, error) {
 	bo := badger.DefaultOptions
 	bo.Dir = dir
 	bo.ValueDir = dir
-	bo.Logger = newDatabaseLogger(logger)
+	bo.Logger = logger.GetLogger("badger")
 
 	// open database
 	db, err := badger.Open(bo)
@@ -47,30 +46,4 @@ func openDatabase(dir string, logger io.Writer) (*database, error) {
 	}()
 
 	return db, nil
-}
-
-type databaseLogger struct {
-	logger *log.Logger
-}
-
-func newDatabaseLogger(w io.Writer) *databaseLogger {
-	return &databaseLogger{
-		logger: log.New(w, "", log.LstdFlags),
-	}
-}
-
-func (l *databaseLogger) Errorf(f string, v ...interface{}) {
-	l.logger.Printf("[ERR] badger: "+f, v...)
-}
-
-func (l *databaseLogger) Warningf(f string, v ...interface{}) {
-	l.logger.Printf("[WARN] badger: "+f, v...)
-}
-
-func (l *databaseLogger) Infof(f string, v ...interface{}) {
-	l.logger.Printf("[INFO] badger: "+f, v...)
-}
-
-func (l *databaseLogger) Debugf(f string, v ...interface{}) {
-	l.logger.Printf("[DEBUG] badger: "+f, v...)
 }
