@@ -23,11 +23,15 @@ func (r Role) String() string {
 }
 
 type Status struct {
+	// The id of this server.
 	ID uint64
 
+	// The role of this server.
 	Role Role
 
+	// The cluster leader.
 	Leader *Route
 
+	// The cluster members.
 	Members []Route
 }
