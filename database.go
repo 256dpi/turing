@@ -18,7 +18,7 @@ type database struct {
 
 func openDatabase(dir string) (*database, uint64, error) {
 	// ensure directory
-	err := os.MkdirAll(dir, 0777)
+	err := os.MkdirAll(dir, 0700)
 	if err != nil {
 		return nil, 0, err
 	}
