@@ -7,6 +7,7 @@ import (
 	"github.com/lni/dragonboat/logger"
 )
 
+// SetLogger can used to set a custom writer for all logs.
 func SetLogger(sink io.Writer) {
 	// set silent logger if nil
 	if sink == nil {

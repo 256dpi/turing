@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 )
 
+// Machine maintains a raft cluster with peers and maintains consensus about the
+// execute instructions on the distributed data store.
 type Machine struct {
 	coordinator *coordinator
 }
 
+// Create will create a new machine using the specified configuration.
 func Create(config Config) (*Machine, error) {
 	// check config
 	err := config.check()
@@ -29,22 +32,23 @@ func Create(config Config) (*Machine, error) {
 	return n, nil
 }
 
-func (m *Machine) Execute(i Instruction) error {
+// Execute will execute the specified instruction.
+func (m *Machine) Execute(instruction Instruction) error {
 	// validate instruction
-	err := i.Describe().Validate()
+	err := instruction.Describe().Validate()
 	if err != nil {
 		return err
 	}
 
 	// encode instruction
-	id, err := encodeInstruction(i)
+	id, err := encodeInstruction(instruction)
 	if err != nil {
 		return err
 	}
 
 	// prepare command
 	cmd := &command{
-		Name: i.Describe().Name,
+		Name: instruction.Describe().Name,
 		Data: id,
 	}
 
@@ -58,7 +62,7 @@ func (m *Machine) Execute(i Instruction) error {
 	var result []byte
 
 	// apply command
-	if i.Describe().Effect == 0 {
+	if instruction.Describe().Effect == 0 {
 		result, err = m.coordinator.lookup(bytes)
 		if err != nil {
 			return err
@@ -72,7 +76,7 @@ func (m *Machine) Execute(i Instruction) error {
 
 	// decode result
 	if result != nil {
-		err = decodeInstruction(result, i)
+		err = decodeInstruction(result, instruction)
 		if err != nil {
 			return err
 		}
@@ -81,10 +85,12 @@ func (m *Machine) Execute(i Instruction) error {
 	return nil
 }
 
+// Status will return the current status.
 func (m *Machine) Status() Status {
 	return m.coordinator.status()
 }
 
+// Close will close the machine.
 func (m *Machine) Close() {
 	m.coordinator.close()
 }

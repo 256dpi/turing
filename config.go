@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Config is used to configure a machine.
 type Config struct {
 	// The server route.
 	Server Route
@@ -63,12 +64,15 @@ func (c Config) dbDir() string {
 	return filepath.Join(c.Directory, "db")
 }
 
+// Route is custom type to represent a cluster member.
 type Route struct {
 	ID   uint64
 	Host string
 	Port int
 }
 
+// ParseRoute will parse the provided string in the form of "7@0.0.0.0:1337" and
+// return a route.
 func ParseRoute(str string) (Route, error) {
 	// split name and addr
 	s := strings.Split(str, "@")
