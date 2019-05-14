@@ -10,9 +10,10 @@ type Description struct {
 	Name string
 
 	// The amount of modifications this instruction will induce. A positive
-	// number is interpreted as an exact amount set or deleted keys during the
-	// execution. A zero value indicates that the instruction is ready only and
-	// will not set or delete any keys.
+	// number is interpreted as the maximum amount of set or deleted keys during
+	// the execution. A zero value indicates that the instruction is ready only
+	// and will not set or delete any keys. A negative number indicates that the
+	// effect is unbounded.
 	Effect int
 
 	// The builder can be set to implement a custom builder. If not set, the

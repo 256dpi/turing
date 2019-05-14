@@ -88,8 +88,8 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 
 	// TODO: Improve batching.
 
-	// prepare cardinality
-	cardinality := 0
+	// prepare total effect
+	totalEffect := 0
 
 	// create transaction
 	txn := r.database.NewTransaction(true)
@@ -118,11 +118,13 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 			panic(err.Error())
 		}
 
-		// increment cardinality
-		cardinality += instruction.Describe().Effect
+		// get effect of instruction
+		effect := instruction.Describe().Effect
+
+		// TODO: Run unbounded instructions in multiple runs.
 
 		// check if new transaction is needed
-		if cardinality >= int(r.database.MaxBatchCount()) {
+		if effect < 0 || totalEffect+effect >= int(r.database.MaxBatchCount()) {
 			// commit current transaction
 			err = txn.Commit()
 			if err != nil {
@@ -132,8 +134,8 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 			// create new transaction
 			txn = r.database.NewTransaction(true)
 
-			// reset cardinality
-			cardinality = instruction.Describe().Effect
+			// reset total effect
+			totalEffect = 0
 		}
 
 		// execute transaction
@@ -158,6 +160,9 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		entry.Result = statemachine.Result{
 			Data: bytes,
 		}
+
+		// increment effect counter
+		totalEffect += effect
 	}
 
 	// commit transaction
