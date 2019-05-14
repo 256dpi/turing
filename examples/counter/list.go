@@ -17,10 +17,6 @@ func (l *list) Describe() turing.Description {
 	}
 }
 
-func (l *list) Name() string {
-	return "list"
-}
-
 func (l *list) Execute(txn *turing.Transaction) error {
 	// create map
 	l.Pairs = make(map[string]int)
