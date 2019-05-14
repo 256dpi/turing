@@ -43,7 +43,7 @@ func (m *Machine) State() string {
 
 func (m *Machine) Execute(i Instruction) error {
 	// encode instruction
-	id, err := i.Encode()
+	id, err := encodeInstruction(i)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (m *Machine) Execute(i Instruction) error {
 
 	// decode result
 	if result != nil {
-		err = i.Decode(result)
+		err = decodeInstruction(result, i)
 		if err != nil {
 			return err
 		}

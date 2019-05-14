@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"github.com/256dpi/god"
@@ -19,14 +18,6 @@ func (i *increment) Describe() turing.Description {
 		Name:        "increment",
 		Cardinality: 1,
 	}
-}
-
-func (i *increment) Encode() ([]byte, error) {
-	return json.Marshal(i)
-}
-
-func (i *increment) Decode(data []byte) error {
-	return json.Unmarshal(data, i)
 }
 
 var incrementCounter = god.NewCounter("increment")

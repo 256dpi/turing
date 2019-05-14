@@ -21,14 +21,6 @@ func (r *Release) Describe() turing.Description {
 	}
 }
 
-func (r *Release) Encode() ([]byte, error) {
-	return json.Marshal(r)
-}
-
-func (r *Release) Decode(data []byte) error {
-	return json.Unmarshal(data, r)
-}
-
 func (r *Release) Execute(txn *turing.Transaction) error {
 	// reset fields
 	r.Unlocked = false

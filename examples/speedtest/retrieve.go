@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"github.com/256dpi/god"
@@ -23,14 +22,6 @@ func (r *retrieve) Describe() turing.Description {
 
 func (r *retrieve) Name() string {
 	return "retrieve"
-}
-
-func (r *retrieve) Encode() ([]byte, error) {
-	return json.Marshal(r)
-}
-
-func (r *retrieve) Decode(data []byte) error {
-	return json.Unmarshal(data, r)
 }
 
 var retrieveCounter = god.NewCounter("retrieve")

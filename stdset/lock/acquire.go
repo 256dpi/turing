@@ -27,14 +27,6 @@ func (a *Acquire) Describe() turing.Description {
 	}
 }
 
-func (a *Acquire) Encode() ([]byte, error) {
-	return json.Marshal(a)
-}
-
-func (a *Acquire) Decode(data []byte) error {
-	return json.Unmarshal(data, a)
-}
-
 func (a *Acquire) Execute(txn *turing.Transaction) error {
 	// reset fields
 	a.Locked = false

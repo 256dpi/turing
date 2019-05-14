@@ -1,8 +1,6 @@
 package basic
 
 import (
-	"encoding/json"
-
 	"github.com/256dpi/turing"
 )
 
@@ -16,14 +14,6 @@ func (m *Map) Describe() turing.Description {
 		Name:     "stdset/basic.Map",
 		ReadOnly: true,
 	}
-}
-
-func (m *Map) Encode() ([]byte, error) {
-	return json.Marshal(m)
-}
-
-func (m *Map) Decode(data []byte) error {
-	return json.Unmarshal(data, m)
 }
 
 func (m *Map) Execute(txn *turing.Transaction) error {

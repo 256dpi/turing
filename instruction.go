@@ -1,6 +1,9 @@
 package turing
 
-import "reflect"
+import (
+	"encoding/json"
+	"reflect"
+)
 
 type Description struct {
 	// The unique name of the function.
@@ -12,19 +15,22 @@ type Description struct {
 	// The cardinality of the function.
 	Cardinality int
 
-	// The build that creates new instructions of that type.
+	// The builder can be set to implement a custom builder. If not set, the
+	// default reflect based build will be used.
 	Builder func() Instruction
+
+	// The encoder can be set to implement a custom encoding. If not set, the
+	// standard JSON encoder will be used.
+	Encoder func(Instruction) ([]byte, error)
+
+	// The decoder can tbe set to implement a custom decoding. If not set, the
+	// standard JSON decoder will be used.
+	Decoder func([]byte, Instruction) error
 }
 
 type Instruction interface {
 	// Describe should return a description of the instruction.
 	Describe() Description
-
-	// Encode should encode the instruction.
-	Encode() ([]byte, error)
-
-	// Decode should decode the instruction.
-	Decode([]byte) error
 
 	// Execute should execute the instruction.
 	Execute(*Transaction) error
@@ -38,4 +44,24 @@ func buildInstruction(i Instruction) Instruction {
 
 	// otherwise use reflect
 	return reflect.New(reflect.TypeOf(i).Elem()).Interface().(Instruction)
+}
+
+func encodeInstruction(i Instruction) ([]byte, error) {
+	// use encoder if available
+	if i.Describe().Encoder != nil {
+		return i.Describe().Encoder(i)
+	}
+
+	// otherwise use json
+	return json.Marshal(i)
+}
+
+func decodeInstruction(data []byte, i Instruction) error {
+	// use decoder if available
+	if i.Describe().Decoder != nil {
+		return i.Describe().Decoder(data, i)
+	}
+
+	// otherwise use json
+	return json.Unmarshal(data, i)
 }

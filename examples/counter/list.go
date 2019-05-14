@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"github.com/256dpi/turing"
@@ -20,14 +19,6 @@ func (l *list) Describe() turing.Description {
 
 func (l *list) Name() string {
 	return "list"
-}
-
-func (l *list) Encode() ([]byte, error) {
-	return json.Marshal(l)
-}
-
-func (l *list) Decode(data []byte) error {
-	return json.Unmarshal(data, l)
 }
 
 func (l *list) Execute(txn *turing.Transaction) error {

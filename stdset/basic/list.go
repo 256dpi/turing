@@ -1,8 +1,6 @@
 package basic
 
 import (
-	"encoding/json"
-
 	"github.com/256dpi/turing"
 )
 
@@ -17,14 +15,6 @@ func (l *List) Describe() turing.Description {
 		Name:     "stdset/basic.List",
 		ReadOnly: true,
 	}
-}
-
-func (l *List) Encode() ([]byte, error) {
-	return json.Marshal(l)
-}
-
-func (l *List) Decode(data []byte) error {
-	return json.Unmarshal(data, l)
 }
 
 func (l *List) Execute(txn *turing.Transaction) error {

@@ -1,8 +1,6 @@
 package basic
 
 import (
-	"encoding/json"
-
 	"github.com/256dpi/turing"
 )
 
@@ -17,14 +15,6 @@ func (g *Get) Describe() turing.Description {
 		Name:     "stdset/basic.Get",
 		ReadOnly: true,
 	}
-}
-
-func (g *Get) Encode() ([]byte, error) {
-	return json.Marshal(g)
-}
-
-func (g *Get) Decode(data []byte) error {
-	return json.Unmarshal(data, g)
 }
 
 func (g *Get) Execute(txn *turing.Transaction) error {

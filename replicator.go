@@ -113,7 +113,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		instruction := buildInstruction(factory)
 
 		// decode instruction
-		err = instruction.Decode(cmd.Data)
+		err = decodeInstruction(cmd.Data, instruction)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -149,7 +149,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		}
 
 		// encode instruction
-		bytes, err := instruction.Encode()
+		bytes, err := encodeInstruction(instruction)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -189,7 +189,7 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	instruction := buildInstruction(factory)
 
 	// decode instruction
-	err = instruction.Decode(cmd.Data)
+	err = decodeInstruction(cmd.Data, instruction)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -203,7 +203,7 @@ func (r *replicator) Lookup(data []byte) ([]byte, error) {
 	}
 
 	// encode instruction
-	bytes, err := instruction.Encode()
+	bytes, err := encodeInstruction(instruction)
 	if err != nil {
 		panic(err.Error())
 	}
