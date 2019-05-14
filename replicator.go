@@ -119,7 +119,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		}
 
 		// increment cardinality
-		cardinality += instruction.Describe().Cardinality
+		cardinality += instruction.Describe().Effect
 
 		// check if new transaction is needed
 		if cardinality >= int(r.database.MaxBatchCount()) {
@@ -133,7 +133,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 			txn = r.database.NewTransaction(true)
 
 			// reset cardinality
-			cardinality = instruction.Describe().Cardinality
+			cardinality = instruction.Describe().Effect
 		}
 
 		// execute transaction

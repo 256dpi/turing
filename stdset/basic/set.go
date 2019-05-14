@@ -11,8 +11,8 @@ type Set struct {
 
 func (s *Set) Describe() turing.Description {
 	return turing.Description{
-		Name:        "stdset/basic.Set",
-		Cardinality: 1,
+		Name:   "stdset/basic.Set",
+		Effect: 1,
 	}
 }
 

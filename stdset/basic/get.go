@@ -12,8 +12,7 @@ type Get struct {
 
 func (g *Get) Describe() turing.Description {
 	return turing.Description{
-		Name:     "stdset/basic.Get",
-		ReadOnly: true,
+		Name: "stdset/basic.Get",
 	}
 }
 

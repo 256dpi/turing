@@ -18,8 +18,7 @@ type retrieve struct {
 
 func (r *retrieve) Describe() turing.Description {
 	return turing.Description{
-		Name:     "retrieve",
-		ReadOnly: true,
+		Name: "retrieve",
 	}
 }
 

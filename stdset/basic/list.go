@@ -12,8 +12,7 @@ type List struct {
 
 func (l *List) Describe() turing.Description {
 	return turing.Description{
-		Name:     "stdset/basic.List",
-		ReadOnly: true,
+		Name: "stdset/basic.List",
 	}
 }
 

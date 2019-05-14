@@ -16,8 +16,8 @@ type Release struct {
 
 func (r *Release) Describe() turing.Description {
 	return turing.Description{
-		Name:        "stdset/lock.Release",
-		Cardinality: 1,
+		Name:   "stdset/lock.Release",
+		Effect: 1,
 	}
 }
 

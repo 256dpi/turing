@@ -9,11 +9,11 @@ type Description struct {
 	// The unique name of the function.
 	Name string
 
-	// If the instruction only reads data.
-	ReadOnly bool
-
-	// The cardinality of the function.
-	Cardinality int
+	// The amount of modifications this instruction will induce. A positive
+	// number is interpreted as an exact amount set or deleted keys during the
+	// execution. A zero value indicates that the instruction is ready only and
+	// will not set or delete any keys.
+	Effect int
 
 	// The builder can be set to implement a custom builder. If not set, the
 	// default reflect based build will be used.

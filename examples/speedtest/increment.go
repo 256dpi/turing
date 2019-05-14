@@ -18,8 +18,8 @@ type increment struct {
 
 func (i *increment) Describe() turing.Description {
 	return turing.Description{
-		Name:        "increment",
-		Cardinality: 1,
+		Name:   "increment",
+		Effect: 1,
 	}
 }
 

@@ -64,7 +64,7 @@ func (m *Machine) Execute(i Instruction) error {
 	var result []byte
 
 	// apply command
-	if i.Describe().ReadOnly {
+	if i.Describe().Effect == 0 {
 		result, err = m.coordinator.lookup(bytes)
 		if err != nil {
 			return err
