@@ -75,3 +75,7 @@ func (r *Release) Execute(txn *turing.Transaction) error {
 func (r *Release) Cardinality() int {
 	return 1
 }
+
+func (r *Release) ReadOnly() bool {
+	return false
+}

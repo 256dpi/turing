@@ -19,4 +19,7 @@ type Instruction interface {
 	// Cardinality should return the number of changes introduced by the
 	// instruction.
 	Cardinality() int
+
+	// ReadOnly should return true if the instruction will not change data.
+	ReadOnly() bool
 }

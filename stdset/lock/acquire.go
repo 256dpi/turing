@@ -91,3 +91,7 @@ func (a *Acquire) Execute(txn *turing.Transaction) error {
 func (a *Acquire) Cardinality() int {
 	return 1
 }
+
+func (a *Acquire) ReadOnly() bool {
+	return false
+}

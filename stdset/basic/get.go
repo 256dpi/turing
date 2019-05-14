@@ -59,3 +59,7 @@ func (g *Get) Execute(txn *turing.Transaction) error {
 func (g *Get) Cardinality() int {
 	return 0
 }
+
+func (g *Get) ReadOnly() bool {
+	return true
+}

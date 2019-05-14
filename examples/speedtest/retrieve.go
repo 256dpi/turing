@@ -71,3 +71,7 @@ func (l *retrieve) Execute(txn *turing.Transaction) error {
 func (l *retrieve) Cardinality() int {
 	return 0
 }
+
+func (l *retrieve) ReadOnly() bool {
+	return true
+}

@@ -58,3 +58,7 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 func (m *Map) Cardinality() int {
 	return 0
 }
+
+func (m *Map) ReadOnly() bool {
+	return true
+}

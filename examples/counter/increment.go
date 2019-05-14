@@ -71,3 +71,7 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 func (i *increment) Cardinality() int {
 	return 1
 }
+
+func (i *increment) ReadOnly() bool {
+	return false
+}

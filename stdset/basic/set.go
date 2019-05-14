@@ -40,3 +40,7 @@ func (s *Set) Execute(txn *turing.Transaction) error {
 func (s *Set) Cardinality() int {
 	return 1
 }
+
+func (s *Set) ReadOnly() bool {
+	return false
+}

@@ -52,3 +52,7 @@ func (l *List) Execute(txn *turing.Transaction) error {
 func (l *List) Cardinality() int {
 	return 0
 }
+
+func (l *List) ReadOnly() bool {
+	return true
+}
