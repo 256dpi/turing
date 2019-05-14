@@ -16,19 +16,13 @@ import (
 
 func main() {
 	// prepare flags
-	var serverFlag = flag.String("server", "1@0.0.0.0:42010", "the server")
+	var idFlag = flag.Uint64("id", 1, "the server id")
 	var membersFlag = flag.String("members", "", "the cluster members")
 	var dirFlag = flag.String("dir", "data", "the data directory")
 	var cleanFlag = flag.Bool("clean", false, "remove existing data")
 
 	// parse flags
 	flag.Parse()
-
-	// parse member
-	server, err := turing.ParseMember(*serverFlag)
-	if err != nil {
-		panic(err)
-	}
 
 	// parse members
 	var members []turing.Member
@@ -50,7 +44,7 @@ func main() {
 	}
 
 	// append server name
-	directory = filepath.Join(directory, strconv.FormatUint(server.ID, 10))
+	directory = filepath.Join(directory, strconv.FormatUint(*idFlag, 10))
 
 	// remove all previous data if requested
 	if *cleanFlag {
@@ -62,7 +56,7 @@ func main() {
 
 	// create machine
 	machine, err := turing.Create(turing.Config{
-		Server:    server,
+		ID:        *idFlag,
 		Members:   members,
 		Directory: directory,
 		Instructions: []turing.Instruction{
@@ -92,7 +86,7 @@ func main() {
 		}
 
 		// set value
-		set := &increment{Key: strconv.FormatUint(server.ID, 10)}
+		set := &increment{Key: strconv.FormatUint(*idFlag, 10)}
 		err = machine.Execute(set)
 		if err != nil {
 			println(err.Error())

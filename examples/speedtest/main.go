@@ -32,18 +32,12 @@ func main() {
 	turing.SetLogger(nil)
 
 	// prepare flags
-	var serverFlag = flag.String("server", "1@0.0.0.0:42010", "the server")
+	var idFlag = flag.Uint64("id", 1, "the server id")
 	var membersFlag = flag.String("members", "", "the cluster members")
 	var dirFlag = flag.String("dir", "data", "the data directory")
 
 	// parse flags
 	flag.Parse()
-
-	// parse member
-	server, err := turing.ParseMember(*serverFlag)
-	if err != nil {
-		panic(err)
-	}
 
 	// parse members
 	var members []turing.Member
@@ -65,7 +59,7 @@ func main() {
 	}
 
 	// append server name
-	directory = filepath.Join(directory, strconv.FormatUint(server.ID, 10))
+	directory = filepath.Join(directory, strconv.FormatUint(*idFlag, 10))
 
 	// remove all previous data
 	err = os.RemoveAll(directory)
@@ -75,7 +69,7 @@ func main() {
 
 	// create machine
 	machine, err := turing.Create(turing.Config{
-		Server:    server,
+		ID:        *idFlag,
 		Members:   members,
 		Directory: directory,
 		Instructions: []turing.Instruction{

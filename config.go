@@ -28,6 +28,7 @@ type Config struct {
 	RoundTripTime time.Duration
 }
 
+// Local will return the local member.
 func (c *Config) Local() *Member {
 	// find member
 	for _, member := range c.Members {

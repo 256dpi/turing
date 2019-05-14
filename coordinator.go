@@ -27,7 +27,7 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 
 	// prepare config
 	rc := config.Config{
-		NodeID:             cfg.Local.ID,
+		NodeID:             cfg.ID,
 		ClusterID:          1,
 		CheckQuorum:        true,
 		ElectionRTT:        10000 / rttMS, // 10s
@@ -42,7 +42,7 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 		WALDir:         cfg.raftDir(),
 		NodeHostDir:    cfg.raftDir(),
 		RTTMillisecond: rttMS,
-		RaftAddress:    cfg.Local.raftAddr(),
+		RaftAddress:    cfg.Local().raftAddr(),
 	}
 
 	// create node
