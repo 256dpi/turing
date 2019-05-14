@@ -14,8 +14,11 @@ type Release struct {
 	Unlocked bool      `json:"unlocked"`
 }
 
-func (r *Release) Name() string {
-	return "stdset/lock.Release"
+func (r *Release) Describe() turing.Description {
+	return turing.Description{
+		Name:        "stdset/lock.Release",
+		Cardinality: 1,
+	}
 }
 
 func (r *Release) Build() turing.Instruction {
@@ -70,12 +73,4 @@ func (r *Release) Execute(txn *turing.Transaction) error {
 	}
 
 	return nil
-}
-
-func (r *Release) Cardinality() int {
-	return 1
-}
-
-func (r *Release) ReadOnly() bool {
-	return false
 }

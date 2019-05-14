@@ -11,6 +11,13 @@ type list struct {
 	Pairs map[string]int `json:"pairs,omitempty"`
 }
 
+func (l *list) Describe() turing.Description {
+	return turing.Description{
+		Name:     "list",
+		ReadOnly: true,
+	}
+}
+
 func (l *list) Name() string {
 	return "list"
 }
@@ -60,12 +67,4 @@ func (l *list) Execute(txn *turing.Transaction) error {
 	}
 
 	return nil
-}
-
-func (l *list) Cardinality() int {
-	return 0
-}
-
-func (l *list) ReadOnly() bool {
-	return true
 }

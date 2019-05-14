@@ -11,8 +11,11 @@ type Map struct {
 	Pairs  map[string][]byte `json:"pairs,omitempty"`
 }
 
-func (m *Map) Name() string {
-	return "stdset/basic.Map"
+func (m *Map) Describe() turing.Description {
+	return turing.Description{
+		Name:     "stdset/basic.Map",
+		ReadOnly: true,
+	}
 }
 
 func (m *Map) Build() turing.Instruction {
@@ -53,12 +56,4 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 	}
 
 	return nil
-}
-
-func (m *Map) Cardinality() int {
-	return 0
-}
-
-func (m *Map) ReadOnly() bool {
-	return true
 }

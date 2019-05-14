@@ -30,7 +30,7 @@ func newReplicator(config MachineConfig) *replicator {
 	// create instruction map
 	instructions := make(map[string]Instruction)
 	for _, i := range config.Instructions {
-		instructions[i.Name()] = i
+		instructions[i.Describe().Name] = i
 	}
 
 	// create replicator
@@ -119,7 +119,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		}
 
 		// increment cardinality
-		cardinality += instruction.Cardinality()
+		cardinality += instruction.Describe().Cardinality
 
 		// check if new transaction is needed
 		if cardinality >= int(r.database.MaxBatchCount()) {
@@ -133,7 +133,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 			txn = r.database.NewTransaction(true)
 
 			// reset cardinality
-			cardinality = instruction.Cardinality()
+			cardinality = instruction.Describe().Cardinality
 		}
 
 		// execute transaction

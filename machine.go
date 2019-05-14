@@ -50,7 +50,7 @@ func (m *Machine) Execute(i Instruction) error {
 
 	// prepare command
 	cmd := &command{
-		Name: i.Name(),
+		Name: i.Describe().Name,
 		Data: id,
 	}
 
@@ -64,7 +64,7 @@ func (m *Machine) Execute(i Instruction) error {
 	var result []byte
 
 	// apply command
-	if i.ReadOnly() {
+	if i.Describe().ReadOnly {
 		result, err = m.coordinator.lookup(bytes)
 		if err != nil {
 			return err

@@ -12,8 +12,11 @@ type Get struct {
 	Exists bool   `json:"exists"`
 }
 
-func (g *Get) Name() string {
-	return "stdset/basic.Get"
+func (g *Get) Describe() turing.Description {
+	return turing.Description{
+		Name:     "stdset/basic.Get",
+		ReadOnly: true,
+	}
 }
 
 func (g *Get) Build() turing.Instruction {
@@ -54,12 +57,4 @@ func (g *Get) Execute(txn *turing.Transaction) error {
 	g.Exists = true
 
 	return nil
-}
-
-func (g *Get) Cardinality() int {
-	return 0
-}
-
-func (g *Get) ReadOnly() bool {
-	return true
 }

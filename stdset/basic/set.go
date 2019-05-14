@@ -11,8 +11,11 @@ type Set struct {
 	Value []byte `json:"value"`
 }
 
-func (s *Set) Name() string {
-	return "stdset/basic.Set"
+func (s *Set) Describe() turing.Description {
+	return turing.Description{
+		Name:        "stdset/basic.Set",
+		Cardinality: 1,
+	}
 }
 
 func (s *Set) Build() turing.Instruction {
@@ -35,12 +38,4 @@ func (s *Set) Execute(txn *turing.Transaction) error {
 	}
 
 	return nil
-}
-
-func (s *Set) Cardinality() int {
-	return 1
-}
-
-func (s *Set) ReadOnly() bool {
-	return false
 }

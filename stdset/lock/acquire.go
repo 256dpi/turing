@@ -20,8 +20,11 @@ type Acquire struct {
 	Locked  bool      `json:"locked"`
 }
 
-func (a *Acquire) Name() string {
-	return "stdset/lock.Acquire"
+func (a *Acquire) Describe() turing.Description {
+	return turing.Description{
+		Name:        "stdset/lock.Acquire",
+		Cardinality: 1,
+	}
 }
 
 func (a *Acquire) Build() turing.Instruction {
@@ -86,12 +89,4 @@ func (a *Acquire) Execute(txn *turing.Transaction) error {
 	a.Locked = true
 
 	return nil
-}
-
-func (a *Acquire) Cardinality() int {
-	return 1
-}
-
-func (a *Acquire) ReadOnly() bool {
-	return false
 }

@@ -12,8 +12,11 @@ type List struct {
 	Keys    [][]byte `json:"keys,omitempty"`
 }
 
-func (l *List) Name() string {
-	return "stdset/basic.List"
+func (l *List) Describe() turing.Description {
+	return turing.Description{
+		Name:     "stdset/basic.List",
+		ReadOnly: true,
+	}
 }
 
 func (l *List) Build() turing.Instruction {
@@ -47,12 +50,4 @@ func (l *List) Execute(txn *turing.Transaction) error {
 	}
 
 	return nil
-}
-
-func (l *List) Cardinality() int {
-	return 0
-}
-
-func (l *List) ReadOnly() bool {
-	return true
 }

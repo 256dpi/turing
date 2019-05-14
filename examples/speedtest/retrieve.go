@@ -14,31 +14,38 @@ type retrieve struct {
 	Value int
 }
 
-func (l *retrieve) Name() string {
+func (r *retrieve) Describe() turing.Description {
+	return turing.Description{
+		Name:     "retrieve",
+		ReadOnly: true,
+	}
+}
+
+func (r *retrieve) Name() string {
 	return "retrieve"
 }
 
-func (l *retrieve) Build() turing.Instruction {
+func (r *retrieve) Build() turing.Instruction {
 	return &retrieve{}
 }
 
-func (l *retrieve) Encode() ([]byte, error) {
-	return json.Marshal(l)
+func (r *retrieve) Encode() ([]byte, error) {
+	return json.Marshal(r)
 }
 
-func (l *retrieve) Decode(data []byte) error {
-	return json.Unmarshal(data, l)
+func (r *retrieve) Decode(data []byte) error {
+	return json.Unmarshal(data, r)
 }
 
 var retrieveCounter = god.NewCounter("retrieve")
 var retrieveTimer = god.NewTimer("retrieve")
 
-func (l *retrieve) Execute(txn *turing.Transaction) error {
+func (r *retrieve) Execute(txn *turing.Transaction) error {
 	// measure execution
 	retrieveTimer.Measure()()
 
 	// get key
-	pair, err := txn.Get([]byte(l.Key))
+	pair, err := txn.Get([]byte(r.Key))
 	if err != nil {
 		return err
 	}
@@ -53,7 +60,7 @@ func (l *retrieve) Execute(txn *turing.Transaction) error {
 			}
 
 			// set count
-			l.Value = count
+			r.Value = count
 
 			return nil
 		})
@@ -66,12 +73,4 @@ func (l *retrieve) Execute(txn *turing.Transaction) error {
 	retrieveCounter.Add(1)
 
 	return nil
-}
-
-func (l *retrieve) Cardinality() int {
-	return 0
-}
-
-func (l *retrieve) ReadOnly() bool {
-	return true
 }

@@ -14,8 +14,11 @@ type increment struct {
 	Value int    `json:"value,omitempty"`
 }
 
-func (i *increment) Name() string {
-	return "increment"
+func (i *increment) Describe() turing.Description {
+	return turing.Description{
+		Name:        "increment",
+		Cardinality: 1,
+	}
 }
 
 func (i *increment) Build() turing.Instruction {
@@ -77,12 +80,4 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 	incrementCounter.Add(1)
 
 	return nil
-}
-
-func (i *increment) Cardinality() int {
-	return 1
-}
-
-func (i *increment) ReadOnly() bool {
-	return false
 }
