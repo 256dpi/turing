@@ -88,8 +88,6 @@ func openDatabase(dir string) (*database, uint64, error) {
 }
 
 func (d *database) update(list []Instruction, index uint64) error {
-	// TODO: Improve batching.
-
 	// prepare total effect
 	totalEffect := 0
 
@@ -118,14 +116,17 @@ func (d *database) update(list []Instruction, index uint64) error {
 			totalEffect = 0
 		}
 
+		// prepare transaction
+		transaction := &Transaction{txn: txn}
+
 		// execute transaction
-		err := instruction.Execute(&Transaction{txn: txn})
+		err := instruction.Execute(transaction)
 		if err != nil {
 			return err
 		}
 
-		// increment effect counter
-		totalEffect += effect
+		// add transaction effect
+		totalEffect += transaction.effect
 	}
 
 	// set index

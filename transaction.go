@@ -25,7 +25,8 @@ func (p *Pair) CopyValue(buf []byte) ([]byte, error) {
 }
 
 type Transaction struct {
-	txn *badger.Txn
+	txn    *badger.Txn
+	effect int
 }
 
 func (t *Transaction) Get(key []byte) (*Pair, error) {
@@ -52,6 +53,9 @@ func (t *Transaction) Set(key, value []byte) error {
 		return err
 	}
 
+	// increment effect
+	t.effect++
+
 	return nil
 }
 
@@ -62,7 +66,14 @@ func (t *Transaction) Delete(key []byte) error {
 		return err
 	}
 
+	// increment effect
+	t.effect++
+
 	return nil
+}
+
+func (t *Transaction) Effect() int {
+	return t.effect
 }
 
 func (t *Transaction) Iterator(config IteratorConfig) *Iterator {
