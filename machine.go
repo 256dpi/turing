@@ -34,6 +34,9 @@ func Create(config Config) (*Machine, error) {
 
 // Execute will execute the specified instruction.
 func (m *Machine) Execute(instruction Instruction) error {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("Machine.Execute"))()
+
 	// validate instruction
 	err := instruction.Describe().Validate()
 	if err != nil {

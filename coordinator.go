@@ -16,6 +16,9 @@ type coordinator struct {
 }
 
 func createCoordinator(cfg Config) (*coordinator, error) {
+	// observe
+	observe(operationMetrics.WithLabelValues("createCoordinator"))()
+
 	// prepare members
 	members := make(map[uint64]string)
 	for _, member := range cfg.Members {
@@ -71,6 +74,9 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 }
 
 func (c *coordinator) update(cmd []byte) ([]byte, error) {
+	// observe
+	observe(operationMetrics.WithLabelValues("coordinator.update"))()
+
 	// prepare context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -88,6 +94,9 @@ func (c *coordinator) update(cmd []byte) ([]byte, error) {
 }
 
 func (c *coordinator) lookup(cmd []byte) ([]byte, error) {
+	// observe
+	observe(operationMetrics.WithLabelValues("coordinator.lookup"))()
+
 	// prepare context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -102,6 +111,9 @@ func (c *coordinator) lookup(cmd []byte) ([]byte, error) {
 }
 
 func (c *coordinator) status() Status {
+	// observe
+	observe(operationMetrics.WithLabelValues("coordinator.status"))()
+
 	// get info
 	info := c.node.GetNodeHostInfo()
 
@@ -160,6 +172,9 @@ func (c *coordinator) status() Status {
 }
 
 func (c *coordinator) close() {
+	// observe
+	observe(operationMetrics.WithLabelValues("coordinator.close"))()
+
 	// stop node
 	c.node.Stop()
 }

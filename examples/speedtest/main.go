@@ -31,6 +31,9 @@ func main() {
 	// disable logging
 	turing.SetLogger(nil)
 
+	// register metrics
+	turing.RegisterMetrics()
+
 	// prepare flags
 	var idFlag = flag.Uint64("id", 1, "the server id")
 	var membersFlag = flag.String("members", "", "the cluster members")

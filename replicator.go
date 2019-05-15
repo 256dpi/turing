@@ -53,6 +53,9 @@ func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 }
 
 func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("replicator.update"))()
+
 	// prepare instruction list
 	list := make([]Instruction, len(entries))
 
@@ -114,6 +117,9 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 }
 
 func (r *replicator) Lookup(data []byte) ([]byte, error) {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("replicator.lookup"))()
+
 	// parse command
 	var cmd command
 	err := json.Unmarshal(data, &cmd)

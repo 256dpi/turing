@@ -17,6 +17,9 @@ type database struct {
 }
 
 func openDatabase(dir string) (*database, uint64, error) {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("database.open"))()
+
 	// ensure directory
 	err := os.MkdirAll(dir, 0700)
 	if err != nil {
@@ -88,6 +91,9 @@ func openDatabase(dir string) (*database, uint64, error) {
 }
 
 func (d *database) update(list []Instruction, index uint64) error {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("database.update"))()
+
 	// calculate max effect (90% of max batch count)
 	maxEffect := int(float64(d.bdb.MaxBatchCount()) * 0.9)
 
@@ -99,6 +105,9 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 	// execute all instructions
 	for _, instruction := range list {
+		// begin observation
+		finish := observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))
+
 		// get estimated effect of instruction
 		estimatedEffect := instruction.Describe().Effect
 
@@ -130,6 +139,9 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 		// add transaction effect
 		totalEffect += transaction.effect
+
+		// finish observation
+		finish()
 	}
 
 	// set index
@@ -148,6 +160,10 @@ func (d *database) update(list []Instruction, index uint64) error {
 }
 
 func (d *database) lookup(instruction Instruction) error {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("database.lookup"))()
+	defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))
+
 	// execute instruction
 	err := d.bdb.View(func(txn *badger.Txn) error {
 		return instruction.Execute(&Transaction{txn: txn})
@@ -160,6 +176,9 @@ func (d *database) lookup(instruction Instruction) error {
 }
 
 func (d *database) backup(sink io.Writer) error {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("database.backup"))()
+
 	// perform backup
 	_, err := d.bdb.Backup(sink, 0)
 	if err != nil {
@@ -170,6 +189,9 @@ func (d *database) backup(sink io.Writer) error {
 }
 
 func (d *database) restore(source io.Reader) error {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("database.restore"))()
+
 	// TODO: Clear database beforehand?
 
 	// load backup
@@ -182,6 +204,9 @@ func (d *database) restore(source io.Reader) error {
 }
 
 func (d *database) close() error {
+	// observe
+	defer observe(operationMetrics.WithLabelValues("database.close"))()
+
 	// close database
 	err := d.bdb.Close()
 	if err != nil {
