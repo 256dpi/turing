@@ -94,6 +94,9 @@ func (d *database) update(list []Instruction, index uint64) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.update"))()
 
+	// count batch size
+	databaseMetrics.WithLabelValues("batch_length").Observe(float64(len(list)))
+
 	// calculate max effect (90% of max batch count)
 	maxEffect := int(float64(d.bdb.MaxBatchCount()) * 0.9)
 
@@ -102,6 +105,9 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 	// create initial transaction
 	txn := d.bdb.NewTransaction(true)
+
+	// prepare transaction count
+	transactionCount := 1
 
 	// execute all instructions
 	for _, instruction := range list {
@@ -123,6 +129,9 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 			// create new transaction
 			txn = d.bdb.NewTransaction(true)
+
+			// increment transaction count
+			transactionCount++
 
 			// reset total effect
 			totalEffect = 0
@@ -155,6 +164,9 @@ func (d *database) update(list []Instruction, index uint64) error {
 	if err != nil {
 		return err
 	}
+
+	// count transaction count
+	databaseMetrics.WithLabelValues("transaction_count").Observe(float64(transactionCount))
 
 	return nil
 }

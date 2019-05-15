@@ -20,10 +20,18 @@ var instructionMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Help:      "Instruction execution timings in milliseconds.",
 }, []string{"name"})
 
+var databaseMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "turing",
+	Subsystem: "",
+	Name:      "database",
+	Help:      "Various database metrics.",
+}, []string{"metric"})
+
 // RegisterMetrics will register prometheus metrics.
 func RegisterMetrics() {
 	prometheus.MustRegister(operationMetrics)
 	prometheus.MustRegister(instructionMetrics)
+	prometheus.MustRegister(databaseMetrics)
 }
 
 func observe(summary prometheus.Observer) func() {
