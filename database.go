@@ -162,7 +162,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 func (d *database) lookup(instruction Instruction) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.lookup"))()
-	defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))
+	defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))()
 
 	// execute instruction
 	err := d.bdb.View(func(txn *badger.Txn) error {
