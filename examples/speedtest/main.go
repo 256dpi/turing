@@ -24,16 +24,6 @@ const keySpace = 1000
 var wg sync.WaitGroup
 
 func main() {
-	// enable debugging
-	god.Debug()
-	god.Metrics()
-
-	// disable logging
-	turing.SetLogger(nil)
-
-	// register metrics
-	turing.RegisterMetrics()
-
 	// prepare flags
 	var idFlag = flag.Uint64("id", 1, "the server id")
 	var membersFlag = flag.String("members", "", "the cluster members")
@@ -41,6 +31,16 @@ func main() {
 
 	// parse flags
 	flag.Parse()
+
+	// enable debugging
+	god.Debug(6060 + int(*idFlag))
+	god.Metrics()
+
+	// disable logging
+	turing.SetLogger(nil)
+
+	// register metrics
+	turing.RegisterMetrics()
 
 	// parse members
 	var members []turing.Member
