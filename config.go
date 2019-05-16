@@ -26,6 +26,9 @@ type Config struct {
 
 	// The average round trip time.
 	RoundTripTime time.Duration
+
+	// Whether development mode should be enabled.
+	Development bool
 }
 
 // Local will return the local member.
@@ -41,8 +44,13 @@ func (c *Config) Local() *Member {
 }
 
 func (c *Config) check() error {
+	// check id
+	if c.ID == 0 && !c.Development {
+		return errors.New("turing: missing id")
+	}
+
 	// check local member
-	if c.Local() == nil {
+	if c.Local() == nil && !c.Development {
 		return errors.New("turing: missing local member")
 	}
 
