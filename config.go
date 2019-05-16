@@ -3,7 +3,9 @@ package turing
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -64,7 +66,27 @@ func (c *Config) check() error {
 
 	// check directory
 	if c.Directory == "" {
-		return errors.New("turing: missing directory")
+		// return error in normal mode
+		if !c.Development {
+			return errors.New("turing: missing directory")
+		}
+
+		// otherwise use temporary director in development mode
+
+		// get temporary directory
+		tempDir, err := ioutil.TempDir("", "turing")
+		if err != nil {
+			return err
+		}
+
+		// clear temporary directory
+		err = os.RemoveAll(tempDir)
+		if err != nil {
+			return err
+		}
+
+		// set directory
+		c.Directory = tempDir
 	}
 
 	// check round trip time
