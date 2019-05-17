@@ -28,6 +28,7 @@ func main() {
 	var idFlag = flag.Uint64("id", 1, "the server id")
 	var membersFlag = flag.String("members", "", "the cluster members")
 	var dirFlag = flag.String("dir", "data", "the data directory")
+	var devFlag = flag.Bool("dev", false, "enable development mode")
 
 	// parse flags
 	flag.Parse()
@@ -44,15 +45,17 @@ func main() {
 
 	// parse members
 	var members []turing.Member
-	for _, member := range strings.Split(*membersFlag, ",") {
-		// parse member
-		member, err := turing.ParseMember(member)
-		if err != nil {
-			panic(err)
-		}
+	if *membersFlag !="" {
+		for _, member := range strings.Split(*membersFlag, ",") {
+			// parse member
+			member, err := turing.ParseMember(member)
+			if err != nil {
+				panic(err)
+			}
 
-		// add member
-		members = append(members, member)
+			// add member
+			members = append(members, member)
+		}
 	}
 
 	// resolve directory
@@ -72,9 +75,10 @@ func main() {
 
 	// create machine
 	machine, err := turing.Create(turing.Config{
-		ID:        *idFlag,
-		Members:   members,
-		Directory: directory,
+		ID:          *idFlag,
+		Members:     members,
+		Directory:   directory,
+		Development: *devFlag,
 		Instructions: []turing.Instruction{
 			&increment{}, &retrieve{},
 		},
