@@ -21,24 +21,24 @@ type Role int
 const (
 	_ Role = iota
 
-	// Leader is the elected leader of a cluster.
-	Leader
+	// RoleLeader is the elected leader of a cluster.
+	RoleLeader
 
-	// Follower is a electable cluster member.
-	Follower
+	// RoleFollower is a electable cluster member.
+	RoleFollower
 
-	// Observer is non-electable cluster member.
-	Observer
+	// RoleObserver is non-electable cluster member.
+	RoleObserver
 )
 
 // String implements the name of the role.
 func (r Role) String() string {
 	switch r {
-	case Leader:
+	case RoleLeader:
 		return "Leader"
-	case Follower:
+	case RoleFollower:
 		return "Follower"
-	case Observer:
+	case RoleObserver:
 		return "Observer"
 	default:
 		return "Unknown"

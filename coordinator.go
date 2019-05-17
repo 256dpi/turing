@@ -119,7 +119,7 @@ func (c *coordinator) status() Status {
 
 	// prepare id and role
 	var id uint64
-	role := Follower
+	role := RoleFollower
 
 	// prepare members
 	var members []Member
@@ -131,12 +131,12 @@ func (c *coordinator) status() Status {
 
 		// set observer
 		if info.ClusterInfoList[0].IsObserver {
-			role = Observer
+			role = RoleObserver
 		}
 
 		// set leader
 		if info.ClusterInfoList[0].IsLeader {
-			role = Leader
+			role = RoleLeader
 		}
 
 		// parse members
