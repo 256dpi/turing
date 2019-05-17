@@ -28,19 +28,19 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 	// calculate rrt in ms
 	var rttMS = uint64(cfg.RoundTripTime / time.Millisecond)
 
-	// prepare config
-	rc := config.Config{
-		NodeID:             cfg.ID,
+	// prepare node config
+	nodeConfig := config.Config{
+		NodeID:             cfg.Member,
 		ClusterID:          1,
 		CheckQuorum:        true,
-		ElectionRTT:        10000 / rttMS, // 10s
+		ElectionRTT:        5000 / rttMS, // 5s
 		HeartbeatRTT:       1000 / rttMS,  // 1s
 		SnapshotEntries:    10000,
 		CompactionOverhead: 10000,
 	}
 
 	// prepare node host config
-	nhc := config.NodeHostConfig{
+	hostConfig := config.NodeHostConfig{
 		DeploymentID:   clusterID,
 		WALDir:         cfg.raftDir(),
 		NodeHostDir:    cfg.raftDir(),
@@ -48,8 +48,8 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 		RaftAddress:    cfg.Local().raftAddr(),
 	}
 
-	// create node
-	node, err := dragonboat.NewNodeHost(nhc)
+	// create node host
+	node, err := dragonboat.NewNodeHost(hostConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -60,17 +60,17 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 	}
 
 	// start cluster
-	err = node.StartOnDiskCluster(members, false, factory, rc)
+	err = node.StartOnDiskCluster(members, false, factory, nodeConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	// create coordinator
-	rn := &coordinator{
+	coordinator := &coordinator{
 		node: node,
 	}
 
-	return rn, nil
+	return coordinator, nil
 }
 
 func (c *coordinator) update(cmd []byte) ([]byte, error) {
@@ -162,10 +162,10 @@ func (c *coordinator) status() Status {
 
 	// create status
 	status := Status{
-		ID:      id,
-		Role:    role,
-		Leader:  leader,
-		Members: members,
+		MemberID: id,
+		Role:     role,
+		Leader:   leader,
+		Members:  members,
 	}
 
 	return status

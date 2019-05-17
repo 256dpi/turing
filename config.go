@@ -14,10 +14,10 @@ import (
 
 // Config is used to configure a machine.
 type Config struct {
-	// The server id.
-	ID uint64
+	// The id of this member.
+	Member uint64
 
-	// The cluster members.
+	// All cluster members.
 	Members []Member
 
 	// The storage directory.
@@ -37,7 +37,7 @@ type Config struct {
 func (c *Config) Local() *Member {
 	// find member
 	for _, member := range c.Members {
-		if member.ID == c.ID {
+		if member.ID == c.Member {
 			return &member
 		}
 	}
@@ -47,7 +47,7 @@ func (c *Config) Local() *Member {
 
 func (c *Config) check() error {
 	// check id
-	if c.ID == 0 && !c.Development {
+	if c.Member == 0 && !c.Development {
 		return errors.New("turing: missing id")
 	}
 

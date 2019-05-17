@@ -2,10 +2,10 @@ package turing
 
 // Status contains information about the cluster.
 type Status struct {
-	// The id of this server.
-	ID uint64
+	// The id of this member.
+	MemberID uint64
 
-	// The role of this server.
+	// The role of this member.
 	Role Role
 
 	// The cluster leader.

@@ -56,7 +56,7 @@ func main() {
 
 	// start machine
 	machine, err := turing.Start(turing.Config{
-		ID:        *idFlag,
+		Member:    *idFlag,
 		Members:   members,
 		Directory: directory,
 		Instructions: []turing.Instruction{
