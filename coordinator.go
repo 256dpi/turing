@@ -15,7 +15,7 @@ type coordinator struct {
 	node *dragonboat.NodeHost
 }
 
-func createCoordinator(cfg Config) (*coordinator, error) {
+func createCoordinator(cfg Config, manager *manager) (*coordinator, error) {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("createCoordinator"))()
 
@@ -33,7 +33,7 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 		NodeID:             cfg.Member,
 		ClusterID:          1,
 		CheckQuorum:        true,
-		ElectionRTT:        5000 / rttMS, // 5s
+		ElectionRTT:        10000 / rttMS, // 10s
 		HeartbeatRTT:       1000 / rttMS,  // 1s
 		SnapshotEntries:    10000,
 		CompactionOverhead: 10000,
@@ -56,7 +56,7 @@ func createCoordinator(cfg Config) (*coordinator, error) {
 
 	// prepare replicator factory
 	factory := func(uint64, uint64) statemachine.IOnDiskStateMachine {
-		return newReplicator(cfg)
+		return newReplicator(cfg, manager)
 	}
 
 	// start cluster

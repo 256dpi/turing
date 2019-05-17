@@ -19,11 +19,12 @@ type command struct {
 
 type replicator struct {
 	config       Config
+	manager      *manager
 	database     *database
 	instructions map[string]Instruction
 }
 
-func newReplicator(config Config) *replicator {
+func newReplicator(config Config, manager *manager) *replicator {
 	// create instruction map
 	instructions := make(map[string]Instruction)
 	for _, i := range config.Instructions {
@@ -33,6 +34,7 @@ func newReplicator(config Config) *replicator {
 	// create replicator
 	replicator := &replicator{
 		config:       config,
+		manager:      manager,
 		instructions: instructions,
 	}
 
@@ -41,7 +43,7 @@ func newReplicator(config Config) *replicator {
 
 func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	// open database
-	database, index, err := openDatabase(r.config.dbDir())
+	database, index, err := openDatabase(r.config.dbDir(), r.manager)
 	if err != nil {
 		return 0, err
 	}

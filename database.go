@@ -13,10 +13,11 @@ import (
 var indexKey = []byte("$index")
 
 type database struct {
-	bdb *badger.DB
+	badger  *badger.DB
+	manager *manager
 }
 
-func openDatabase(dir string) (*database, uint64, error) {
+func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.open"))()
 
@@ -84,8 +85,12 @@ func openDatabase(dir string) (*database, uint64, error) {
 
 	// create database
 	db := &database{
-		bdb: bdb,
+		badger:  bdb,
+		manager: manager,
 	}
+
+	// init manager
+	manager.init()
 
 	return db, index, nil
 }
@@ -98,13 +103,13 @@ func (d *database) update(list []Instruction, index uint64) error {
 	databaseMetrics.WithLabelValues("batch_length").Observe(float64(len(list)))
 
 	// calculate max effect (90% of max batch count)
-	maxEffect := int(float64(d.bdb.MaxBatchCount()) * 0.9)
+	maxEffect := int(float64(d.badger.MaxBatchCount()) * 0.9)
 
 	// prepare total effect
 	totalEffect := 0
 
 	// create initial transaction
-	txn := d.bdb.NewTransaction(true)
+	txn := d.badger.NewTransaction(true)
 
 	// prepare transaction count
 	transactionCount := 1
@@ -128,7 +133,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 			}
 
 			// create new transaction
-			txn = d.bdb.NewTransaction(true)
+			txn = d.badger.NewTransaction(true)
 
 			// increment transaction count
 			transactionCount++
@@ -165,6 +170,11 @@ func (d *database) update(list []Instruction, index uint64) error {
 		return err
 	}
 
+	// yield to manager
+	for _, instruction := range list {
+		d.manager.process(instruction)
+	}
+
 	// count transaction count
 	databaseMetrics.WithLabelValues("transaction_count").Observe(float64(transactionCount))
 
@@ -177,7 +187,7 @@ func (d *database) lookup(instruction Instruction) error {
 	defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))()
 
 	// execute instruction
-	err := d.bdb.View(func(txn *badger.Txn) error {
+	err := d.badger.View(func(txn *badger.Txn) error {
 		return instruction.Execute(&Transaction{txn: txn})
 	})
 	if err != nil {
@@ -192,7 +202,7 @@ func (d *database) backup(sink io.Writer) error {
 	defer observe(operationMetrics.WithLabelValues("database.backup"))()
 
 	// perform backup
-	_, err := d.bdb.Backup(sink, 0)
+	_, err := d.badger.Backup(sink, 0)
 	if err != nil {
 		return err
 	}
@@ -207,7 +217,7 @@ func (d *database) restore(source io.Reader) error {
 	// TODO: Clear database beforehand?
 
 	// load backup
-	err := d.bdb.Load(source)
+	err := d.badger.Load(source)
 	if err != nil {
 		return err
 	}
@@ -220,7 +230,7 @@ func (d *database) close() error {
 	defer observe(operationMetrics.WithLabelValues("database.close"))()
 
 	// close database
-	err := d.bdb.Close()
+	err := d.badger.Close()
 	if err != nil {
 		return err
 	}

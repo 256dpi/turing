@@ -70,6 +70,9 @@ func main() {
 	// ensure stop
 	defer machine.Stop()
 
+	// subscribe observer
+	machine.Subscribe(&observer{})
+
 	// run printer
 	go printer(machine)
 
@@ -93,9 +96,6 @@ func main() {
 			time.Sleep(time.Second)
 			continue
 		}
-
-		// print instruction
-		fmt.Printf("==> %+v\n", set)
 
 		// list values
 		list := &list{}

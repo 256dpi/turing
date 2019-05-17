@@ -7,6 +7,7 @@ import (
 // Machine maintains a raft cluster with members and maintains consensus about the
 // execute instructions on the distributed data store.
 type Machine struct {
+	manager     *manager
 	coordinator *coordinator
 	development *database
 }
@@ -20,11 +21,13 @@ func Start(config Config) (*Machine, error) {
 	}
 
 	// create machine
-	m := &Machine{}
+	m := &Machine{
+		manager: newManager(),
+	}
 
 	// create coordinator in normal mode
 	if !config.Development {
-		m.coordinator, err = createCoordinator(config)
+		m.coordinator, err = createCoordinator(config, m.manager)
 		if err != nil {
 			return nil, err
 		}
@@ -32,7 +35,7 @@ func Start(config Config) (*Machine, error) {
 
 	// create database in development mode
 	if config.Development {
-		m.development, _, err = openDatabase(config.dbDir())
+		m.development, _, err = openDatabase(config.dbDir(), m.manager)
 		if err != nil {
 			return nil, err
 		}
@@ -106,6 +109,16 @@ func (m *Machine) Execute(instruction Instruction) error {
 	}
 
 	return nil
+}
+
+// Subscribe will subscribe the provided observer.
+func (m *Machine) Subscribe(observer Observer) {
+	m.manager.subscribe(observer)
+}
+
+// Unsubscribe will unsubscribe the provided observer.
+func (m *Machine) Unsubscribe(observer Observer) {
+	m.manager.unsubscribe(observer)
 }
 
 // Status will return the current status.
