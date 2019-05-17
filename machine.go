@@ -11,8 +11,8 @@ type Machine struct {
 	development *database
 }
 
-// Create will create a new machine using the specified configuration.
-func Create(config Config) (*Machine, error) {
+// Start will create a new machine using the specified configuration.
+func Start(config Config) (*Machine, error) {
 	// check config
 	err := config.check()
 	if err != nil {
@@ -118,8 +118,8 @@ func (m *Machine) Status() Status {
 	return Status{}
 }
 
-// Close will close the machine.
-func (m *Machine) Close() {
+// Stop will stop the machine.
+func (m *Machine) Stop() {
 	// close development db
 	if m.development != nil {
 		_ = m.development.close()

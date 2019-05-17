@@ -73,8 +73,8 @@ func main() {
 		panic(err)
 	}
 
-	// create machine
-	machine, err := turing.Create(turing.Config{
+	// start machine
+	machine, err := turing.Start(turing.Config{
 		ID:          *idFlag,
 		Members:     members,
 		Directory:   directory,
@@ -87,8 +87,8 @@ func main() {
 		panic(err)
 	}
 
-	// ensure closing
-	defer machine.Close()
+	// ensure stop
+	defer machine.Stop()
 
 	// create control channel
 	done := make(chan struct{})
