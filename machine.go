@@ -49,21 +49,24 @@ func (m *Machine) Execute(instruction Instruction) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("Machine.Execute"))()
 
+	// get description
+	description := instruction.Describe()
+
+	// validate instruction
+	err := description.Validate()
+	if err != nil {
+		return err
+	}
+
 	// execute directly in development mode
 	if m.development != nil {
 		// perform lookup
-		if instruction.Describe().Effect == 0 {
+		if description.Effect == 0 {
 			return m.development.lookup(instruction)
 		}
 
 		// perform update
 		return m.development.update([]Instruction{instruction}, 0)
-	}
-
-	// validate instruction
-	err := instruction.Describe().Validate()
-	if err != nil {
-		return err
 	}
 
 	// encode instruction
@@ -74,7 +77,7 @@ func (m *Machine) Execute(instruction Instruction) error {
 
 	// prepare command
 	cmd := &command{
-		Name: instruction.Describe().Name,
+		Name: description.Name,
 		Data: id,
 	}
 
@@ -88,8 +91,8 @@ func (m *Machine) Execute(instruction Instruction) error {
 	var result []byte
 
 	// apply command
-	if instruction.Describe().Effect == 0 {
-		result, err = m.coordinator.lookup(bytes)
+	if description.Effect == 0 {
+		result, err = m.coordinator.lookup(bytes, description.NonLinear)
 		if err != nil {
 			return err
 		}

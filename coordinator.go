@@ -93,13 +93,25 @@ func (c *coordinator) update(cmd []byte) ([]byte, error) {
 	return result.Data, nil
 }
 
-func (c *coordinator) lookup(cmd []byte) ([]byte, error) {
+func (c *coordinator) lookup(cmd []byte, nonLinear bool) ([]byte, error) {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("coordinator.lookup"))()
 
 	// prepare context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
+	// TODO: Perform lookup on database instance directly?
+
+	// use faster non linear read if available
+	if nonLinear {
+		result, err := c.node.ReadLocal(clusterID, cmd)
+		if err != nil {
+			return nil, err
+		}
+
+		return result, nil
+	}
 
 	// lookup data
 	result, err := c.node.SyncRead(ctx, clusterID, cmd)
