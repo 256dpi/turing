@@ -7,7 +7,7 @@ import (
 )
 
 // MaxEffect is maximum effect that can be reported by an instruction.
-// Instructions with a bigger effect should report an unbounded effect.
+// Instructions with a bigger effect must report an unbounded effect.
 const MaxEffect = 1000
 
 // UnboundedEffect can be used as an effect if the instruction potentially

@@ -105,14 +105,10 @@ func (d *database) update(list []Instruction, index uint64) error {
 	// calculate max effect (90% of max batch count)
 	maxEffect := int(float64(d.badger.MaxBatchCount()) * 0.9)
 
-	// prepare total effect
-	totalEffect := 0
-
 	// create initial transaction
 	txn := d.badger.NewTransaction(true)
-
-	// prepare transaction count
 	transactionCount := 1
+	accumulatedEffect := 0
 
 	// execute all instructions
 	for _, instruction := range list {
@@ -122,10 +118,8 @@ func (d *database) update(list []Instruction, index uint64) error {
 		// get estimated effect of instruction
 		estimatedEffect := instruction.Describe().Effect
 
-		// TODO: Run unbounded instructions in multiple runs.
-
-		// check if new transaction is needed
-		if estimatedEffect < 0 || totalEffect+estimatedEffect >= maxEffect {
+		// check if new transaction is needed for bounded transaction
+		if estimatedEffect > 0 && accumulatedEffect+estimatedEffect >= maxEffect {
 			// commit current transaction
 			err := txn.Commit()
 			if err != nil {
@@ -134,25 +128,42 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 			// create new transaction
 			txn = d.badger.NewTransaction(true)
-
-			// increment transaction count
 			transactionCount++
-
-			// reset total effect
-			totalEffect = 0
+			accumulatedEffect = 0
 		}
 
-		// prepare transaction
-		transaction := &Transaction{txn: txn}
+		// prepare wrapper
+		wrapper := &Transaction{txn: txn}
 
 		// execute transaction
-		err := instruction.Execute(transaction)
-		if err != nil {
-			return err
+		for {
+			err := instruction.Execute(wrapper)
+			if err == ErrMaxEffect {
+				// persist changes
+				err = txn.Commit()
+				if err != nil {
+					return err
+				}
+
+				// create new transaction
+				txn = d.badger.NewTransaction(true)
+				transactionCount++
+				accumulatedEffect = 0
+
+				// reset wrapper
+				wrapper = &Transaction{txn: txn}
+
+				continue
+			}
+			if err != nil {
+				return err
+			}
+
+			break
 		}
 
-		// add transaction effect
-		totalEffect += transaction.effect
+		// add effect from uncommitted transaction
+		accumulatedEffect += wrapper.effect
 
 		// finish observation
 		finish()

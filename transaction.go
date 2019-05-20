@@ -1,8 +1,15 @@
 package turing
 
 import (
+	"errors"
+
 	"github.com/dgraph-io/badger"
 )
+
+// ErrMaxEffect is returned by a transaction if the effect limit has been
+// reached. The instruction should return with this error to have the current
+// changes persistent and be executed again to persist the remaining changes.
+var ErrMaxEffect = errors.New("max effect")
 
 // Transaction is used by an instruction to perform changes to the data store.
 type Transaction struct {
@@ -33,7 +40,9 @@ func (t *Transaction) Get(key []byte) (*Pair, error) {
 func (t *Transaction) Set(key, value []byte) error {
 	// set key to value
 	err := t.txn.Set(userPrefix(key), value)
-	if err != nil {
+	if err == badger.ErrTxnTooBig {
+		return ErrMaxEffect
+	} else if err != nil {
 		return err
 	}
 
@@ -48,7 +57,9 @@ func (t *Transaction) Set(key, value []byte) error {
 func (t *Transaction) Delete(key []byte) error {
 	// delete key
 	err := t.txn.Delete(userPrefix(key))
-	if err != nil {
+	if err == badger.ErrTxnTooBig {
+		return ErrMaxEffect
+	} else if err != nil {
 		return err
 	}
 
@@ -64,7 +75,8 @@ func (t *Transaction) Effect() int {
 }
 
 // Iterator will construct and return a new iterator. The iterator must be
-// closed as soon as it is not used anymore.
+// closed as soon as it is not used anymore. There can be only one iterator
+// created at a time.
 func (t *Transaction) Iterator(prefix []byte, prefetch, reverse bool) *Iterator {
 	return &Iterator{
 		iter: t.txn.NewIterator(badger.IteratorOptions{

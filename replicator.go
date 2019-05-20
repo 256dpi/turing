@@ -10,8 +10,6 @@ import (
 
 // TODO: Handle conflicts.
 
-// TODO: Handle too big transactions.
-
 type command struct {
 	Name string `json:"name"`
 	Data []byte `json:"data"`
