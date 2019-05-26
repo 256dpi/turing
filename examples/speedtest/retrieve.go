@@ -17,6 +17,8 @@ type retrieve struct {
 }
 
 func (r *retrieve) Describe() turing.Description {
+	// TODO: Enable non linear reads.
+
 	return turing.Description{
 		Name: "retrieve",
 	}

@@ -17,7 +17,7 @@ require (
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/lni/dragonboat v2.1.1-0.20190510072938-300c193b88df+incompatible
+	github.com/lni/dragonboat v2.1.1-0.20190526105346-79c2c43f71e3+incompatible
 	github.com/montanaflynn/stats v0.5.0
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect
 	github.com/pkg/errors v0.8.1 // indirect

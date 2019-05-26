@@ -2,7 +2,7 @@ package turing
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 
 	"github.com/lni/dragonboat/statemachine"
@@ -52,7 +52,7 @@ func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	return index, nil
 }
 
-func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
+func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry, error) {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("replicator.update"))()
 
@@ -68,13 +68,13 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		var cmd command
 		err := json.Unmarshal(entries[i].Cmd, &cmd)
 		if err != nil {
-			panic(err.Error())
+			return nil, err
 		}
 
 		// get factory instruction
 		factory, ok := r.instructions[cmd.Name]
 		if !ok {
-			panic("missing instruction: " + cmd.Name)
+			return nil, fmt.Errorf("missing instruction: " + cmd.Name)
 		}
 
 		// create new instruction
@@ -83,7 +83,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		// decode instruction
 		err = decodeInstruction(cmd.Data, instruction)
 		if err != nil {
-			panic(err.Error())
+			return nil, err
 		}
 
 		// add instruction
@@ -96,7 +96,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 	// execute instructions
 	err := r.database.update(list, index)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	// encode instructions
@@ -104,7 +104,7 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		// encode instruction
 		bytes, err := encodeInstruction(list[i])
 		if err != nil {
-			panic(err.Error())
+			return nil, err
 		}
 
 		// set result
@@ -113,48 +113,27 @@ func (r *replicator) Update(entries []statemachine.Entry) []statemachine.Entry {
 		}
 	}
 
-	return entries
+	return entries, nil
 }
 
-func (r *replicator) Lookup(data []byte) ([]byte, error) {
+func (r *replicator) Sync() error {
+	return nil
+}
+
+func (r *replicator) Lookup(data interface{}) (interface{}, error) {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("replicator.lookup"))()
 
-	// parse command
-	var cmd command
-	err := json.Unmarshal(data, &cmd)
-	if err != nil {
-		return nil, err
-	}
-
-	// get factory instruction
-	factory, ok := r.instructions[cmd.Name]
-	if !ok {
-		return nil, errors.New("missing instruction: " + cmd.Name)
-	}
-
-	// create new instruction
-	instruction := buildInstruction(factory)
-
-	// decode instruction
-	err = decodeInstruction(cmd.Data, instruction)
-	if err != nil {
-		return nil, err
-	}
+	// get instruction
+	instruction := data.(Instruction)
 
 	// perform lookup
-	err = r.database.lookup(instruction)
+	err := r.database.lookup(instruction)
 	if err != nil {
 		return nil, err
 	}
 
-	// encode instruction
-	bytes, err := encodeInstruction(instruction)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
+	return instruction, nil
 }
 
 func (r *replicator) PrepareSnapshot() (interface{}, error) {
@@ -169,10 +148,6 @@ func (r *replicator) RecoverFromSnapshot(source io.Reader, abort <-chan struct{}
 	return r.database.restore(source)
 }
 
-func (r *replicator) Close() {
-	_ = r.database.close()
-}
-
-func (r *replicator) GetHash() uint64 {
-	return 42
+func (r *replicator) Close() error {
+	return r.database.close()
 }

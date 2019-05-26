@@ -69,6 +69,16 @@ func (m *Machine) Execute(instruction Instruction) error {
 		return m.development.update([]Instruction{instruction}, 0)
 	}
 
+	// immediately execute lookups$
+	if description.Effect == 0 {
+		err = m.coordinator.lookup(instruction, description.NonLinear)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	// encode instruction
 	id, err := encodeInstruction(instruction)
 	if err != nil {
@@ -87,20 +97,10 @@ func (m *Machine) Execute(instruction Instruction) error {
 		return err
 	}
 
-	// prepare result
-	var result []byte
-
 	// apply command
-	if description.Effect == 0 {
-		result, err = m.coordinator.lookup(bytes, description.NonLinear)
-		if err != nil {
-			return err
-		}
-	} else {
-		result, err = m.coordinator.update(bytes)
-		if err != nil {
-			return err
-		}
+	result, err := m.coordinator.update(bytes)
+	if err != nil {
+		return err
 	}
 
 	// decode result
