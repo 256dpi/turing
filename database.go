@@ -195,10 +195,12 @@ func (d *database) update(list []Instruction, index uint64) error {
 func (d *database) lookup(instruction Instruction) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.lookup"))()
-	defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))()
 
 	// execute instruction
 	err := d.badger.View(func(txn *badger.Txn) error {
+		// observe
+		defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))()
+
 		return instruction.Execute(&Transaction{txn: txn})
 	})
 	if err != nil {

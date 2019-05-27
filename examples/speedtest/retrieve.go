@@ -9,7 +9,6 @@ import (
 )
 
 var retrieveCounter = god.NewCounter("retrieve")
-var retrieveTimer = god.NewTimer("retrieve")
 
 type retrieve struct {
 	Key   string
@@ -23,9 +22,6 @@ func (r *retrieve) Describe() turing.Description {
 }
 
 func (r *retrieve) Execute(txn *turing.Transaction) error {
-	// measure execution
-	retrieveTimer.Measure()()
-
 	// get key
 	pair, err := txn.Get([]byte(r.Key))
 	if err != nil {

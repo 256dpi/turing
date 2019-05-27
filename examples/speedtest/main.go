@@ -45,7 +45,7 @@ func main() {
 
 	// parse members
 	var members []turing.Member
-	if *membersFlag !="" {
+	if *membersFlag != "" {
 		for _, member := range strings.Split(*membersFlag, ",") {
 			// parse member
 			member, err := turing.ParseMember(member)
@@ -116,7 +116,6 @@ func main() {
 }
 
 var writeCounter = god.NewCounter("write")
-var writeTimer = god.NewTimer("write")
 
 func writer(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
@@ -130,9 +129,6 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 			return
 		default:
 		}
-
-		// measure start
-		start := time.Now()
 
 		// prepare instruction
 		increment := &increment{
@@ -149,12 +145,10 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 
 		// increment
 		writeCounter.Add(1)
-		writeTimer.Add(time.Since(start))
 	}
 }
 
 var readCounter = god.NewCounter("read")
-var readTimer = god.NewTimer("read")
 
 func reader(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
@@ -168,9 +162,6 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 			return
 		default:
 		}
-
-		// measure start
-		start := time.Now()
 
 		// prepare instruction
 		retrieve := &retrieve{
@@ -186,6 +177,5 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 
 		// retrieve
 		readCounter.Add(1)
-		readTimer.Add(time.Since(start))
 	}
 }

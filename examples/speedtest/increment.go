@@ -9,7 +9,6 @@ import (
 )
 
 var incrementCounter = god.NewCounter("increment")
-var incrementTimer = god.NewTimer("increment")
 
 type increment struct {
 	Key   string `json:"key,omitempty"`
@@ -24,9 +23,6 @@ func (i *increment) Describe() turing.Description {
 }
 
 func (i *increment) Execute(txn *turing.Transaction) error {
-	// measure execution
-	defer incrementTimer.Measure()()
-
 	// make key
 	key := []byte(i.Key)
 
