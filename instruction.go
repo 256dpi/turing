@@ -27,11 +27,11 @@ type Instruction interface {
 // Description is a description of an instruction.
 type Description struct {
 	// The unique name of the instruction. We recommend the following notation:
-	// "parent/package.Instruction" to ease discoverability.
+	// "path/package.Instruction" to ease discoverability.
 	Name string
 
-	// The amount of modifications this instruction will induce. A positive
-	// number is interpreted as the maximum amount of set or deleted keys during
+	// The amount of modifications this instruction will make. A positive
+	// number is interpreted as the maximum amount of set and deleted keys during
 	// the execution. A zero value indicates that the instruction is read only
 	// and will not set or delete any keys. A negative number indicates that the
 	// effect is unbounded and may modify many keys.

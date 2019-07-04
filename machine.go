@@ -69,7 +69,7 @@ func (m *Machine) Execute(instruction Instruction) error {
 		return m.development.update([]Instruction{instruction}, 0)
 	}
 
-	// immediately execute lookups$
+	// immediately execute lookups
 	if description.Effect == 0 {
 		err = m.coordinator.lookup(instruction, description.NonLinear)
 		if err != nil {
