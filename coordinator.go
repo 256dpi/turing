@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/lni/dragonboat"
-	"github.com/lni/dragonboat/config"
-	"github.com/lni/dragonboat/statemachine"
+	"github.com/lni/dragonboat/v3"
+	"github.com/lni/dragonboat/v3/config"
+	"github.com/lni/dragonboat/v3/statemachine"
 )
 
 const clusterID uint64 = 1
@@ -125,7 +125,9 @@ func (c *coordinator) status() Status {
 	defer observe(operationMetrics.WithLabelValues("coordinator.status"))()
 
 	// get info
-	info := c.node.GetNodeHostInfo()
+	info := c.node.GetNodeHostInfo(dragonboat.NodeHostInfoOption{
+		SkipLogInfo: true,
+	})
 
 	// prepare id and role
 	var id uint64

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
-	"github.com/lni/dragonboat/logger"
+	"github.com/lni/dragonboat/v3/logger"
 )
 
 var indexKey = []byte("$index")
@@ -28,9 +28,7 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 	}
 
 	// prepare options
-	bo := badger.DefaultOptions
-	bo.Dir = dir
-	bo.ValueDir = dir
+	bo := badger.DefaultOptions(dir)
 	bo.Logger = logger.GetLogger("badger")
 
 	// open database
@@ -230,7 +228,7 @@ func (d *database) restore(source io.Reader) error {
 	// TODO: Clear database beforehand?
 
 	// load backup
-	err := d.badger.Load(source)
+	err := d.badger.Load(source, 256)
 	if err != nil {
 		return err
 	}
