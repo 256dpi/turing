@@ -24,6 +24,18 @@ type Instruction interface {
 	Execute(*Transaction) error
 }
 
+// InstructionCodec is the interface that is implemented by instructions that
+// require custom encoding and decoding.
+type InstructionCodec interface {
+	// The encoder can be set to implement a custom encoding. If not set, the
+	// default JSON encoder will be used.
+	Encode() ([]byte, error)
+
+	// The decoder can tbe set to implement a custom decoding. If not set, the
+	// default JSON decoder will be used.
+	Decode([]byte) error
+}
+
 // Description is a description of an instruction.
 type Description struct {
 	// The unique name of the instruction. We recommend the following notation:
@@ -45,14 +57,6 @@ type Description struct {
 	// The builder can be set to implement a custom builder. If not set, the
 	// default reflect based builder will be used.
 	Builder func() Instruction
-
-	// The encoder can be set to implement a custom encoding. If not set, the
-	// default JSON encoder will be used.
-	Encoder func(Instruction) ([]byte, error)
-
-	// The decoder can tbe set to implement a custom decoding. If not set, the
-	// default JSON decoder will be used.
-	Decoder func([]byte, Instruction) error
 }
 
 // Validate will validate the instruction description.
@@ -81,9 +85,9 @@ func buildInstruction(i Instruction) Instruction {
 }
 
 func encodeInstruction(i Instruction) ([]byte, error) {
-	// use encoder if available
-	if i.Describe().Encoder != nil {
-		return i.Describe().Encoder(i)
+	// use codec if available
+	if ic, ok := i.(InstructionCodec); ok {
+		return ic.Encode()
 	}
 
 	// otherwise use json
@@ -91,9 +95,9 @@ func encodeInstruction(i Instruction) ([]byte, error) {
 }
 
 func decodeInstruction(data []byte, i Instruction) error {
-	// use decoder if available
-	if i.Describe().Decoder != nil {
-		return i.Describe().Decoder(data, i)
+	// use codec if available
+	if ic, ok := i.(InstructionCodec); ok {
+		return ic.Decode(data)
 	}
 
 	// otherwise use json
