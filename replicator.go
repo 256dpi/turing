@@ -117,7 +117,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 }
 
 func (r *replicator) Sync() error {
-	return nil
+	return r.database.sync()
 }
 
 func (r *replicator) Lookup(data interface{}) (interface{}, error) {

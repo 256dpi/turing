@@ -30,6 +30,7 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 	// prepare options
 	bo := badger.DefaultOptions(dir)
 	bo.Logger = logger.GetLogger("badger")
+	bo.SyncWrites = false
 
 	// open database
 	bdb, err := badger.Open(bo)
@@ -201,6 +202,16 @@ func (d *database) lookup(instruction Instruction) error {
 
 		return instruction.Execute(&Transaction{txn: txn})
 	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *database) sync() error {
+	// sync database to disk
+	err := d.badger.Sync()
 	if err != nil {
 		return err
 	}
