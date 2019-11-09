@@ -161,7 +161,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 
 		// retrieve value
 		retrieve := &retrieve{Key: strconv.Itoa(rand.Intn(keySpace))}
-		err := machine.Execute(retrieve, true)
+		err := machine.Execute(retrieve, false)
 		if err != nil {
 			errorCounter.Add(1)
 			time.Sleep(100 * time.Millisecond)

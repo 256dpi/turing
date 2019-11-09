@@ -77,8 +77,10 @@ func (c *coordinator) update(cmd []byte) ([]byte, error) {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("coordinator.update"))()
 
+	// TODO: Make context configurable.
+
 	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
 	defer cancel()
 
 	// get session
@@ -90,6 +92,8 @@ func (c *coordinator) update(cmd []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	// TODO: Retry on ErrTimeout.
+
 	return result.Data, nil
 }
 
@@ -97,8 +101,10 @@ func (c *coordinator) lookup(instruction Instruction, nonLinear bool) (e error) 
 	// observe
 	defer observe(operationMetrics.WithLabelValues("coordinator.lookup"))()
 
+	// TODO: Make context configurable.
+
 	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
 	defer cancel()
 
 	// use faster non linear read if available
@@ -116,6 +122,8 @@ func (c *coordinator) lookup(instruction Instruction, nonLinear bool) (e error) 
 	if err != nil {
 		return err
 	}
+
+	// TODO: Retry on ErrTimeout.
 
 	return nil
 }
