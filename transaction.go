@@ -3,48 +3,51 @@ package turing
 import (
 	"errors"
 
-	"github.com/dgraph-io/badger"
+	"github.com/cockroachdb/pebble"
 )
+
+// ErrReadOnly is returned by by a transaction on write operations if the
+// instruction has been flagged as read only.
+var ErrReadOnly = errors.New("read only")
 
 // ErrMaxEffect is returned by a transaction if the effect limit has been
 // reached. The instruction should return with this error to have the current
 // changes persistent and be executed again to persist the remaining changes.
 var ErrMaxEffect = errors.New("max effect")
 
-// Transaction is used by an instruction to perform changes to the data store.
+// Transaction is used by an instruction to perform changes to the database.
 type Transaction struct {
-	txn    *badger.Txn
+	reader pebble.Reader
+	writer pebble.Writer
 	effect int
 }
 
 // Get will lookup the specified key.
-func (t *Transaction) Get(key []byte) (*Pair, error) {
-	// get item
-	item, err := t.txn.Get(userPrefix(key))
-	if err == badger.ErrKeyNotFound {
+func (t *Transaction) Get(key []byte) ([]byte, error) {
+	// get key
+	value, err := t.reader.Get(userPrefix(key))
+	if err == pebble.ErrNotFound {
 		return nil, nil
-	} else if err != nil {
-		return nil, err
 	}
 
-	// create pair
-	p := &Pair{
-		item: item,
-	}
-
-	return p, nil
+	return value, nil
 }
 
 // Set will set the specified key to the new value. This operation will counter
 // towards the effect of the transaction.
 func (t *Transaction) Set(key, value []byte) error {
+	// check writer
+	if t.writer == nil {
+		return ErrReadOnly
+	}
+
 	// set key to value
-	err := t.txn.Set(userPrefix(key), value)
-	if err == badger.ErrTxnTooBig {
-		return ErrMaxEffect
-	} else if err != nil {
+	err := t.writer.Set(userPrefix(key), value, nil)
+	if err != nil {
 		return err
 	}
+
+	// TODO: Check max effect if batch is used.
 
 	// increment effect
 	t.effect++
@@ -55,13 +58,18 @@ func (t *Transaction) Set(key, value []byte) error {
 // Delete will delete the specified key. This operation will counter towards the
 // effect of the transaction.
 func (t *Transaction) Delete(key []byte) error {
+	// check writer
+	if t.writer == nil {
+		return ErrReadOnly
+	}
+
 	// delete key
-	err := t.txn.Delete(userPrefix(key))
-	if err == badger.ErrTxnTooBig {
-		return ErrMaxEffect
-	} else if err != nil {
+	err := t.writer.Delete(userPrefix(key), nil)
+	if err != nil {
 		return err
 	}
+
+	// TODO: Check max effect if batch is used.
 
 	// increment effect
 	t.effect++
@@ -77,83 +85,70 @@ func (t *Transaction) Effect() int {
 // Iterator will construct and return a new iterator. The iterator must be
 // closed as soon as it is not used anymore. There can be only one iterator
 // created at a time.
-func (t *Transaction) Iterator(prefix []byte, prefetch, reverse bool) *Iterator {
+func (t *Transaction) Iterator(prefix []byte) *Iterator {
 	return &Iterator{
-		iter: t.txn.NewIterator(badger.IteratorOptions{
-			Prefix:         userPrefix(prefix),
-			PrefetchValues: prefetch,
-			PrefetchSize:   100, // recommended value
-			Reverse:        reverse,
-		}),
+		iter: t.reader.NewIter(prefixIterator(userPrefix(prefix))),
 	}
 }
 
-// Pair is a single key value pair.
-type Pair struct {
-	item *badger.Item
-}
-
-// Key will return the key of the pair.
-func (p *Pair) Key() []byte {
-	return userTrim(p.item.Key())
-}
-
-// CopyKey will create a copy of the key.
-func (p *Pair) CopyKey(buf []byte) []byte {
-	return userTrim(p.item.KeyCopy(buf))
-}
-
-// LoadValue will load the value and run the provided callback when it is
-// available.
-func (p *Pair) LoadValue(fn func([]byte) error) error {
-	return p.item.Value(fn)
-}
-
-// CopyValue will create a copy of the value.
-func (p *Pair) CopyValue(buf []byte) ([]byte, error) {
-	return p.item.ValueCopy(buf)
-}
-
-// Iterator is used to iterate over the key space of the data store.
+// Iterator is used to iterate over the key space of the database.
 type Iterator struct {
-	iter *badger.Iterator
+	iter *pebble.Iterator
 }
 
-// Seek to the exact key or the smallest greater key. The behaviour is reversed
-// when iterating in reverse mode.
-func (i *Iterator) Seek(key []byte) {
-	i.iter.Seek(userPrefix(key))
+// SeekGE will seek to the exact key or the next greater key.
+func (i *Iterator) SeekGE(key []byte) bool {
+	return i.iter.SeekGE(userPrefix(key))
 }
 
-// Valid will return whether a valid pair is present.
+// SeekLT will seek to the exact key or the next smaller key.
+func (i *Iterator) SeekLT(key []byte) bool {
+	return i.iter.SeekLT(userPrefix(key))
+}
+
+// First will seek to the first key in the range.
+func (i *Iterator) First() bool {
+	return i.iter.First()
+}
+
+// Last will seek to the last key in the range.
+func (i *Iterator) Last() bool {
+	return i.iter.Last()
+}
+
+// Valid will return whether a valid key/value pair is present.
 func (i *Iterator) Valid() bool {
 	return i.iter.Valid()
 }
 
-// Pair will return the current key value pair.
-func (i *Iterator) Pair() *Pair {
-	// get item
-	item := i.iter.Item()
-	if item == nil {
-		return nil
-	}
-
-	// create pair
-	p := &Pair{
-		item: item,
-	}
-
-	return p
+// Next will move on to the next key.
+func (i *Iterator) Next() bool {
+	return i.iter.Next()
 }
 
-// Next will move on to the next pair.
-func (i *Iterator) Next() {
-	i.iter.Next()
+// Prev will go back to the previous key.
+func (i *Iterator) Prev() bool {
+	return i.iter.Prev()
+}
+
+// Key will return the current key.
+func (i *Iterator) Key() []byte {
+	return userTrim(i.iter.Key())
+}
+
+// Value will return the current value.
+func (i *Iterator) Value() []byte {
+	return i.iter.Value()
+}
+
+// Error will return the error
+func (i *Iterator) Error() error {
+	return i.iter.Error()
 }
 
 // Close will close the iterator.
-func (i *Iterator) Close() {
-	i.iter.Close()
+func (i *Iterator) Close() error {
+	return i.iter.Close()
 }
 
 func userPrefix(key []byte) []byte {
@@ -162,4 +157,27 @@ func userPrefix(key []byte) []byte {
 
 func userTrim(key []byte) []byte {
 	return key[1:]
+}
+
+func prefixRange(prefix []byte) ([]byte, []byte) {
+	var limit []byte
+	for i := len(prefix) - 1; i >= 0; i-- {
+		c := prefix[i]
+		if c < 0xff {
+			limit = make([]byte, i+1)
+			copy(limit, prefix)
+			limit[i] = c + 1
+			break
+		}
+	}
+	return prefix, limit
+}
+
+func prefixIterator(prefix []byte) *pebble.IterOptions {
+	low, up := prefixRange(prefix)
+
+	return &pebble.IterOptions{
+		LowerBound: low,
+		UpperBound: up,
+	}
 }

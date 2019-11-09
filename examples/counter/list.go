@@ -12,7 +12,7 @@ type list struct {
 
 func (l *list) Describe() turing.Description {
 	return turing.Description{
-		Name: "list",
+		Name:      "list",
 		NonLinear: true,
 	}
 }
@@ -22,29 +22,19 @@ func (l *list) Execute(txn *turing.Transaction) error {
 	l.Pairs = make(map[string]int)
 
 	// create iterator
-	iter := txn.Iterator(nil, true, false)
-
-	// ensure closing
+	iter := txn.Iterator(nil)
 	defer iter.Close()
 
 	// iterate through all pairs
-	for iter.Seek(nil); iter.Valid(); iter.Next() {
-		// load value
-		err := iter.Pair().LoadValue(func(value []byte) error {
-			// parse value
-			count, err := strconv.Atoi(string(value))
-			if err != nil {
-				return err
-			}
-
-			// set count
-			l.Pairs[string(iter.Pair().Key())] = count
-
-			return nil
-		})
+	for iter.First(); iter.Valid(); iter.Next() {
+		// parse value
+		count, err := strconv.Atoi(string(iter.Value()))
 		if err != nil {
 			return err
 		}
+
+		// set count
+		l.Pairs[string(iter.Key())] = count
 	}
 
 	return nil

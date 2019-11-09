@@ -75,7 +75,7 @@ func main() {
 
 	// start machine
 	machine, err := turing.Start(turing.Config{
-		Member:      *idFlag,
+		ID:          *idFlag,
 		Members:     members,
 		Directory:   directory,
 		Development: *devFlag,
@@ -116,6 +116,8 @@ func main() {
 }
 
 var writeCounter = god.NewCounter("write")
+var readCounter = god.NewCounter("read")
+var errorCounter = god.NewCounter("error")
 
 func writer(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
@@ -139,7 +141,8 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		// run update
 		err := machine.Execute(increment)
 		if err != nil {
-			time.Sleep(time.Second)
+			errorCounter.Add(1)
+			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 
@@ -147,8 +150,6 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		writeCounter.Add(1)
 	}
 }
-
-var readCounter = god.NewCounter("read")
 
 func reader(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
@@ -171,7 +172,8 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		// run update
 		err := machine.Execute(retrieve)
 		if err != nil {
-			time.Sleep(time.Second)
+			errorCounter.Add(1)
+			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 

@@ -21,14 +21,12 @@ func (l *List) Execute(txn *turing.Transaction) error {
 	l.Keys = make([][]byte, 0)
 
 	// create iterator
-	iter := txn.Iterator(l.Prefix, false, l.Reverse)
-
-	// ensure closing
+	iter := txn.Iterator(l.Prefix)
 	defer iter.Close()
 
 	// add all keys
-	for iter.Seek(nil); iter.Valid(); iter.Next() {
-		l.Keys = append(l.Keys, iter.Pair().CopyKey(nil))
+	for iter.First(); iter.Valid(); iter.Next() {
+		l.Keys = append(l.Keys, turing.Copy(nil, iter.Key()))
 	}
 
 	return nil

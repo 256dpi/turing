@@ -21,22 +21,19 @@ func (g *Get) Execute(txn *turing.Transaction) error {
 	g.Value = nil
 	g.Exists = false
 
-	// get pair
-	pair, err := txn.Get(g.Key)
+	// get value
+	value, err := txn.Get(g.Key)
 	if err != nil {
 		return err
 	}
 
 	// return if missing
-	if pair == nil {
+	if value == nil {
 		return nil
 	}
 
 	// copy value
-	g.Value, err = pair.CopyValue(nil)
-	if err != nil {
-		return err
-	}
+	g.Value = turing.Copy(nil, value)
 
 	// set flag
 	g.Exists = true

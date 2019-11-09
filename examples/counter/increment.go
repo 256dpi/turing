@@ -33,11 +33,7 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 
 	// set current count if available
 	if value != nil {
-		err = value.LoadValue(func(value []byte) error {
-			n, err := strconv.Atoi(string(value))
-			count = n
-			return err
-		})
+		count, err = strconv.Atoi(string(value))
 		if err != nil {
 			return err
 		}

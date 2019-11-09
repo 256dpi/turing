@@ -56,7 +56,7 @@ func main() {
 
 	// start machine
 	machine, err := turing.Start(turing.Config{
-		Member:    *idFlag,
+		ID:        *idFlag,
 		Members:   members,
 		Directory: directory,
 		Instructions: []turing.Instruction{
@@ -88,9 +88,9 @@ func main() {
 			return
 		}
 
-		// set value
-		set := &increment{Key: strconv.FormatUint(*idFlag, 10)}
-		err = machine.Execute(set)
+		// increment value
+		inc := &increment{Key: strconv.FormatUint(*idFlag, 10)}
+		err = machine.Execute(inc)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
@@ -98,8 +98,8 @@ func main() {
 		}
 
 		// list values
-		list := &list{}
-		err = machine.Execute(list)
+		lst := &list{}
+		err = machine.Execute(lst)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
@@ -107,7 +107,7 @@ func main() {
 		}
 
 		// print instruction
-		fmt.Printf("==> %+v\n", list)
+		fmt.Printf("LIST: %+v\n", lst)
 	}
 }
 
@@ -117,6 +117,6 @@ func printer(machine *turing.Machine) {
 		time.Sleep(time.Second)
 
 		// print info
-		fmt.Printf("%+v\n", machine.Status())
+		fmt.Printf("STATUS: %+v\n", machine.Status())
 	}
 }

@@ -20,21 +20,13 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 	m.Pairs = make(map[string][]byte)
 
 	// create iterator
-	iter := txn.Iterator(m.Prefix, true, false)
-
-	// ensure closing
+	iter := txn.Iterator(m.Prefix)
 	defer iter.Close()
 
 	// iterate through all pairs
-	for iter.Seek(nil); iter.Valid(); iter.Next() {
-		// load value
-		value, err := iter.Pair().CopyValue(nil)
-		if err != nil {
-			return err
-		}
-
+	for iter.First(); iter.Valid(); iter.Next() {
 		// set key value
-		m.Pairs[string(iter.Pair().Key())] = value
+		m.Pairs[string(iter.Key())] = turing.Copy(nil, iter.Value())
 	}
 
 	return nil

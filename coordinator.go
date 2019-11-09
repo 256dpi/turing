@@ -30,11 +30,11 @@ func createCoordinator(cfg Config, manager *manager) (*coordinator, error) {
 
 	// prepare node config
 	nodeConfig := config.Config{
-		NodeID:             cfg.Member,
-		ClusterID:          1,
+		NodeID:             cfg.ID,
+		ClusterID:          clusterID,
 		CheckQuorum:        true,
-		ElectionRTT:        10000 / rttMS, // 10s
-		HeartbeatRTT:       1000 / rttMS,  // 1s
+		ElectionRTT:        rttMS * 1000, // 1000ms @ 1ms RTT
+		HeartbeatRTT:       rttMS * 100,  // 100ms @ 1ms RTT
 		SnapshotEntries:    10000,
 		CompactionOverhead: 10000,
 	}

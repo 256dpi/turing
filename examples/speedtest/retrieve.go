@@ -23,28 +23,21 @@ func (r *retrieve) Describe() turing.Description {
 
 func (r *retrieve) Execute(txn *turing.Transaction) error {
 	// get key
-	pair, err := txn.Get([]byte(r.Key))
+	value, err := txn.Get([]byte(r.Key))
 	if err != nil {
 		return err
 	}
 
 	// check pair
-	if pair != nil {
-		err = pair.LoadValue(func(value []byte) error {
-			// parse value
-			count, err := strconv.Atoi(string(value))
-			if err != nil {
-				return err
-			}
-
-			// set count
-			r.Value = count
-
-			return nil
-		})
+	if value != nil {
+		// parse value
+		count, err := strconv.Atoi(string(value))
 		if err != nil {
 			return err
 		}
+
+		// set count
+		r.Value = count
 	}
 
 	// count

@@ -28,19 +28,16 @@ func (r *Release) Execute(txn *turing.Transaction) error {
 	// prepare lock
 	var lock Lock
 
-	// get pair
-	pair, err := txn.Get(r.Key)
+	// get value
+	value, err := txn.Get(r.Key)
 	if err != nil {
 		return err
 	}
 
 	// check content if missing
-	if pair != nil {
+	if value != nil {
 		// decode lock
-		err = pair.LoadValue(func(value []byte) error {
-			_ = json.Unmarshal(value, &lock)
-			return nil
-		})
+		err = json.Unmarshal(value, &lock)
 		if err != nil {
 			return err
 		}

@@ -4,16 +4,14 @@ import (
 	"io"
 	"os"
 	"strconv"
-	"time"
 
-	"github.com/dgraph-io/badger"
-	"github.com/lni/dragonboat/v3/logger"
+	"github.com/cockroachdb/pebble"
 )
 
 var indexKey = []byte("$index")
 
 type database struct {
-	badger  *badger.DB
+	pebble  *pebble.DB
 	manager *manager
 }
 
@@ -27,64 +25,47 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 		return nil, 0, err
 	}
 
-	// prepare options
-	bo := badger.DefaultOptions(dir)
-	bo.Logger = logger.GetLogger("badger")
-	bo.SyncWrites = false
+	// TODO: Add logging.
 
-	// open database
-	bdb, err := badger.Open(bo)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// run gc routine
-	go func() {
-		for {
-			// sleep some time
-			time.Sleep(time.Second)
-
-			// run gc
-			err = bdb.RunValueLogGC(0.5)
-			if err == badger.ErrRejected {
-				return
-			} else if err != nil && err != badger.ErrNoRewrite {
-				panic(err)
-			}
-		}
-	}()
-
-	// prepare index
-	var index uint64
-
-	// get last committed index
-	err = bdb.View(func(txn *badger.Txn) error {
-		// get key
-		item, err := txn.Get(indexKey)
-		if err == badger.ErrKeyNotFound {
-			return nil
-		} else if err != nil {
-			return err
-		}
-
-		// parse value
-		err = item.Value(func(val []byte) error {
-			index, err = strconv.ParseUint(string(val), 10, 64)
-			return err
-		})
-		if err != nil {
-			return err
-		}
-
-		return nil
+	// open db
+	pdb, err := pebble.Open(dir, &pebble.Options{
+		Cache:                       pebble.NewCache(64 << 20),
+		MemTableSize:                16 << 20,
+		MemTableStopWritesThreshold: 4,
+		MinFlushRate:                4 << 20,
+		L0CompactionThreshold:       2,
+		L0StopWritesThreshold:       16,
+		LBaseMaxBytes:               16 << 20,
+		Levels: []pebble.LevelOptions{{
+			BlockSize: 32 << 10, // 32KB
+		}},
+		Logger:        nil,
+		EventListener: pebble.MakeLoggingEventListener(nil),
 	})
 	if err != nil {
 		return nil, 0, err
 	}
 
+	// prepare index
+	var index uint64
+
+	// get last committed index
+	value, err := pdb.Get(indexKey)
+	if err != nil && err != pebble.ErrNotFound {
+		return nil, 0, err
+	}
+
+	// parse index if available
+	if value != nil {
+		index, err = strconv.ParseUint(string(value), 10, 64)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
 	// create database
 	db := &database{
-		badger:  bdb,
+		pebble:  pdb,
 		manager: manager,
 	}
 
@@ -101,13 +82,20 @@ func (d *database) update(list []Instruction, index uint64) error {
 	// count batch size
 	databaseMetrics.WithLabelValues("batch_length").Observe(float64(len(list)))
 
-	// calculate max effect (90% of max batch count)
-	maxEffect := int(float64(d.badger.MaxBatchCount()) * 0.9)
+	// define max effect
+	maxEffect := 10000
+
+	// create initial batch
+	batch := d.pebble.NewIndexedBatch()
 
 	// create initial transaction
-	txn := d.badger.NewTransaction(true)
+	txn := &Transaction{
+		reader: batch,
+		writer: batch,
+	}
+
+	// prepare counters
 	transactionCount := 1
-	accumulatedEffect := 0
 
 	// execute all instructions
 	for _, instruction := range list {
@@ -118,39 +106,47 @@ func (d *database) update(list []Instruction, index uint64) error {
 		estimatedEffect := instruction.Describe().Effect
 
 		// check if new transaction is needed for bounded transaction
-		if estimatedEffect > 0 && accumulatedEffect+estimatedEffect >= maxEffect {
-			// commit current transaction
-			err := txn.Commit()
+		if estimatedEffect > 0 && txn.effect+estimatedEffect >= maxEffect {
+			// commit current batch
+			err := batch.Commit(nil)
 			if err != nil {
 				return err
 			}
 
-			// create new transaction
-			txn = d.badger.NewTransaction(true)
-			transactionCount++
-			accumulatedEffect = 0
-		}
+			// create new batch
+			batch = d.pebble.NewIndexedBatch()
 
-		// prepare wrapper
-		wrapper := &Transaction{txn: txn}
+			// create new transaction
+			txn = &Transaction{
+				reader: batch,
+				writer: batch,
+			}
+
+			// update counters
+			transactionCount++
+		}
 
 		// execute transaction
 		for {
-			err := instruction.Execute(wrapper)
+			err := instruction.Execute(txn)
 			if err == ErrMaxEffect {
-				// persist changes
-				err = txn.Commit()
+				// commit current batch
+				err := batch.Commit(nil)
 				if err != nil {
 					return err
 				}
 
-				// create new transaction
-				txn = d.badger.NewTransaction(true)
-				transactionCount++
-				accumulatedEffect = 0
+				// create new batch
+				batch = d.pebble.NewIndexedBatch()
 
-				// reset wrapper
-				wrapper = &Transaction{txn: txn}
+				// create new transaction
+				txn = &Transaction{
+					reader: batch,
+					writer: batch,
+				}
+
+				// update counters
+				transactionCount++
 
 				continue
 			}
@@ -160,9 +156,6 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 			break
 		}
-
-		// add effect from uncommitted transaction
-		accumulatedEffect += wrapper.effect
 
 		// finish observation
 		finish()
@@ -174,8 +167,8 @@ func (d *database) update(list []Instruction, index uint64) error {
 		return err
 	}
 
-	// commit final transaction
-	err = txn.Commit()
+	// commit final batch
+	err = batch.Commit(nil)
 	if err != nil {
 		return err
 	}
@@ -195,13 +188,11 @@ func (d *database) lookup(instruction Instruction) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.lookup"))()
 
-	// execute instruction
-	err := d.badger.View(func(txn *badger.Txn) error {
-		// observe
-		defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))()
+	// observe
+	defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))()
 
-		return instruction.Execute(&Transaction{txn: txn})
-	})
+	// execute instruction
+	err := instruction.Execute(&Transaction{reader: d.pebble})
 	if err != nil {
 		return err
 	}
@@ -210,11 +201,10 @@ func (d *database) lookup(instruction Instruction) error {
 }
 
 func (d *database) sync() error {
-	// sync database to disk
-	err := d.badger.Sync()
-	if err != nil {
-		return err
-	}
+	// observe
+	defer observe(operationMetrics.WithLabelValues("database.sync"))()
+
+	// TODO: Implement?
 
 	return nil
 }
@@ -223,11 +213,7 @@ func (d *database) backup(sink io.Writer) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.backup"))()
 
-	// perform backup
-	_, err := d.badger.Backup(sink, 0)
-	if err != nil {
-		return err
-	}
+	// TODO: Implement.
 
 	return nil
 }
@@ -236,13 +222,7 @@ func (d *database) restore(source io.Reader) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.restore"))()
 
-	// TODO: Clear database beforehand?
-
-	// load backup
-	err := d.badger.Load(source, 256)
-	if err != nil {
-		return err
-	}
+	// TODO: Implement.
 
 	return nil
 }
@@ -252,7 +232,7 @@ func (d *database) close() error {
 	defer observe(operationMetrics.WithLabelValues("database.close"))()
 
 	// close database
-	err := d.badger.Close()
+	err := d.pebble.Close()
 	if err != nil {
 		return err
 	}

@@ -8,8 +8,6 @@ import (
 	"github.com/lni/dragonboat/v3/statemachine"
 )
 
-// TODO: Handle conflicts.
-
 type command struct {
 	Name string `json:"name"`
 	Data []byte `json:"data"`

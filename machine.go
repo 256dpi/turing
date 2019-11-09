@@ -5,7 +5,7 @@ import (
 )
 
 // Machine maintains a raft cluster with members and maintains consensus about the
-// execute instructions on the distributed data store.
+// execute instructions on the distributed database.
 type Machine struct {
 	manager     *manager
 	coordinator *coordinator
