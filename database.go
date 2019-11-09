@@ -204,7 +204,11 @@ func (d *database) sync() error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.sync"))()
 
-	// TODO: Implement?
+	// flush database
+	_, err := d.pebble.AsyncFlush()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
