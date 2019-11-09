@@ -44,8 +44,10 @@ func Start(config Config) (*Machine, error) {
 	return m, nil
 }
 
-// Execute will execute the specified instruction.
-func (m *Machine) Execute(instruction Instruction) error {
+// Execute will execute the specified instruction. NonLinear may be set to true
+// to allow read only instructions to query data without linearizability
+// guarantees. This may be substantially faster but return stale data.
+func (m *Machine) Execute(instruction Instruction, nonLinear bool) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("Machine.Execute"))()
 
@@ -71,7 +73,7 @@ func (m *Machine) Execute(instruction Instruction) error {
 
 	// immediately execute lookups
 	if description.Effect == 0 {
-		err = m.coordinator.lookup(instruction, description.NonLinear)
+		err = m.coordinator.lookup(instruction, nonLinear)
 		if err != nil {
 			return err
 		}

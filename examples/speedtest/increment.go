@@ -44,7 +44,7 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 	}
 
 	// increment
-	count++
+	count += i.Value
 
 	// set value
 	err = txn.Set(key, []byte(strconv.Itoa(count)))

@@ -49,11 +49,6 @@ type Description struct {
 	// effect is unbounded and may modify many keys.
 	Effect int
 
-	// NonLinear may be set to true to allow the instruction to query data
-	// without linearizability guarantees. This may be substantially faster
-	// but return stale data.
-	NonLinear bool
-
 	// The builder can be set to implement a custom builder. If not set, the
 	// default reflect based builder will be used.
 	Builder func() Instruction

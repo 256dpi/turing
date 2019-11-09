@@ -90,7 +90,7 @@ func main() {
 
 		// increment value
 		inc := &increment{Key: strconv.FormatUint(*idFlag, 10)}
-		err = machine.Execute(inc)
+		err = machine.Execute(inc, false)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
@@ -99,7 +99,7 @@ func main() {
 
 		// list values
 		lst := &list{}
-		err = machine.Execute(lst)
+		err = machine.Execute(lst, false)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)

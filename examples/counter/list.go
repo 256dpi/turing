@@ -12,8 +12,7 @@ type list struct {
 
 func (l *list) Describe() turing.Description {
 	return turing.Description{
-		Name:      "list",
-		NonLinear: true,
+		Name: "list",
 	}
 }
 
