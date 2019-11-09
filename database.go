@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/cockroachdb/pebble"
+	"github.com/lni/dragonboat/v3/logger"
 )
 
 var indexKey = []byte("$index")
@@ -25,7 +26,8 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 		return nil, 0, err
 	}
 
-	// TODO: Add logging.
+	// prepare logger
+	lgr := &extendedLogger{ILogger: logger.GetLogger("pebble")}
 
 	// open db
 	pdb, err := pebble.Open(dir, &pebble.Options{
@@ -39,8 +41,8 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 		Levels: []pebble.LevelOptions{{
 			BlockSize: 32 << 10, // 32KB
 		}},
-		Logger:        nil,
-		EventListener: pebble.MakeLoggingEventListener(nil),
+		Logger:        lgr,
+		EventListener: pebble.MakeLoggingEventListener(lgr),
 	})
 	if err != nil {
 		return nil, 0, err

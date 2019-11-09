@@ -64,3 +64,13 @@ func (l *customLogger) Panicf(format string, args ...interface{}) {
 		l.logger.Panicf(format, args...)
 	}
 }
+
+type extendedLogger struct {
+	logger.ILogger
+}
+
+func (l *extendedLogger) Fatalf(format string, args ...interface{}) {
+	if l.ILogger != nil {
+		l.ILogger.Panicf(format, args...)
+	}
+}
