@@ -182,10 +182,10 @@ func (c *coordinator) status() Status {
 
 	// create status
 	status := Status{
-		MemberID: id,
-		Role:     role,
-		Leader:   leader,
-		Members:  members,
+		ID:      id,
+		Role:    role,
+		Leader:  leader,
+		Members: members,
 	}
 
 	return status

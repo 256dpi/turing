@@ -3,7 +3,7 @@ package turing
 // Status contains information about the cluster.
 type Status struct {
 	// The id of this member.
-	MemberID uint64
+	ID uint64
 
 	// The role of this member.
 	Role Role
