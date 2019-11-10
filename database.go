@@ -77,7 +77,7 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 	return db, index, nil
 }
 
-func (d *database) update(list []Instruction, index uint64) error {
+func (d *database) update(list []Instruction, indexes []uint64) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("database.update"))()
 
@@ -97,7 +97,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 	transactionCount := 1
 
 	// execute all instructions
-	for _, instruction := range list {
+	for i, instruction := range list {
 		// begin observation
 		finish := observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))
 
@@ -129,7 +129,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 		for {
 			err := instruction.Execute(txn)
 			if err == ErrMaxEffect {
-				// commit current batch
+				// commit current batch (without index)
 				err := batch.Commit(nil)
 				if err != nil {
 					return err
@@ -153,6 +153,12 @@ func (d *database) update(list []Instruction, index uint64) error {
 				return err
 			}
 
+			// set index
+			err = batch.Set(indexKey, []byte(strconv.FormatUint(indexes[i], 10)), nil)
+			if err != nil {
+				return err
+			}
+
 			break
 		}
 
@@ -160,17 +166,8 @@ func (d *database) update(list []Instruction, index uint64) error {
 		finish()
 	}
 
-	// TODO: Every batch should set the correct index. Otherwise we may execute
-	//  and instruction multiple times if the last batch (with the index) fails.
-
-	// set index
-	err := batch.Set(indexKey, []byte(strconv.FormatUint(index, 10)), nil)
-	if err != nil {
-		return err
-	}
-
 	// commit final batch
-	err = batch.Commit(nil)
+	err := batch.Commit(nil)
 	if err != nil {
 		return err
 	}

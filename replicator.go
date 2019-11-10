@@ -54,17 +54,15 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	// observe
 	defer observe(operationMetrics.WithLabelValues("replicator.update"))()
 
-	// prepare instruction list
-	list := make([]Instruction, len(entries))
-
-	// prepare index
-	var index uint64
+	// prepare instruction and index list
+	instructions := make([]Instruction, len(entries))
+	indexes := make([]uint64, len(entries))
 
 	// decode instructions
-	for i := range entries {
+	for i, entry := range entries {
 		// parse command
 		var cmd command
-		err := json.Unmarshal(entries[i].Cmd, &cmd)
+		err := json.Unmarshal(entry.Cmd, &cmd)
 		if err != nil {
 			return nil, err
 		}
@@ -84,15 +82,13 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 			return nil, err
 		}
 
-		// add instruction
-		list[i] = instruction
-
-		// set last index
-		index = entries[i].Index
+		// set instruction and index
+		instructions[i] = instruction
+		indexes[i] = entry.Index
 	}
 
 	// execute instructions
-	err := r.database.update(list, index)
+	err := r.database.update(instructions, indexes)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +96,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	// encode instructions
 	for i := range entries {
 		// encode instruction
-		bytes, err := encodeInstruction(list[i])
+		bytes, err := encodeInstruction(instructions[i])
 		if err != nil {
 			return nil, err
 		}

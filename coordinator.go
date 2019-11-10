@@ -80,7 +80,7 @@ func (c *coordinator) update(cmd []byte) ([]byte, error) {
 	// TODO: Make context configurable.
 
 	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// get session
@@ -104,7 +104,7 @@ func (c *coordinator) lookup(instruction Instruction, nonLinear bool) (e error) 
 	// TODO: Make context configurable.
 
 	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// use faster non linear read if available

@@ -68,7 +68,7 @@ func (m *Machine) Execute(instruction Instruction, nonLinear bool) error {
 		}
 
 		// perform update
-		return m.development.update([]Instruction{instruction}, 0)
+		return m.development.update([]Instruction{instruction}, []uint64{0})
 	}
 
 	// immediately execute lookups
