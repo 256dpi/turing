@@ -26,7 +26,7 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 	// iterate through all pairs
 	for iter.First(); iter.Valid(); iter.Next() {
 		// set key value
-		m.Pairs[string(iter.Key())] = turing.Copy(nil, iter.Value())
+		m.Pairs[string(iter.Key(false))] = iter.Value(true)
 	}
 
 	return nil

@@ -161,13 +161,35 @@ func (i *Iterator) Prev() bool {
 }
 
 // Key will return the current key.
-func (i *Iterator) Key() []byte {
-	return userTrim(i.iter.Key())
+func (i *Iterator) Key(copy bool) []byte {
+	// get key
+	key := userTrim(i.iter.Key())
+	if key == nil {
+		return nil
+	}
+
+	// make copy
+	if copy {
+		key = Copy(nil, key)
+	}
+
+	return key
 }
 
 // Value will return the current value.
-func (i *Iterator) Value() []byte {
-	return i.iter.Value()
+func (i *Iterator) Value(copy bool) []byte {
+	// get value
+	value := i.iter.Value()
+	if value == nil {
+		return nil
+	}
+
+	// make copy
+	if copy {
+		value = Copy(nil, value)
+	}
+
+	return value
 }
 
 // Error will return the error
@@ -185,7 +207,10 @@ func userPrefix(key []byte) []byte {
 }
 
 func userTrim(key []byte) []byte {
-	return key[1:]
+	if len(key) > 0 {
+		return key[1:]
+	}
+	return key
 }
 
 func prefixIterator(prefix []byte) *pebble.IterOptions {

@@ -27,13 +27,13 @@ func (l *list) Execute(txn *turing.Transaction) error {
 	// iterate through all pairs
 	for iter.First(); iter.Valid(); iter.Next() {
 		// parse value
-		count, err := strconv.Atoi(string(iter.Value()))
+		count, err := strconv.Atoi(string(iter.Value(false)))
 		if err != nil {
 			return err
 		}
 
 		// set count
-		l.Pairs[string(iter.Key())] = count
+		l.Pairs[string(iter.Key(false))] = count
 	}
 
 	return nil
