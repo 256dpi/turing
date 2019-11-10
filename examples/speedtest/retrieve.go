@@ -23,7 +23,7 @@ func (r *retrieve) Describe() turing.Description {
 
 func (r *retrieve) Execute(txn *turing.Transaction) error {
 	// get key
-	value, err := txn.Get([]byte(r.Key))
+	value, err := txn.Get([]byte(r.Key), false)
 	if err != nil {
 		return err
 	}

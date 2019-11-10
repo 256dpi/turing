@@ -26,7 +26,7 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 	var count int
 
 	// get existing value
-	value, err := txn.Get(key)
+	value, err := txn.Get(key, false)
 	if err != nil {
 		return err
 	}

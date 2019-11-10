@@ -35,7 +35,7 @@ func (a *Acquire) Execute(txn *turing.Transaction) error {
 	var lock Lock
 
 	// get value
-	value, err := txn.Get(a.Key)
+	value, err := txn.Get(a.Key, false)
 	if err != nil {
 		return err
 	}

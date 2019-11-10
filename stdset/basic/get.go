@@ -22,7 +22,7 @@ func (g *Get) Execute(txn *turing.Transaction) error {
 	g.Exists = false
 
 	// get value
-	value, err := txn.Get(g.Key)
+	value, err := txn.Get(g.Key, true)
 	if err != nil {
 		return err
 	}
@@ -32,10 +32,8 @@ func (g *Get) Execute(txn *turing.Transaction) error {
 		return nil
 	}
 
-	// copy value
-	g.Value = turing.Copy(nil, value)
-
-	// set flag
+	// set result
+	g.Value = value
 	g.Exists = true
 
 	return nil

@@ -29,7 +29,7 @@ func (r *Release) Execute(txn *turing.Transaction) error {
 	var lock Lock
 
 	// get value
-	value, err := txn.Get(r.Key)
+	value, err := txn.Get(r.Key, false)
 	if err != nil {
 		return err
 	}

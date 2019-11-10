@@ -22,19 +22,25 @@ type Transaction struct {
 	effect int
 }
 
-// Get will lookup the specified key.
-func (t *Transaction) Get(key []byte) ([]byte, error) {
+// Get will lookup the specified key. A returned un-copied slice must not be
+// modified by the caller. Specify copy to receive a safe copy of the value.
+func (t *Transaction) Get(key []byte, copy bool) ([]byte, error) {
 	// get key
 	value, err := t.reader.Get(userPrefix(key))
 	if err == pebble.ErrNotFound {
 		return nil, nil
 	}
 
+	// make copy if requested
+	if copy {
+		value = Copy(nil, value)
+	}
+
 	return value, nil
 }
 
-// Set will set the specified key to the new value. This operation will counter
-// towards the effect of the transaction.
+// Set will set the specified key to the new value. This operation will count as
+// one towards the effect of the transaction.
 func (t *Transaction) Set(key, value []byte) error {
 	// check writer
 	if t.writer == nil {
@@ -55,8 +61,8 @@ func (t *Transaction) Set(key, value []byte) error {
 	return nil
 }
 
-// Delete will delete the specified key. This operation will counter towards the
-// effect of the transaction.
+// Delete will delete the specified key. This operation will count as one towards
+// the effect of the transaction.
 func (t *Transaction) Delete(key []byte) error {
 	// check writer
 	if t.writer == nil {
@@ -65,6 +71,29 @@ func (t *Transaction) Delete(key []byte) error {
 
 	// delete key
 	err := t.writer.Delete(userPrefix(key), nil)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Check max effect if batch is used.
+
+	// increment effect
+	t.effect++
+
+	return nil
+}
+
+// DeleteRange deletes all of the keys in the range [start, end] (inclusive on
+// start, exclusive on end). This operation will count as one towards the effect
+// of the transaction.
+func (t *Transaction) DeleteRange(start, end []byte) error {
+	// check writer
+	if t.writer == nil {
+		return ErrReadOnly
+	}
+
+	// delete range
+	err := t.writer.DeleteRange(userPrefix(start), userPrefix(end), nil)
 	if err != nil {
 		return err
 	}
@@ -159,22 +188,8 @@ func userTrim(key []byte) []byte {
 	return key[1:]
 }
 
-func prefixRange(prefix []byte) ([]byte, []byte) {
-	var limit []byte
-	for i := len(prefix) - 1; i >= 0; i-- {
-		c := prefix[i]
-		if c < 0xff {
-			limit = make([]byte, i+1)
-			copy(limit, prefix)
-			limit[i] = c + 1
-			break
-		}
-	}
-	return prefix, limit
-}
-
 func prefixIterator(prefix []byte) *pebble.IterOptions {
-	low, up := prefixRange(prefix)
+	low, up := PrefixRange(prefix)
 
 	return &pebble.IterOptions{
 		LowerBound: low,
