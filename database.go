@@ -163,8 +163,11 @@ func (d *database) update(list []Instruction, index uint64) error {
 		finish()
 	}
 
+	// TODO: Every batch should set the correct index. Otherwise we may execute
+	//  and instruction multiple times if the last batch (with the index) fails.
+
 	// set index
-	err := txn.Set(indexKey, []byte(strconv.FormatUint(index, 10)))
+	err := batch.Set(indexKey, []byte(strconv.FormatUint(index, 10)), nil)
 	if err != nil {
 		return err
 	}
