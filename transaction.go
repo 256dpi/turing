@@ -53,7 +53,10 @@ func (t *Transaction) Set(key, value []byte) error {
 		return err
 	}
 
-	// TODO: Check max effect if batch is used.
+	// check effect
+	if t.effect >= MaxEffect {
+		return ErrMaxEffect
+	}
 
 	// increment effect
 	t.effect++
@@ -75,7 +78,10 @@ func (t *Transaction) Delete(key []byte) error {
 		return err
 	}
 
-	// TODO: Check max effect if batch is used.
+	// check effect
+	if t.effect >= MaxEffect {
+		return ErrMaxEffect
+	}
 
 	// increment effect
 	t.effect++
@@ -98,7 +104,10 @@ func (t *Transaction) DeleteRange(start, end []byte) error {
 		return err
 	}
 
-	// TODO: Check max effect if batch is used.
+	// check effect
+	if t.effect >= MaxEffect {
+		return ErrMaxEffect
+	}
 
 	// increment effect
 	t.effect++

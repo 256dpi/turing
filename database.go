@@ -84,9 +84,6 @@ func (d *database) update(list []Instruction, index uint64) error {
 	// count batch size
 	databaseMetrics.WithLabelValues("batch_length").Observe(float64(len(list)))
 
-	// define max effect
-	maxEffect := 10000
-
 	// create initial batch
 	batch := d.pebble.NewIndexedBatch()
 
@@ -108,7 +105,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 		estimatedEffect := instruction.Describe().Effect
 
 		// check if new transaction is needed for bounded transaction
-		if estimatedEffect > 0 && txn.effect+estimatedEffect >= maxEffect {
+		if estimatedEffect > 0 && txn.effect+estimatedEffect >= MaxEffect {
 			// commit current batch
 			err := batch.Commit(nil)
 			if err != nil {
