@@ -1,7 +1,9 @@
 package turing
 
 import (
+	"context"
 	"encoding/json"
+	"time"
 )
 
 // Machine maintains a raft cluster with members and maintains consensus about the
@@ -47,9 +49,21 @@ func Start(config Config) (*Machine, error) {
 // Execute will execute the specified instruction. NonLinear may be set to true
 // to allow read only instructions to query data without linearizability
 // guarantees. This may be substantially faster but return stale data.
-func (m *Machine) Execute(instruction Instruction, nonLinear bool) error {
+func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinear bool) error {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("Machine.Execute"))()
+
+	// ensure context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// ensure deadline
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Second)
+		defer cancel()
+	}
 
 	// get description
 	description := instruction.Describe()
@@ -73,7 +87,7 @@ func (m *Machine) Execute(instruction Instruction, nonLinear bool) error {
 
 	// immediately execute lookups
 	if description.Effect == 0 {
-		err = m.coordinator.lookup(instruction, nonLinear)
+		err = m.coordinator.lookup(ctx, instruction, nonLinear)
 		if err != nil {
 			return err
 		}
@@ -100,7 +114,7 @@ func (m *Machine) Execute(instruction Instruction, nonLinear bool) error {
 	}
 
 	// apply command
-	result, err := m.coordinator.update(bytes)
+	result, err := m.coordinator.update(ctx, bytes)
 	if err != nil {
 		return err
 	}

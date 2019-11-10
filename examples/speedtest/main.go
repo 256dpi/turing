@@ -134,7 +134,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 
 		// increment value
 		increment := &increment{Key: strconv.Itoa(rand.Intn(keySpace)), Value: 1}
-		err := machine.Execute(increment, false)
+		err := machine.Execute(nil, increment, false)
 		if err != nil {
 			errorCounter.Add(1)
 			time.Sleep(100 * time.Millisecond)
@@ -161,7 +161,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 
 		// retrieve value
 		retrieve := &retrieve{Key: strconv.Itoa(rand.Intn(keySpace))}
-		err := machine.Execute(retrieve, false)
+		err := machine.Execute(nil, retrieve, false)
 		if err != nil {
 			errorCounter.Add(1)
 			time.Sleep(100 * time.Millisecond)

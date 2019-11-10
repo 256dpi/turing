@@ -73,15 +73,9 @@ func createCoordinator(cfg Config, manager *manager) (*coordinator, error) {
 	return coordinator, nil
 }
 
-func (c *coordinator) update(cmd []byte) ([]byte, error) {
+func (c *coordinator) update(ctx context.Context, cmd []byte) ([]byte, error) {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("coordinator.update"))()
-
-	// TODO: Make context configurable.
-
-	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	// get session
 	session := c.node.GetNoOPSession(clusterID)
@@ -97,15 +91,9 @@ func (c *coordinator) update(cmd []byte) ([]byte, error) {
 	return result.Data, nil
 }
 
-func (c *coordinator) lookup(instruction Instruction, nonLinear bool) (e error) {
+func (c *coordinator) lookup(ctx context.Context, instruction Instruction, nonLinear bool) (e error) {
 	// observe
 	defer observe(operationMetrics.WithLabelValues("coordinator.lookup"))()
-
-	// TODO: Make context configurable.
-
-	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	// use faster non linear read if available
 	if nonLinear {
