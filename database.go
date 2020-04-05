@@ -10,6 +10,8 @@ import (
 	"github.com/lni/dragonboat/v3/logger"
 )
 
+var noSync = &pebble.WriteOptions{}
+
 var indexKey = []byte("$index")
 
 type database struct {
@@ -118,7 +120,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 		// check if new transaction is needed for bounded transaction
 		if estimatedEffect > 0 && txn.effect+estimatedEffect >= MaxEffect {
 			// commit current batch
-			err := batch.Commit(nil)
+			err := batch.Commit(noSync)
 			if err != nil {
 				return err
 			}
@@ -154,7 +156,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 			// commit batch if maxed out and start over
 			if maxed {
 				// commit current batch (without index)
-				err := batch.Commit(nil)
+				err := batch.Commit(noSync)
 				if err != nil {
 					return err
 				}
@@ -188,7 +190,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	}
 
 	// commit final batch
-	err := batch.Commit(nil)
+	err := batch.Commit(noSync)
 	if err != nil {
 		return err
 	}
