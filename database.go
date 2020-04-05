@@ -105,10 +105,12 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	batch := d.pebble.NewIndexedBatch()
 
 	// create initial transaction
-	txn := &Transaction{
-		reader: batch,
-		writer: batch,
-	}
+	txn := obtainTxn()
+	txn.reader = batch
+	txn.writer = batch
+
+	// ensure recycle
+	defer recycleTxn(txn)
 
 	// prepare counters
 	transactionCount := 1
@@ -132,11 +134,11 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 			// create new batch
 			batch = d.pebble.NewIndexedBatch()
 
-			// create new transaction
-			txn = &Transaction{
-				reader: batch,
-				writer: batch,
-			}
+			// reset transaction
+			txn.reader = batch
+			txn.writer = batch
+			txn.effect = 0
+			txn.closers = 0
 
 			// update counters
 			transactionCount++
@@ -168,11 +170,11 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 				// create new batch
 				batch = d.pebble.NewIndexedBatch()
 
-				// create new transaction
-				txn = &Transaction{
-					reader: batch,
-					writer: batch,
-				}
+				// reset transaction
+				txn.reader = batch
+				txn.writer = batch
+				txn.effect = 0
+				txn.closers = 0
 
 				// update counters
 				transactionCount++
@@ -220,9 +222,11 @@ func (d *database) lookup(instruction Instruction) error {
 	defer timer2.ObserveDuration()
 
 	// prepare transaction
-	txn := &Transaction{
-		reader: d.pebble,
-	}
+	txn := obtainTxn()
+	txn.reader = d.pebble
+
+	// ensure recycle
+	defer recycleTxn(txn)
 
 	// execute instruction
 	err := instruction.Execute(txn)

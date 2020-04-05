@@ -3,6 +3,7 @@ package turing
 import (
 	"errors"
 	"io"
+	"sync"
 
 	"github.com/cockroachdb/pebble"
 )
@@ -13,6 +14,24 @@ type closerFunc func() error
 
 func (f closerFunc) Close() error {
 	return f()
+}
+
+var txnPool = sync.Pool{
+	New: func() interface{} {
+		return &Transaction{}
+	},
+}
+
+func obtainTxn() *Transaction {
+	return txnPool.Get().(*Transaction)
+}
+
+func recycleTxn(txn *Transaction) {
+	txn.reader = nil
+	txn.writer = nil
+	txn.closers = 0
+	txn.effect = 0
+	txnPool.Put(txn)
 }
 
 // ErrReadOnly is returned by by a transaction on write operations if the
