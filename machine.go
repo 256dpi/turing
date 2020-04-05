@@ -23,10 +23,18 @@ func Start(config Config) (*Machine, error) {
 		return nil, err
 	}
 
+	// TODO: Balancer should be configurable.
+
+	// prepare balancer
+	balancer := newBalancer(10000, 0)
+	if config.Development {
+		balancer = newBalancer(100, 100)
+	}
+
 	// create machine
 	m := &Machine{
 		manager:  newManager(),
-		balancer: newBalancer(100, 100),
+		balancer: balancer,
 	}
 
 	// create coordinator in normal mode

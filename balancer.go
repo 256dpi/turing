@@ -1,53 +1,66 @@
 package turing
 
 // TODO: The balancer should be improved to ensure a good balance between read
-// and writes.
+//  and writes.
 
 type balancer struct {
 	read  chan struct{}
 	write chan struct{}
 }
 
-func newBalancer(read, write int) *balancer {
-	// prepare
-	b := &balancer{
-		read:  make(chan struct{}, read),
-		write: make(chan struct{}, write),
+func newBalancer(reads, writes int) *balancer {
+	// prepare read bucket
+	var read chan struct{}
+	if reads > 0 {
+		read = make(chan struct{}, reads)
+		for i := 0; i < reads; i++ {
+			read <- struct{}{}
+		}
 	}
 
-	// fill read tokens
-	for i := 0; i < cap(b.read); i++ {
-		b.read <- struct{}{}
+	// prepare write bucket
+	var write chan struct{}
+	if writes > 0 {
+		write = make(chan struct{}, writes)
+		for i := 0; i < writes; i++ {
+			write <- struct{}{}
+		}
 	}
 
-	// fill write tokens
-	for i := 0; i < cap(b.write); i++ {
-		b.write <- struct{}{}
+	return &balancer{
+		read:  read,
+		write: write,
 	}
-
-	return b
 }
 
 func (b *balancer) get(write bool) {
 	// get token
 	if write {
-		<-b.write
+		if b.write != nil {
+			<-b.write
+		}
 	} else {
-		<-b.read
+		if b.read != nil {
+			<-b.read
+		}
 	}
 }
 
 func (b *balancer) put(write bool) {
 	// put token
 	if write {
-		select {
-		case b.write <- struct{}{}:
-		default:
+		if b.write != nil {
+			select {
+			case b.write <- struct{}{}:
+			default:
+			}
 		}
 	} else {
-		select {
-		case b.read <- struct{}{}:
-		default:
+		if b.read != nil {
+			select {
+			case b.read <- struct{}{}:
+			default:
+			}
 		}
 	}
 }
