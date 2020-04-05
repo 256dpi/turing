@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// TODO: How should parallel instructions executions be handled?
+//  Should we try to batch requests before handing them over to raft?
+
 // Machine maintains a raft cluster with members and maintains consensus about the
 // execute instructions on the distributed database.
 type Machine struct {
