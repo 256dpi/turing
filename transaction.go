@@ -7,6 +7,14 @@ import (
 	"github.com/cockroachdb/pebble"
 )
 
+// TODO: Can a transaction be used concurrently?
+
+type closerFunc func() error
+
+func (f closerFunc) Close() error {
+	return f()
+}
+
 // ErrReadOnly is returned by by a transaction on write operations if the
 // instruction has been flagged as read only.
 var ErrReadOnly = errors.New("read only")
@@ -18,9 +26,10 @@ var ErrMaxEffect = errors.New("max effect")
 
 // Transaction is used by an instruction to perform changes to the database.
 type Transaction struct {
-	reader pebble.Reader
-	writer pebble.Writer
-	effect int
+	reader  pebble.Reader
+	writer  pebble.Writer
+	closers int
+	effect  int
 }
 
 // Get will lookup the specified key. The returned slice must not be modified by
@@ -35,9 +44,16 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 		return nil, false, nil, err
 	}
 
-	// TODO: Increment closer counter.
+	// increment
+	t.closers++
 
-	return value, true, closer, nil
+	// wrap closer
+	wrappedCloser := closerFunc(func() error {
+		t.closers--
+		return closer.Close()
+	})
+
+	return value, true, wrappedCloser, nil
 }
 
 // Use will lookup the specified key and yield it to the provided function if it

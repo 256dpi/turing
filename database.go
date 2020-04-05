@@ -1,6 +1,7 @@
 package turing
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -135,10 +136,23 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 			transactionCount++
 		}
 
-		// execute transaction
 		for {
+			// execute transaction
+			var maxed bool
 			err := instruction.Execute(txn)
 			if err == ErrMaxEffect {
+				maxed = true
+			} else if err != nil {
+				return err
+			}
+
+			// check closers
+			if txn.closers != 0 {
+				return fmt.Errorf("unclosed values after instruction execution")
+			}
+
+			// commit batch if maxed out and start over
+			if maxed {
 				// commit current batch (without index)
 				err := batch.Commit(nil)
 				if err != nil {
@@ -158,9 +172,6 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 				transactionCount++
 
 				continue
-			}
-			if err != nil {
-				return err
 			}
 
 			// set index
@@ -200,10 +211,20 @@ func (d *database) lookup(instruction Instruction) error {
 	// observe
 	defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))()
 
+	// prepare transaction
+	txn := &Transaction{
+		reader: d.pebble,
+	}
+
 	// execute instruction
-	err := instruction.Execute(&Transaction{reader: d.pebble})
+	err := instruction.Execute(txn)
 	if err != nil {
 		return err
+	}
+
+	// check closers
+	if txn.closers != 0 {
+		return fmt.Errorf("unclosed values after instruction execution")
 	}
 
 	return nil
