@@ -69,10 +69,12 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 		ctx = context.Background()
 	}
 
+	// TODO: Make timeout configurable.
+
 	// ensure deadline
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 10 * time.Second)
 		defer cancel()
 	}
 
