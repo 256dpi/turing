@@ -36,7 +36,7 @@ func RegisterMetrics() {
 	prometheus.MustRegister(databaseMetrics)
 }
 
-func observe(summary *prometheus.HistogramVec, label string) *prometheus.Timer {
+func observe(summary *prometheus.HistogramVec, label string) prometheus.Timer {
 	// get cache from cache
 	var cache *sync.Map
 	value, ok := observerCacheCache.Load(summary)
@@ -57,5 +57,6 @@ func observe(summary *prometheus.HistogramVec, label string) *prometheus.Timer {
 		observer = value.(prometheus.Observer)
 	}
 
-	return prometheus.NewTimer(observer)
+	// prevent allocation
+	return *prometheus.NewTimer(observer)
 }
