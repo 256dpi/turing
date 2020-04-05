@@ -32,15 +32,18 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 	// prepare logger
 	lgr := &extendedLogger{ILogger: logger.GetLogger("pebble")}
 
+	// create cache
+	cache := pebble.NewCache(64 << 20) // 64MB
+
 	// open db
 	pdb, err := pebble.Open(dir, &pebble.Options{
-		Cache:                       pebble.NewCache(64 << 20),
-		MemTableSize:                16 << 20,
+		Cache:                       cache,
+		MemTableSize:                16 << 20, // 16MB
 		MemTableStopWritesThreshold: 4,
-		MinFlushRate:                4 << 20,
+		MinFlushRate:                4 << 20, // 4MB
 		L0CompactionThreshold:       2,
 		L0StopWritesThreshold:       16,
-		LBaseMaxBytes:               16 << 20,
+		LBaseMaxBytes:               16 << 20, // 16MB
 		Levels: []pebble.LevelOptions{{
 			BlockSize: 32 << 10, // 32KB
 		}},
@@ -50,6 +53,9 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
+
+	// unref cache
+	cache.Unref()
 
 	// prepare index
 	var index uint64
