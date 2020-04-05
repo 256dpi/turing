@@ -26,21 +26,15 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 	// make key
 	key := []byte(i.Key)
 
-	// prepare count
+	// get count
 	var count int
-
-	// get existing value
-	value, err := txn.Get(key, false)
+	var err error
+	err = txn.Use(key, func(value []byte) error {
+		count, err = strconv.Atoi(string(value))
+		return err
+	})
 	if err != nil {
 		return err
-	}
-
-	// set current count if available
-	if value != nil {
-		count, err = strconv.Atoi(string(value))
-		if err != nil {
-			return err
-		}
 	}
 
 	// increment

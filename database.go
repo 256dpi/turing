@@ -52,14 +52,24 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 	var index uint64
 
 	// get last committed index
-	value, err := pdb.Get(indexKey)
+	value, closer, err := pdb.Get(indexKey)
 	if err != nil && err != pebble.ErrNotFound {
 		return nil, 0, err
 	}
 
 	// parse index if available
 	if value != nil {
+		// ensure close
+		defer closer.Close()
+
+		// parse value
 		index, err = strconv.ParseUint(string(value), 10, 64)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		// close value
+		err = closer.Close()
 		if err != nil {
 			return nil, 0, err
 		}

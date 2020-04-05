@@ -22,22 +22,14 @@ func (r *retrieve) Describe() turing.Description {
 }
 
 func (r *retrieve) Execute(txn *turing.Transaction) error {
-	// get key
-	value, err := txn.Get([]byte(r.Key), false)
+	// get count
+	var err error
+	err = txn.Use([]byte(r.Key), func(value []byte) error {
+		r.Value, err = strconv.Atoi(string(value))
+		return err
+	})
 	if err != nil {
 		return err
-	}
-
-	// check pair
-	if value != nil {
-		// parse value
-		count, err := strconv.Atoi(string(value))
-		if err != nil {
-			return err
-		}
-
-		// set count
-		r.Value = count
 	}
 
 	// count

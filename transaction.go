@@ -2,6 +2,7 @@ package turing
 
 import (
 	"errors"
+	"io"
 
 	"github.com/cockroachdb/pebble"
 )
@@ -22,21 +23,70 @@ type Transaction struct {
 	effect int
 }
 
-// Get will lookup the specified key. A returned un-copied slice must not be
-// modified by the caller. Specify copy to receive a safe copy of the value.
-func (t *Transaction) Get(key []byte, copy bool) ([]byte, error) {
-	// get key
-	value, err := t.reader.Get(userPrefix(key))
+// Get will lookup the specified key. The returned slice must not be modified by
+// the caller. A closer is returned that must be closed once the value is not
+// used anymore. Consider Use or Copy for better safety.
+func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
+	// get value
+	value, closer, err := t.reader.Get(userPrefix(key))
 	if err == pebble.ErrNotFound {
-		return nil, nil
+		return nil, false, nil, nil
+	} else if err != nil {
+		return nil, false, nil, err
 	}
 
-	// make copy if requested
-	if copy {
-		value = Copy(nil, value)
+	// TODO: Increment closer counter.
+
+	return value, true, closer, nil
+}
+
+// Use will lookup the specified key and yield it to the provided function if it
+// exists.
+func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
+	// get value
+	value, closer, err := t.reader.Get(userPrefix(key))
+	if err == pebble.ErrNotFound {
+		return nil
+	} else if err != nil {
+		return err
 	}
 
-	return value, nil
+	// yield value
+	err = fn(value)
+	if err != nil {
+		_ = closer.Close()
+		return err
+	}
+
+	// close value
+	err = closer.Close()
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+// Copy will lookup the specified key and return a copy if it exists.
+func (t *Transaction) Copy(key []byte) ([]byte, bool, error) {
+	// get value
+	value, closer, err := t.reader.Get(userPrefix(key))
+	if err == pebble.ErrNotFound {
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+
+	// copy value
+	value = Copy(nil, value)
+
+	// close value
+	err = closer.Close()
+	if err != nil {
+		return nil, false, err
+	}
+
+	return value, true, nil
 }
 
 // Set will set the specified key to the new value. This operation will count as
@@ -64,9 +114,9 @@ func (t *Transaction) Set(key, value []byte) error {
 	return nil
 }
 
-// Delete will delete the specified key. This operation will count as one towards
+// Unset will remove the specified key. This operation will count as one towards
 // the effect of the transaction.
-func (t *Transaction) Delete(key []byte) error {
+func (t *Transaction) Unset(key []byte) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
@@ -89,10 +139,10 @@ func (t *Transaction) Delete(key []byte) error {
 	return nil
 }
 
-// DeleteRange deletes all of the keys in the range [start, end] (inclusive on
-// start, exclusive on end). This operation will count as one towards the effect
-// of the transaction.
-func (t *Transaction) DeleteRange(start, end []byte) error {
+// Delete deletes all of the keys in the range [start, end] (inclusive on start,
+// exclusive on end). This operation will count as one towards the effect of the
+// transaction.
+func (t *Transaction) Delete(start, end []byte) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly

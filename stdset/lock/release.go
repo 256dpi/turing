@@ -25,37 +25,28 @@ func (r *Release) Execute(txn *turing.Transaction) error {
 	// reset fields
 	r.Unlocked = false
 
-	// prepare lock
+	// get lock
 	var lock Lock
-
-	// get value
-	value, err := txn.Get(r.Key, false)
+	err := txn.Use(r.Key, func(value []byte) error {
+		return json.Unmarshal(value, &lock)
+	})
 	if err != nil {
 		return err
 	}
 
-	// check content if missing
-	if value != nil {
-		// decode lock
-		err = json.Unmarshal(value, &lock)
-		if err != nil {
-			return err
-		}
-
-		// cancel if lock is still active and has another value
-		if lock.Time.Before(r.Time) && lock.Value != r.Value {
-			return nil
-		}
-
-		// delete lock
-		err = txn.Delete(r.Key)
-		if err != nil {
-			return err
-		}
-
-		// set flag
-		r.Unlocked = true
+	// skip if lock is missing or is still active and has another value
+	if lock.Time.IsZero() || (lock.Time.Before(r.Time) && lock.Value != r.Value) {
+		return nil
 	}
+
+	// unset lock
+	err = txn.Unset(r.Key)
+	if err != nil {
+		return err
+	}
+
+	// set flag
+	r.Unlocked = true
 
 	return nil
 }

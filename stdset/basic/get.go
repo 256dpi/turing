@@ -17,24 +17,12 @@ func (g *Get) Describe() turing.Description {
 }
 
 func (g *Get) Execute(txn *turing.Transaction) error {
-	// reset
-	g.Value = nil
-	g.Exists = false
-
 	// get value
-	value, err := txn.Get(g.Key, true)
+	var err error
+	g.Value, g.Exists, err = txn.Copy(g.Key)
 	if err != nil {
 		return err
 	}
-
-	// return if missing
-	if value == nil {
-		return nil
-	}
-
-	// set result
-	g.Value = value
-	g.Exists = true
 
 	return nil
 }
