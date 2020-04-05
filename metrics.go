@@ -6,21 +6,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var operationMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var operationMetrics = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "turing",
 	Subsystem: "",
 	Name:      "operations",
 	Help:      "Internal operation timings in milliseconds.",
 }, []string{"name"})
 
-var instructionMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var instructionMetrics = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "turing",
 	Subsystem: "",
 	Name:      "instructions",
 	Help:      "Instruction execution timings in milliseconds.",
 }, []string{"name"})
 
-var databaseMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var databaseMetrics = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "turing",
 	Subsystem: "",
 	Name:      "database",
@@ -36,7 +36,7 @@ func RegisterMetrics() {
 	prometheus.MustRegister(databaseMetrics)
 }
 
-func observe(summary *prometheus.SummaryVec, label string) *prometheus.Timer {
+func observe(summary *prometheus.HistogramVec, label string) *prometheus.Timer {
 	// get cache from cache
 	var cache *sync.Map
 	value, ok := observerCacheCache.Load(summary)
