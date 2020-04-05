@@ -96,6 +96,8 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 			return m.development.lookup(instruction)
 		}
 
+		// TODO: We should batch multiple writes in development.
+
 		// perform update
 		return m.development.update([]Instruction{instruction}, []uint64{0})
 	}

@@ -29,6 +29,8 @@ type Config struct {
 	// The average round trip time.
 	RoundTripTime time.Duration
 
+	// TODO: Rename to standalone mode.
+
 	// Whether development mode should be enabled.
 	Development bool
 }
