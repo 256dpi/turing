@@ -6,6 +6,7 @@ import (
 
 	"github.com/lni/dragonboat/v3"
 	"github.com/lni/dragonboat/v3/config"
+	"github.com/lni/dragonboat/v3/plugin/pebble"
 	"github.com/lni/dragonboat/v3/statemachine"
 )
 
@@ -44,6 +45,7 @@ func createCoordinator(cfg Config, manager *manager) (*coordinator, error) {
 		DeploymentID:   clusterID,
 		WALDir:         cfg.raftDir(),
 		NodeHostDir:    cfg.raftDir(),
+		LogDBFactory:   pebble.NewBatchedLogDB,
 		RTTMillisecond: rttMS,
 		RaftAddress:    cfg.Local().raftAddr(),
 	}
