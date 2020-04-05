@@ -12,6 +12,7 @@ type Machine struct {
 	manager     *manager
 	coordinator *coordinator
 	development *database
+	balancer    *balancer
 }
 
 // Start will create a new machine using the specified configuration.
@@ -24,7 +25,8 @@ func Start(config Config) (*Machine, error) {
 
 	// create machine
 	m := &Machine{
-		manager: newManager(),
+		manager:  newManager(),
+		balancer: newBalancer(100, 100),
 	}
 
 	// create coordinator in normal mode
@@ -74,6 +76,10 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	if err != nil {
 		return err
 	}
+
+	// balance
+	m.balancer.get(description.Effect != 0)
+	defer m.balancer.put(description.Effect != 0)
 
 	// execute directly in development mode
 	if m.development != nil {
