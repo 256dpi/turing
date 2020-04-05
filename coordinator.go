@@ -17,9 +17,6 @@ type coordinator struct {
 }
 
 func createCoordinator(cfg Config, manager *manager) (*coordinator, error) {
-	// observe
-	defer observe(operationMetrics.WithLabelValues("createCoordinator"))()
-
 	// prepare members
 	members := make(map[uint64]string)
 	for _, member := range cfg.Members {
@@ -182,9 +179,6 @@ func (c *coordinator) status() Status {
 }
 
 func (c *coordinator) close() {
-	// observe
-	defer observe(operationMetrics.WithLabelValues("coordinator.close"))()
-
 	// stop node
 	c.node.Stop()
 }

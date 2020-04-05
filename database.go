@@ -20,9 +20,6 @@ type database struct {
 }
 
 func openDatabase(dir string, manager *manager) (*database, uint64, error) {
-	// observe
-	defer observe(operationMetrics.WithLabelValues("database.open"))()
-
 	// ensure directory
 	err := os.MkdirAll(dir, 0700)
 	if err != nil {
@@ -270,9 +267,6 @@ func (d *database) restore(source io.Reader) error {
 }
 
 func (d *database) close() error {
-	// observe
-	defer observe(operationMetrics.WithLabelValues("database.close"))()
-
 	// close database
 	err := d.pebble.Close()
 	if err != nil {
