@@ -8,7 +8,7 @@ import (
 	"github.com/256dpi/turing"
 )
 
-var retrieveCounter = god.NewCounter("retrieve")
+var retrieveCounter = god.NewCounter("retrieve", nil)
 
 type retrieve struct {
 	Key   string

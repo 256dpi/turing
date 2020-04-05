@@ -115,9 +115,9 @@ func main() {
 	wg.Wait()
 }
 
-var writeCounter = god.NewCounter("write")
-var readCounter = god.NewCounter("read")
-var errorCounter = god.NewCounter("error")
+var writeCounter = god.NewCounter("write", nil)
+var readCounter = god.NewCounter("read", nil)
+var errorCounter = god.NewCounter("error", nil)
 
 func writer(machine *turing.Machine, done <-chan struct{}) {
 	// signal return

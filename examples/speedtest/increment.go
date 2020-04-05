@@ -8,7 +8,7 @@ import (
 	"github.com/256dpi/turing"
 )
 
-var incrementCounter = god.NewCounter("increment")
+var incrementCounter = god.NewCounter("increment", nil)
 
 type increment struct {
 	Key   string `json:"k,omitempty"`
