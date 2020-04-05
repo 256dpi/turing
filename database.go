@@ -99,7 +99,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	defer timer.ObserveDuration()
 
 	// count batch size
-	databaseMetrics.WithLabelValues("batch_length").Observe(float64(len(list)))
+	getObserver(databaseMetrics, "batch_length").Observe(float64(len(list)))
 
 	// create initial batch
 	batch := d.pebble.NewIndexedBatch()
@@ -207,7 +207,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	}
 
 	// count transaction count
-	databaseMetrics.WithLabelValues("transaction_count").Observe(float64(transactionCount))
+	getObserver(databaseMetrics, "transaction_count").Observe(float64(transactionCount))
 
 	return nil
 }
