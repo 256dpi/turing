@@ -52,7 +52,8 @@ func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 
 func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry, error) {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("replicator.update"))()
+	timer := observe(operationMetrics, "replicator.update")
+	defer timer.ObserveDuration()
 
 	// prepare instruction and index list
 	instructions := make([]Instruction, len(entries))
@@ -116,7 +117,8 @@ func (r *replicator) Sync() error {
 
 func (r *replicator) Lookup(data interface{}) (interface{}, error) {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("replicator.lookup"))()
+	timer := observe(operationMetrics, "replicator.lookup")
+	defer timer.ObserveDuration()
 
 	// get instruction
 	instruction := data.(Instruction)

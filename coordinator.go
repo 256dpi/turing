@@ -74,7 +74,8 @@ func createCoordinator(cfg Config, manager *manager) (*coordinator, error) {
 
 func (c *coordinator) update(ctx context.Context, cmd []byte) ([]byte, error) {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("coordinator.update"))()
+	timer := observe(operationMetrics, "coordinator.update")
+	defer timer.ObserveDuration()
 
 	// get session
 	session := c.node.GetNoOPSession(clusterID)
@@ -92,7 +93,8 @@ func (c *coordinator) update(ctx context.Context, cmd []byte) ([]byte, error) {
 
 func (c *coordinator) lookup(ctx context.Context, instruction Instruction, nonLinear bool) (e error) {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("coordinator.lookup"))()
+	timer := observe(operationMetrics, "coordinator.lookup")
+	defer timer.ObserveDuration()
 
 	// use faster non linear read if available
 	if nonLinear {
@@ -117,7 +119,8 @@ func (c *coordinator) lookup(ctx context.Context, instruction Instruction, nonLi
 
 func (c *coordinator) status() Status {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("coordinator.status"))()
+	timer := observe(operationMetrics, "coordinator.status")
+	defer timer.ObserveDuration()
 
 	// get info
 	info := c.node.GetNodeHostInfo(dragonboat.NodeHostInfoOption{

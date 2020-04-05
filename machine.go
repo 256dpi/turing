@@ -51,7 +51,8 @@ func Start(config Config) (*Machine, error) {
 // guarantees. This may be substantially faster but return stale data.
 func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinear bool) error {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("Machine.Execute"))()
+	timer := observe(operationMetrics, "Machine.Execute")
+	defer timer.ObserveDuration()
 
 	// ensure context
 	if ctx == nil {

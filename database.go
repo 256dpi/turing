@@ -95,7 +95,8 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 
 func (d *database) update(list []Instruction, indexes []uint64) error {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("database.update"))()
+	timer := observe(operationMetrics, "database.update")
+	defer timer.ObserveDuration()
 
 	// count batch size
 	databaseMetrics.WithLabelValues("batch_length").Observe(float64(len(list)))
@@ -115,7 +116,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	// execute all instructions
 	for i, instruction := range list {
 		// begin observation
-		finish := observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))
+		timer := observe(instructionMetrics, instruction.Describe().Name)
 
 		// get estimated effect of instruction
 		estimatedEffect := instruction.Describe().Effect
@@ -189,7 +190,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 		}
 
 		// finish observation
-		finish()
+		timer.ObserveDuration()
 	}
 
 	// commit final batch
@@ -211,10 +212,12 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 
 func (d *database) lookup(instruction Instruction) error {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("database.lookup"))()
+	timer1 := observe(operationMetrics, "database.lookup")
+	defer timer1.ObserveDuration()
 
 	// observe
-	defer observe(instructionMetrics.WithLabelValues(instruction.Describe().Name))()
+	timer2 := observe(instructionMetrics, instruction.Describe().Name)
+	defer timer2.ObserveDuration()
 
 	// prepare transaction
 	txn := &Transaction{
@@ -237,7 +240,8 @@ func (d *database) lookup(instruction Instruction) error {
 
 func (d *database) sync() error {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("database.sync"))()
+	timer := observe(operationMetrics, "database.sync")
+	defer timer.ObserveDuration()
 
 	// flush database
 	_, err := d.pebble.AsyncFlush()
@@ -250,7 +254,8 @@ func (d *database) sync() error {
 
 func (d *database) backup(sink io.Writer) error {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("database.backup"))()
+	timer := observe(operationMetrics, "database.backup")
+	defer timer.ObserveDuration()
 
 	// TODO: Implement.
 
@@ -259,7 +264,8 @@ func (d *database) backup(sink io.Writer) error {
 
 func (d *database) restore(source io.Reader) error {
 	// observe
-	defer observe(operationMetrics.WithLabelValues("database.restore"))()
+	timer := observe(operationMetrics, "database.restore")
+	defer timer.ObserveDuration()
 
 	// TODO: Implement.
 
