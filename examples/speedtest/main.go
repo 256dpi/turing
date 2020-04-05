@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/256dpi/god"
+	"github.com/lni/dragonboat/v3"
 
 	"github.com/256dpi/turing"
 )
@@ -116,8 +117,6 @@ func main() {
 }
 
 var writeCounter = god.NewCounter("write", nil)
-var readCounter = god.NewCounter("read", nil)
-var errorCounter = god.NewCounter("error", nil)
 
 func writer(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
@@ -136,8 +135,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		increment := &increment{Key: strconv.Itoa(rand.Intn(keySpace)), Value: 1}
 		err := machine.Execute(nil, increment, false)
 		if err != nil {
-			errorCounter.Add(1)
-			time.Sleep(100 * time.Millisecond)
+			handle(err)
 			continue
 		}
 
@@ -145,6 +143,8 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		writeCounter.Add(1)
 	}
 }
+
+var readCounter = god.NewCounter("read", nil)
 
 func reader(machine *turing.Machine, done <-chan struct{}) {
 	// signal return
@@ -163,12 +163,31 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		retrieve := &retrieve{Key: strconv.Itoa(rand.Intn(keySpace))}
 		err := machine.Execute(nil, retrieve, false)
 		if err != nil {
-			errorCounter.Add(1)
-			time.Sleep(100 * time.Millisecond)
+			handle(err)
 			continue
 		}
 
 		// retrieve
 		readCounter.Add(1)
 	}
+}
+
+var unreadyCounter = god.NewCounter("x-unready", nil)
+var busyCounter = god.NewCounter("x-busy", nil)
+var timeoutCounter = god.NewCounter("x-timeout", nil)
+var errorCounter = god.NewCounter("x-error", nil)
+
+func handle(err error) {
+	if err == dragonboat.ErrClusterNotReady {
+		unreadyCounter.Add(1)
+	} else if err == dragonboat.ErrSystemBusy {
+		busyCounter.Add(1)
+	} else if err == dragonboat.ErrTimeout {
+		timeoutCounter.Add(1)
+	} else if err != nil {
+		errorCounter.Add(1)
+		println(err.Error())
+	}
+
+	time.Sleep(100 * time.Millisecond)
 }
