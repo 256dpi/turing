@@ -1,6 +1,6 @@
 module github.com/256dpi/turing
 
-go 1.12
+go 1.13
 
 require (
 	github.com/256dpi/god v0.4.0
