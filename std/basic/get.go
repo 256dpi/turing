@@ -12,7 +12,7 @@ type Get struct {
 
 func (g *Get) Describe() turing.Description {
 	return turing.Description{
-		Name: "std/basic.Get",
+		Name: "std/basic/Get",
 	}
 }
 

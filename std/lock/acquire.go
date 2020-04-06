@@ -22,7 +22,7 @@ type Acquire struct {
 
 func (a *Acquire) Describe() turing.Description {
 	return turing.Description{
-		Name:   "std/lock.Acquire",
+		Name:   "std/lock/Acquire",
 		Effect: 1,
 	}
 }

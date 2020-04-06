@@ -7,7 +7,7 @@ import (
 )
 
 var Add = &turing.Operator{
-	Name: "turing/std/counter/add",
+	Name: "std/counter/Add",
 	Zero: []byte("0"),
 	Apply: func(value []byte, ops [][]byte) ([]byte, error) {
 		// parse value
@@ -42,7 +42,7 @@ type Increment struct {
 
 func (i *Increment) Describe() turing.Description {
 	return turing.Description{
-		Name:   "turing/std/counter/increment",
+		Name:   "std/counter/increment",
 		Effect: 1,
 	}
 }

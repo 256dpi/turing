@@ -16,7 +16,7 @@ type Release struct {
 
 func (r *Release) Describe() turing.Description {
 	return turing.Description{
-		Name:   "std/lock.Release",
+		Name:   "std/lock/Release",
 		Effect: 1,
 	}
 }
