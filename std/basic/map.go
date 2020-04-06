@@ -11,7 +11,7 @@ type Map struct {
 
 func (m *Map) Describe() turing.Description {
 	return turing.Description{
-		Name: "stdset/basic.Map",
+		Name: "std/basic.Map",
 	}
 }
 

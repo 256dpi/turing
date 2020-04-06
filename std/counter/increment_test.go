@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/stdset/basic"
+	"github.com/256dpi/turing/std/basic"
 )
 
 var instructions = []turing.Instruction{

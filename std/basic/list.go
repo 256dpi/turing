@@ -12,7 +12,7 @@ type List struct {
 
 func (l *List) Describe() turing.Description {
 	return turing.Description{
-		Name: "stdset/basic.List",
+		Name: "std/basic.List",
 	}
 }
 

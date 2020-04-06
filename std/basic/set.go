@@ -11,7 +11,7 @@ type Set struct {
 
 func (s *Set) Describe() turing.Description {
 	return turing.Description{
-		Name:   "stdset/basic.Set",
+		Name:   "std/basic.Set",
 		Effect: 1,
 	}
 }
