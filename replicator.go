@@ -14,24 +14,24 @@ type command struct {
 }
 
 type replicator struct {
-	config       Config
-	manager      *manager
-	database     *database
-	instructions map[string]Instruction
+	config   Config
+	manager  *manager
+	database *database
+	registry map[string]Instruction
 }
 
 func newReplicator(config Config, manager *manager) *replicator {
-	// create instruction map
-	instructions := make(map[string]Instruction)
+	// create instruction registry
+	registry := make(map[string]Instruction)
 	for _, i := range config.Instructions {
-		instructions[i.Describe().Name] = i
+		registry[i.Describe().Name] = i
 	}
 
 	// create replicator
 	replicator := &replicator{
-		config:       config,
-		manager:      manager,
-		instructions: instructions,
+		config:   config,
+		manager:  manager,
+		registry: registry,
 	}
 
 	return replicator
@@ -69,7 +69,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		}
 
 		// get factory instruction
-		factory, ok := r.instructions[cmd.Name]
+		factory, ok := r.registry[cmd.Name]
 		if !ok {
 			return nil, fmt.Errorf("missing instruction: " + cmd.Name)
 		}
