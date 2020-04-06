@@ -373,6 +373,9 @@ func (i *Iterator) Value(copy bool) ([]byte, error) {
 		return nil, err
 	}
 
+	// set bytes
+	bytes = value.Value
+
 	// make copy
 	if copy {
 		bytes = Copy(nil, bytes)
