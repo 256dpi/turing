@@ -27,11 +27,10 @@ func PrefixRange(prefix []byte) ([]byte, []byte) {
 }
 
 // TestMachine will start and return a machine for testing purposes.
-func TestMachine(instructions []Instruction, operators []*Operator) *Machine {
+func TestMachine(instructions ...Instruction) *Machine {
 	// create machine
 	machine, err := Start(Config{
 		Instructions: instructions,
-		Operators:    operators,
 		Standalone:   true,
 	})
 	if err != nil {

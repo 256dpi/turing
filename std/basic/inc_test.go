@@ -8,16 +8,8 @@ import (
 	"github.com/256dpi/turing"
 )
 
-var instructions = []turing.Instruction{
-	&Inc{},
-}
-
-var operators = []*turing.Operator{
-	Add,
-}
-
 func TestInc(t *testing.T) {
-	machine := turing.TestMachine(instructions, operators)
+	machine := turing.TestMachine(&Inc{}, &Get{})
 	defer machine.Stop()
 
 	err := machine.Execute(nil, &Inc{

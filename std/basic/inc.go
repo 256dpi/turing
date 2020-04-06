@@ -6,8 +6,8 @@ import (
 	"github.com/256dpi/turing"
 )
 
-var Add = &turing.Operator{
-	Name: "std/counter/Add",
+var IncAdd = &turing.Operator{
+	Name: "std/counter/IncAdd",
 	Zero: []byte("0"),
 	Apply: func(value []byte, ops [][]byte) ([]byte, error) {
 		// parse value
@@ -42,14 +42,15 @@ type Inc struct {
 
 func (i *Inc) Describe() turing.Description {
 	return turing.Description{
-		Name:   "std/basic/Inc",
-		Effect: 1,
+		Name:      "std/basic/Inc",
+		Effect:    1,
+		Operators: []*turing.Operator{IncAdd},
 	}
 }
 
 func (i *Inc) Execute(txn *turing.Transaction) error {
 	// merge with value
-	err := txn.Merge(i.Key, strconv.AppendInt(nil, i.Value, 10), Add)
+	err := txn.Merge(i.Key, strconv.AppendInt(nil, i.Value, 10), IncAdd)
 	if err != nil {
 		return err
 	}

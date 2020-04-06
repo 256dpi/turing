@@ -53,6 +53,9 @@ type Description struct {
 	// The builder can be set to implement a custom builder. If not set, the
 	// default reflect based builder will be used.
 	Builder func() Instruction
+
+	// The operators used by this instruction.
+	Operators []*Operator
 }
 
 // Validate will validate the instruction description.

@@ -27,9 +27,6 @@ type Config struct {
 	// The used instructions.
 	Instructions []Instruction
 
-	// The used operators.
-	Operators []*Operator
-
 	// The average round trip time.
 	RoundTripTime time.Duration
 

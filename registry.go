@@ -9,38 +9,39 @@ type registry struct {
 
 func buildRegistry(config Config) (*registry, error) {
 	// prepare registry
-	registry := &registry{
+	reg := &registry{
 		instructions: map[string]Instruction{},
 		operators:    map[string]*Operator{},
 	}
 
 	// add instructions
-	for _, instruction := range config.Instructions {
-		// get name
-		name := instruction.Describe().Name
+	for _, ins := range config.Instructions {
+		// get description
+		dsc := ins.Describe()
 
 		// check existence
-		if registry.instructions[name] != nil {
-			return nil, fmt.Errorf("duplicate instruction: %s", name)
+		if reg.instructions[dsc.Name] != nil {
+			return nil, fmt.Errorf("duplicate instruction: %s", dsc.Name)
 		}
 
 		// store instruction
-		registry.instructions[name] = instruction
-	}
+		reg.instructions[dsc.Name] = ins
 
-	// add operators
-	for _, operator := range config.Operators {
-		// get name
-		name := operator.Name
+		// add operators
+		for _, op := range dsc.Operators {
+			// get name
+			name := op.Name
 
-		// check existence
-		if registry.operators[name] != nil {
-			return nil, fmt.Errorf("duplicate operator: %s", name)
+			// check existing operator
+			eop := reg.operators[name]
+			if eop != nil && eop != op {
+				return nil, fmt.Errorf("different operator for same name: %s", name)
+			}
+
+			// store operator
+			reg.operators[name] = op
 		}
-
-		// store operator
-		registry.operators[name] = operator
 	}
 
-	return registry, nil
+	return reg, nil
 }

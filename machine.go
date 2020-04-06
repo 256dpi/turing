@@ -3,6 +3,7 @@ package turing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -100,6 +101,11 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 
 	// get description
 	description := instruction.Describe()
+
+	// check registry
+	if m.registry.instructions[description.Name] == nil {
+		return fmt.Errorf("missing instruction: %s", description.Name)
+	}
 
 	// validate instruction
 	err := description.Validate()

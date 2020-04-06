@@ -2,6 +2,7 @@ package turing
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 
@@ -217,6 +218,12 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
+	}
+
+	// check registry
+	if t.registry.operators[operator.Name] == nil {
+		// TODO: Make sure current instruction registered operator.
+		return fmt.Errorf("unknown operator: %s", operator.Name)
 	}
 
 	// encode value
