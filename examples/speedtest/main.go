@@ -30,6 +30,7 @@ func main() {
 	var membersFlag = flag.String("members", "", "the cluster members")
 	var dirFlag = flag.String("dir", "data", "the data directory")
 	var standaloneFlag = flag.Bool("standalone", false, "enable standalone mode")
+	var memoryFlag = flag.Bool("memory", false, "enable in-memory mode")
 
 	// parse flags
 	flag.Parse()
@@ -67,6 +68,11 @@ func main() {
 
 	// append server id
 	directory = filepath.Join(directory, strconv.FormatUint(*idFlag, 10))
+
+	// check if in-memory is requested
+	if *memoryFlag {
+		directory = ""
+	}
 
 	// start machine
 	machine, err := turing.Start(turing.Config{
