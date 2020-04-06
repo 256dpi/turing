@@ -56,7 +56,7 @@ type Transaction struct {
 // used anymore. Consider Use or Copy for better safety.
 func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	// get value
-	value, closer, err := t.reader.Get(userPrefix(key))
+	value, closer, err := t.reader.Get(prefixUserKey(key))
 	if err == pebble.ErrNotFound {
 		return nil, false, nil, nil
 	} else if err != nil {
@@ -79,7 +79,7 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 // exists.
 func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
 	// get value
-	value, closer, err := t.reader.Get(userPrefix(key))
+	value, closer, err := t.reader.Get(prefixUserKey(key))
 	if err == pebble.ErrNotFound {
 		return nil
 	} else if err != nil {
@@ -105,7 +105,7 @@ func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
 // Copy will lookup the specified key and return a copy if it exists.
 func (t *Transaction) Copy(key []byte) ([]byte, bool, error) {
 	// get value
-	value, closer, err := t.reader.Get(userPrefix(key))
+	value, closer, err := t.reader.Get(prefixUserKey(key))
 	if err == pebble.ErrNotFound {
 		return nil, false, nil
 	} else if err != nil {
@@ -133,7 +133,7 @@ func (t *Transaction) Set(key, value []byte) error {
 	}
 
 	// set key to value
-	err := t.writer.Set(userPrefix(key), value, nil)
+	err := t.writer.Set(prefixUserKey(key), value, nil)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (t *Transaction) Unset(key []byte) error {
 	}
 
 	// delete key
-	err := t.writer.Delete(userPrefix(key), nil)
+	err := t.writer.Delete(prefixUserKey(key), nil)
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func (t *Transaction) Delete(start, end []byte) error {
 	}
 
 	// delete range
-	err := t.writer.DeleteRange(userPrefix(start), userPrefix(end), nil)
+	err := t.writer.DeleteRange(prefixUserKey(start), prefixUserKey(end), nil)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (t *Transaction) Effect() int {
 // created at a time.
 func (t *Transaction) Iterator(prefix []byte) *Iterator {
 	return &Iterator{
-		iter: t.reader.NewIter(prefixIterator(userPrefix(prefix))),
+		iter: t.reader.NewIter(prefixIterator(prefixUserKey(prefix))),
 	}
 }
 
@@ -221,12 +221,12 @@ type Iterator struct {
 
 // SeekGE will seek to the exact key or the next greater key.
 func (i *Iterator) SeekGE(key []byte) bool {
-	return i.iter.SeekGE(userPrefix(key))
+	return i.iter.SeekGE(prefixUserKey(key))
 }
 
 // SeekLT will seek to the exact key or the next smaller key.
 func (i *Iterator) SeekLT(key []byte) bool {
-	return i.iter.SeekLT(userPrefix(key))
+	return i.iter.SeekLT(prefixUserKey(key))
 }
 
 // First will seek to the first key in the range.
@@ -257,7 +257,7 @@ func (i *Iterator) Prev() bool {
 // Key will return the current key.
 func (i *Iterator) Key(copy bool) []byte {
 	// get key
-	key := userTrim(i.iter.Key())
+	key := trimUserKey(i.iter.Key())
 	if key == nil {
 		return nil
 	}
@@ -296,11 +296,11 @@ func (i *Iterator) Close() error {
 	return i.iter.Close()
 }
 
-func userPrefix(key []byte) []byte {
+func prefixUserKey(key []byte) []byte {
 	return append([]byte{'#'}, key...)
 }
 
-func userTrim(key []byte) []byte {
+func trimUserKey(key []byte) []byte {
 	if len(key) > 0 {
 		return key[1:]
 	}
