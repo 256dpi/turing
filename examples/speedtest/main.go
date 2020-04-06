@@ -29,7 +29,7 @@ func main() {
 	var idFlag = flag.Uint64("id", 1, "the server id")
 	var membersFlag = flag.String("members", "", "the cluster members")
 	var dirFlag = flag.String("dir", "data", "the data directory")
-	var devFlag = flag.Bool("dev", false, "enable development mode")
+	var standaloneFlag = flag.Bool("standalone", false, "enable standalone mode")
 
 	// parse flags
 	flag.Parse()
@@ -70,10 +70,10 @@ func main() {
 
 	// start machine
 	machine, err := turing.Start(turing.Config{
-		ID:          *idFlag,
-		Members:     members,
-		Directory:   directory,
-		Development: *devFlag,
+		ID:         *idFlag,
+		Members:    members,
+		Directory:  directory,
+		Standalone: *standaloneFlag,
 		Instructions: []turing.Instruction{
 			&increment{}, &retrieve{},
 		},

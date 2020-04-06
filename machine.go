@@ -30,7 +30,7 @@ func Start(config Config) (*Machine, error) {
 
 	// prepare balancer
 	balancer := newBalancer(10000, 0)
-	if config.Development {
+	if config.Standalone {
 		balancer = newBalancer(100, 100)
 	}
 
@@ -41,15 +41,15 @@ func Start(config Config) (*Machine, error) {
 	}
 
 	// create coordinator in normal mode
-	if !config.Development {
+	if !config.Standalone {
 		m.coordinator, err = createCoordinator(config, m.manager)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// create database in development mode
-	if config.Development {
+	// create database in standalone mode
+	if config.Standalone {
 		m.development, _, err = openDatabase(config, m.manager)
 		if err != nil {
 			return nil, err
