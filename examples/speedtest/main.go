@@ -135,6 +135,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		err := machine.Execute(nil, &inc{
 			Key:   strconv.Itoa(rand.Intn(keySpace)),
 			Value: 1,
+			Merge: rand.Intn(4) > 0, // 75%
 		}, false)
 		if err != nil {
 			handle(err)

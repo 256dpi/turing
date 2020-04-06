@@ -22,6 +22,8 @@ func (r *get) Describe() turing.Description {
 var getCounter = god.NewCounter("get", nil)
 
 func (r *get) Execute(txn *turing.Transaction) error {
+	getCounter.Add(1)
+
 	// get count
 	var err error
 	err = txn.Use([]byte(r.Key), func(value []byte) error {
@@ -31,9 +33,6 @@ func (r *get) Execute(txn *turing.Transaction) error {
 	if err != nil {
 		return err
 	}
-
-	// count
-	getCounter.Add(1)
 
 	return nil
 }
