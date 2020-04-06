@@ -1,4 +1,4 @@
-package counter
+package basic
 
 import (
 	"strconv"
@@ -35,19 +35,19 @@ var Add = &turing.Operator{
 	},
 }
 
-type Increment struct {
+type Inc struct {
 	Key   []byte `json:"key,omitempty"`
 	Value int64  `json:"value,omitempty"`
 }
 
-func (i *Increment) Describe() turing.Description {
+func (i *Inc) Describe() turing.Description {
 	return turing.Description{
-		Name:   "std/counter/increment",
+		Name:   "std/basic/Inc",
 		Effect: 1,
 	}
 }
 
-func (i *Increment) Execute(txn *turing.Transaction) error {
+func (i *Inc) Execute(txn *turing.Transaction) error {
 	// merge with value
 	err := txn.Merge(i.Key, strconv.AppendInt(nil, i.Value, 10), Add)
 	if err != nil {

@@ -1,4 +1,4 @@
-package counter
+package basic
 
 import (
 	"testing"
@@ -6,34 +6,33 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/std/basic"
 )
 
 var instructions = []turing.Instruction{
-	&Increment{},
+	&Inc{},
 }
 
 var operators = []*turing.Operator{
 	Add,
 }
 
-func TestIncrement(t *testing.T) {
+func TestInc(t *testing.T) {
 	machine := turing.TestMachine(instructions, operators)
 	defer machine.Stop()
 
-	err := machine.Execute(nil, &Increment{
+	err := machine.Execute(nil, &Inc{
 		Key:   []byte("foo"),
 		Value: 1,
 	}, false)
 	assert.NoError(t, err)
 
-	err = machine.Execute(nil, &Increment{
+	err = machine.Execute(nil, &Inc{
 		Key:   []byte("foo"),
 		Value: 2,
 	}, false)
 	assert.NoError(t, err)
 
-	var get = basic.Get{
+	var get = Get{
 		Key: []byte("foo"),
 	}
 
@@ -41,7 +40,7 @@ func TestIncrement(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("3"), get.Value)
 
-	err = machine.Execute(nil, &Increment{
+	err = machine.Execute(nil, &Inc{
 		Key:   []byte("foo"),
 		Value: 3,
 	}, false)
