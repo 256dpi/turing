@@ -35,7 +35,7 @@ func Start(config Config) (*Machine, error) {
 	// prepare balancer
 	balancer := newBalancer(10000, 0)
 	if config.Standalone {
-		balancer = newBalancer(100, 100)
+		balancer = newBalancer(4, 1)
 	}
 
 	// prepare coordinator
@@ -103,14 +103,12 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	m.balancer.get(description.Effect != 0)
 	defer m.balancer.put(description.Effect != 0)
 
-	// execute directly if possible
-	if m.database != nil {
+	// execute directly if standalone
+	if m.config.Standalone {
 		// perform lookup
 		if description.Effect == 0 {
 			return m.database.lookup(instruction)
 		}
-
-		// TODO: We should batch multiple writes in development.
 
 		// perform update
 		return m.database.update([]Instruction{instruction}, []uint64{0})
