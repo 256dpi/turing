@@ -8,10 +8,10 @@ import (
 )
 
 type Release struct {
-	Key      []byte    `json:"key"`
-	Value    string    `json:"value"`
-	Time     time.Time `json:"time"`
-	Unlocked bool      `json:"unlocked"`
+	Key      []byte    `json:"k,omitempty"`
+	Value    string    `json:"v,omitempty"`
+	Time     time.Time `json:"t,omitempty"`
+	Unlocked bool      `json:"u,omitempty"`
 }
 
 func (r *Release) Describe() turing.Description {

@@ -5,8 +5,8 @@ import (
 )
 
 type Map struct {
-	Prefix []byte            `json:"prefix,omitempty"`
-	Pairs  map[string][]byte `json:"pairs,omitempty"`
+	Prefix []byte            `json:"p,omitempty"`
+	Pairs  map[string][]byte `json:"m,omitempty"`
 }
 
 func (m *Map) Describe() turing.Description {

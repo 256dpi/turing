@@ -8,16 +8,16 @@ import (
 )
 
 type Lock struct {
-	Value string    `json:"value"`
-	Time  time.Time `json:"time"`
+	Value string    `json:"v,omitempty"`
+	Time  time.Time `json:"t,omitempty"`
 }
 
 type Acquire struct {
-	Key     []byte    `json:"key"`
-	Value   string    `json:"value"`
-	Time    time.Time `json:"time"`
-	Timeout time.Time `json:"timeout"`
-	Locked  bool      `json:"locked"`
+	Key     []byte    `json:"k,omitempty"`
+	Value   string    `json:"v,omitempty"`
+	Time    time.Time `json:"t,omitempty"`
+	Timeout time.Time `json:"o,omitempty"`
+	Locked  bool      `json:"l,omitempty"`
 }
 
 func (a *Acquire) Describe() turing.Description {

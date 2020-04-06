@@ -5,8 +5,8 @@ import (
 )
 
 type Set struct {
-	Key   []byte `json:"key"`
-	Value []byte `json:"value"`
+	Key   []byte `json:"k,omitempty"`
+	Value []byte `json:"v,omitempty"`
 }
 
 func (s *Set) Describe() turing.Description {
