@@ -65,14 +65,8 @@ func main() {
 		panic(err)
 	}
 
-	// append server name
+	// append server id
 	directory = filepath.Join(directory, strconv.FormatUint(*idFlag, 10))
-
-	// remove all previous data
-	err = os.RemoveAll(directory)
-	if err != nil {
-		panic(err)
-	}
 
 	// start machine
 	machine, err := turing.Start(turing.Config{

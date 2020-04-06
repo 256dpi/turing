@@ -19,7 +19,6 @@ func main() {
 	var idFlag = flag.Uint64("id", 1, "the server id")
 	var membersFlag = flag.String("members", "", "the cluster members")
 	var dirFlag = flag.String("dir", "data", "the data directory")
-	var cleanFlag = flag.Bool("clean", false, "remove existing data")
 
 	// parse flags
 	flag.Parse()
@@ -43,16 +42,8 @@ func main() {
 		panic(err)
 	}
 
-	// append server name
+	// append server id
 	directory = filepath.Join(directory, strconv.FormatUint(*idFlag, 10))
-
-	// remove all previous data if requested
-	if *cleanFlag {
-		err = os.RemoveAll(directory)
-		if err != nil {
-			panic(err)
-		}
-	}
 
 	// start machine
 	machine, err := turing.Start(turing.Config{
