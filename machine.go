@@ -12,9 +12,10 @@ import (
 // Machine maintains a raft cluster with members and maintains consensus about the
 // execute instructions on the distributed database.
 type Machine struct {
+	config      Config
 	manager     *manager
 	coordinator *coordinator
-	development *database
+	database    *database
 	balancer    *balancer
 }
 
@@ -26,6 +27,9 @@ func Start(config Config) (*Machine, error) {
 		return nil, err
 	}
 
+	// prepare manager
+	manager := newManager()
+
 	// TODO: Balancer should be configurable.
 
 	// prepare balancer
@@ -34,26 +38,31 @@ func Start(config Config) (*Machine, error) {
 		balancer = newBalancer(100, 100)
 	}
 
+	// prepare coordinator
+	var coordinator *coordinator
+	if !config.Standalone {
+		coordinator, err = createCoordinator(config, manager)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// prepare database
+	var database *database
+	if config.Standalone {
+		database, _, err = openDatabase(config, manager)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// create machine
 	m := &Machine{
-		manager:  newManager(),
-		balancer: balancer,
-	}
-
-	// create coordinator in normal mode
-	if !config.Standalone {
-		m.coordinator, err = createCoordinator(config, m.manager)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// create database in standalone mode
-	if config.Standalone {
-		m.development, _, err = openDatabase(config, m.manager)
-		if err != nil {
-			return nil, err
-		}
+		config:      config,
+		manager:     manager,
+		coordinator: coordinator,
+		database:    database,
+		balancer:    balancer,
 	}
 
 	return m, nil
@@ -77,7 +86,7 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	// ensure deadline
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 10 * time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 	}
 
@@ -94,20 +103,20 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	m.balancer.get(description.Effect != 0)
 	defer m.balancer.put(description.Effect != 0)
 
-	// execute directly in development mode
-	if m.development != nil {
+	// execute directly if possible
+	if m.database != nil {
 		// perform lookup
 		if description.Effect == 0 {
-			return m.development.lookup(instruction)
+			return m.database.lookup(instruction)
 		}
 
 		// TODO: We should batch multiple writes in development.
 
 		// perform update
-		return m.development.update([]Instruction{instruction}, []uint64{0})
+		return m.database.update([]Instruction{instruction}, []uint64{0})
 	}
 
-	// immediately execute lookups
+	// immediately perform lookups
 	if description.Effect == 0 {
 		err = m.coordinator.lookup(ctx, instruction, nonLinear)
 		if err != nil {
@@ -135,7 +144,7 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 		return err
 	}
 
-	// apply command
+	// perform update
 	result, err := m.coordinator.update(ctx, bytes)
 	if err != nil {
 		return err
@@ -175,8 +184,8 @@ func (m *Machine) Status() Status {
 // Stop will stop the machine.
 func (m *Machine) Stop() {
 	// close development db
-	if m.development != nil {
-		_ = m.development.close()
+	if m.database != nil {
+		_ = m.database.close()
 	}
 
 	// close coordinator
