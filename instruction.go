@@ -16,6 +16,21 @@ const MaxEffect = 10000
 // using multiple transactions.
 const UnboundedEffect = -1
 
+// Operator describes a merge operator.
+type Operator struct {
+	// The name of the operator.
+	Name string
+
+	// The zero value for merge only keys.
+	Zero []byte
+
+	// The function called to apply operands to a value.
+	Apply func(value []byte, ops [][]byte) ([]byte, error)
+
+	// An optional function called to combine operands.
+	// Combine func(ops [][]byte) ([]byte, error)
+}
+
 // Instruction is the interface that is implemented by instructions that are
 // executed by the machine.
 type Instruction interface {
