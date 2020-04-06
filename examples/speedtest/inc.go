@@ -8,8 +8,6 @@ import (
 	"github.com/256dpi/turing"
 )
 
-var incCounter = god.NewCounter("inc", nil)
-
 type inc struct {
 	Key   string `msgpack:"k,omitempty"`
 	Value int64  `msgpack:"v,omitempty"`
@@ -21,6 +19,8 @@ func (i *inc) Describe() turing.Description {
 		Effect: 1,
 	}
 }
+
+var incCounter = god.NewCounter("inc", nil)
 
 func (i *inc) Execute(txn *turing.Transaction) error {
 	// make key

@@ -8,8 +8,6 @@ import (
 	"github.com/256dpi/turing"
 )
 
-var getCounter = god.NewCounter("get", nil)
-
 type get struct {
 	Key   string `msgpack:"k,omitempty"`
 	Value int64  `msgpack:"v,omitempty"`
@@ -20,6 +18,8 @@ func (r *get) Describe() turing.Description {
 		Name: "get",
 	}
 }
+
+var getCounter = god.NewCounter("get", nil)
 
 func (r *get) Execute(txn *turing.Transaction) error {
 	// get count
