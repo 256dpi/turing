@@ -28,7 +28,7 @@ func main() {
 	// prepare flags
 	var idFlag = flag.Uint64("id", 1, "the server id")
 	var membersFlag = flag.String("members", "", "the cluster members")
-	var dirFlag = flag.String("dir", "data", "the data directory")
+	var directoryFlag = flag.String("directory", "data", "the data directory")
 	var standaloneFlag = flag.Bool("standalone", false, "enable standalone mode")
 	var memoryFlag = flag.Bool("memory", false, "enable in-memory mode")
 
@@ -61,7 +61,7 @@ func main() {
 	}
 
 	// resolve directory
-	directory, err := filepath.Abs(*dirFlag)
+	directory, err := filepath.Abs(*directoryFlag)
 	if err != nil {
 		panic(err)
 	}
