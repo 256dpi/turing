@@ -8,40 +8,40 @@ import (
 	"github.com/256dpi/turing"
 )
 
-var incrementCounter = god.NewCounter("increment", nil)
+var incCounter = god.NewCounter("inc", nil)
 
-type increment struct {
+type inc struct {
 	Key   string `msgpack:"k,omitempty"`
-	Value int    `msgpack:"v,omitempty"`
+	Value int64  `msgpack:"v,omitempty"`
 }
 
-func (i *increment) Describe() turing.Description {
+func (i *inc) Describe() turing.Description {
 	return turing.Description{
-		Name:   "increment",
+		Name:   "inc",
 		Effect: 1,
 	}
 }
 
-func (i *increment) Execute(txn *turing.Transaction) error {
+func (i *inc) Execute(txn *turing.Transaction) error {
 	// make key
 	key := []byte(i.Key)
 
 	// get count
-	var count int
+	var count int64
 	var err error
 	err = txn.Use(key, func(value []byte) error {
-		count, err = strconv.Atoi(string(value))
+		count, err = strconv.ParseInt(string(value), 10, 64)
 		return err
 	})
 	if err != nil {
 		return err
 	}
 
-	// increment
+	// inc
 	count += i.Value
 
 	// set value
-	err = txn.Set(key, []byte(strconv.Itoa(count)))
+	err = txn.Set(key, strconv.AppendInt(nil, count, 10))
 	if err != nil {
 		return err
 	}
@@ -49,8 +49,8 @@ func (i *increment) Execute(txn *turing.Transaction) error {
 	// set count
 	i.Value = count
 
-	// increment
-	incrementCounter.Add(1)
+	// inc
+	incCounter.Add(1)
 
 	return nil
 }

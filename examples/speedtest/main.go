@@ -81,7 +81,7 @@ func main() {
 		Directory:  directory,
 		Standalone: *standaloneFlag,
 		Instructions: []turing.Instruction{
-			&increment{}, &retrieve{},
+			&inc{}, &get{},
 		},
 	})
 	if err != nil {
@@ -131,9 +131,11 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		default:
 		}
 
-		// increment value
-		increment := &increment{Key: strconv.Itoa(rand.Intn(keySpace)), Value: 1}
-		err := machine.Execute(nil, increment, false)
+		// inc value
+		err := machine.Execute(nil, &inc{
+			Key:   strconv.Itoa(rand.Intn(keySpace)),
+			Value: 1,
+		}, false)
 		if err != nil {
 			handle(err)
 			continue
@@ -159,15 +161,16 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		default:
 		}
 
-		// retrieve value
-		retrieve := &retrieve{Key: strconv.Itoa(rand.Intn(keySpace))}
-		err := machine.Execute(nil, retrieve, false)
+		// get value
+		err := machine.Execute(nil, &get{
+			Key: strconv.Itoa(rand.Intn(keySpace)),
+		}, false)
 		if err != nil {
 			handle(err)
 			continue
 		}
 
-		// retrieve
+		// increment
 		readCounter.Add(1)
 	}
 }

@@ -8,24 +8,24 @@ import (
 	"github.com/256dpi/turing"
 )
 
-var retrieveCounter = god.NewCounter("retrieve", nil)
+var getCounter = god.NewCounter("get", nil)
 
-type retrieve struct {
+type get struct {
 	Key   string `msgpack:"k,omitempty"`
-	Value int    `msgpack:"v,omitempty"`
+	Value int64  `msgpack:"v,omitempty"`
 }
 
-func (r *retrieve) Describe() turing.Description {
+func (r *get) Describe() turing.Description {
 	return turing.Description{
-		Name: "retrieve",
+		Name: "get",
 	}
 }
 
-func (r *retrieve) Execute(txn *turing.Transaction) error {
+func (r *get) Execute(txn *turing.Transaction) error {
 	// get count
 	var err error
 	err = txn.Use([]byte(r.Key), func(value []byte) error {
-		r.Value, err = strconv.Atoi(string(value))
+		r.Value, err = strconv.ParseInt(string(value), 10, 64)
 		return err
 	})
 	if err != nil {
@@ -33,7 +33,7 @@ func (r *retrieve) Execute(txn *turing.Transaction) error {
 	}
 
 	// count
-	retrieveCounter.Add(1)
+	getCounter.Add(1)
 
 	return nil
 }
