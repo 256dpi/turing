@@ -80,6 +80,8 @@ func buildInstruction(i Instruction) Instruction {
 	return reflect.New(reflect.TypeOf(i).Elem()).Interface().(Instruction)
 }
 
+// TODO: Use msgpack for default coding?
+
 func encodeInstruction(i Instruction) ([]byte, error) {
 	// use codec if available
 	if ic, ok := i.(InstructionCodec); ok {

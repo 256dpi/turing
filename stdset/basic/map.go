@@ -25,8 +25,14 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 
 	// iterate through all pairs
 	for iter.First(); iter.Valid(); iter.Next() {
+		// get value
+		value, err := iter.Value(true)
+		if err != nil {
+			return err
+		}
+
 		// set key value
-		m.Pairs[string(iter.Key(false))] = iter.Value(true)
+		m.Pairs[string(iter.Key(false))] = value
 	}
 
 	return nil

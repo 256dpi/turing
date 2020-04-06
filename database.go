@@ -33,10 +33,19 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	// create cache
 	cache := pebble.NewCache(64 << 20) // 64MB
 
+	// prepare merger
+	merger := &pebble.Merger{
+		Name: "turing",
+		Merge: func(key, value []byte) (pebble.ValueMerger, error) {
+			return newMerger(registry, value), nil
+		},
+	}
+
 	// open db
 	pdb, err := pebble.Open(config.dbDir(), &pebble.Options{
 		FS:                          fs,
 		Cache:                       cache,
+		Merger:                      merger,
 		MemTableSize:                16 << 20, // 16MB
 		MemTableStopWritesThreshold: 4,
 		MinFlushRate:                4 << 20, // 4MB

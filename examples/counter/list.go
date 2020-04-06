@@ -26,8 +26,14 @@ func (l *list) Execute(txn *turing.Transaction) error {
 
 	// iterate through all pairs
 	for iter.First(); iter.Valid(); iter.Next() {
+		// get value
+		value, err := iter.Value(false)
+		if err != nil {
+			return err
+		}
+
 		// parse value
-		count, err := strconv.Atoi(string(iter.Value(false)))
+		count, err := strconv.Atoi(string(value))
 		if err != nil {
 			return err
 		}
