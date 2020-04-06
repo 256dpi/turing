@@ -13,6 +13,7 @@ import (
 // execute instructions on the distributed database.
 type Machine struct {
 	config      Config
+	registry    *registry
 	manager     *manager
 	coordinator *coordinator
 	database    *database
@@ -23,6 +24,12 @@ type Machine struct {
 func Start(config Config) (*Machine, error) {
 	// check config
 	err := config.check()
+	if err != nil {
+		return nil, err
+	}
+
+	// build registry
+	registry, err := buildRegistry(config)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +48,7 @@ func Start(config Config) (*Machine, error) {
 	// prepare coordinator
 	var coordinator *coordinator
 	if !config.Standalone {
-		coordinator, err = createCoordinator(config, manager)
+		coordinator, err = createCoordinator(config, registry, manager)
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +57,7 @@ func Start(config Config) (*Machine, error) {
 	// prepare database
 	var database *database
 	if config.Standalone {
-		database, _, err = openDatabase(config, manager)
+		database, _, err = openDatabase(config, registry, manager)
 		if err != nil {
 			return nil, err
 		}
@@ -59,6 +66,7 @@ func Start(config Config) (*Machine, error) {
 	// create machine
 	m := &Machine{
 		config:      config,
+		registry:    registry,
 		manager:     manager,
 		coordinator: coordinator,
 		database:    database,

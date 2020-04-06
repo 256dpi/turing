@@ -16,7 +16,7 @@ type coordinator struct {
 	node *dragonboat.NodeHost
 }
 
-func createCoordinator(cfg Config, manager *manager) (*coordinator, error) {
+func createCoordinator(cfg Config, registry *registry, manager *manager) (*coordinator, error) {
 	// prepare members
 	members := make(map[uint64]string)
 	for _, member := range cfg.Members {
@@ -56,7 +56,7 @@ func createCoordinator(cfg Config, manager *manager) (*coordinator, error) {
 
 	// prepare replicator factory
 	factory := func(uint64, uint64) statemachine.IOnDiskStateMachine {
-		return newReplicator(cfg, manager)
+		return newReplicator(cfg, registry, manager)
 	}
 
 	// start cluster

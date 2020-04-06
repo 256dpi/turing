@@ -45,10 +45,11 @@ var ErrMaxEffect = errors.New("max effect")
 
 // Transaction is used by an instruction to perform changes to the database.
 type Transaction struct {
-	reader  pebble.Reader
-	writer  pebble.Writer
-	closers int
-	effect  int
+	registry *registry
+	reader   pebble.Reader
+	writer   pebble.Writer
+	closers  int
+	effect   int
 }
 
 // Get will lookup the specified key. The returned slice must not be modified by

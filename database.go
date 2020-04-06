@@ -12,11 +12,12 @@ import (
 var indexKey = []byte("$index")
 
 type database struct {
-	pebble  *pebble.DB
-	manager *manager
+	registry *registry
+	manager  *manager
+	pebble   *pebble.DB
 }
 
-func openDatabase(config Config, manager *manager) (*database, uint64, error) {
+func openDatabase(config Config, registry *registry, manager *manager) (*database, uint64, error) {
 	// get fs
 	fs := config.dbFS()
 
@@ -84,8 +85,9 @@ func openDatabase(config Config, manager *manager) (*database, uint64, error) {
 
 	// create database
 	db := &database{
-		pebble:  pdb,
-		manager: manager,
+		registry: registry,
+		manager:  manager,
+		pebble:   pdb,
 	}
 
 	// init manager
@@ -107,6 +109,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 
 	// create initial transaction
 	txn := obtainTxn()
+	txn.registry = d.registry
 	txn.reader = batch
 	txn.writer = batch
 
@@ -224,6 +227,7 @@ func (d *database) lookup(instruction Instruction) error {
 
 	// prepare transaction
 	txn := obtainTxn()
+	txn.registry = d.registry
 	txn.reader = d.pebble
 
 	// ensure recycle

@@ -17,29 +17,20 @@ type replicator struct {
 	config   Config
 	manager  *manager
 	database *database
-	registry map[string]Instruction
+	registry *registry
 }
 
-func newReplicator(config Config, manager *manager) *replicator {
-	// create instruction registry
-	registry := make(map[string]Instruction)
-	for _, i := range config.Instructions {
-		registry[i.Describe().Name] = i
-	}
-
-	// create replicator
-	replicator := &replicator{
+func newReplicator(config Config, registry *registry, manager *manager) *replicator {
+	return &replicator{
 		config:   config,
 		manager:  manager,
 		registry: registry,
 	}
-
-	return replicator
 }
 
 func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	// open database
-	database, index, err := openDatabase(r.config, r.manager)
+	database, index, err := openDatabase(r.config, r.registry, r.manager)
 	if err != nil {
 		return 0, err
 	}
@@ -69,7 +60,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		}
 
 		// get factory instruction
-		factory, ok := r.registry[cmd.Name]
+		factory, ok := r.registry.instructions[cmd.Name]
 		if !ok {
 			return nil, fmt.Errorf("missing instruction: " + cmd.Name)
 		}
