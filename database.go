@@ -3,7 +3,6 @@ package turing
 import (
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 
 	"github.com/cockroachdb/pebble"
@@ -19,9 +18,12 @@ type database struct {
 	manager *manager
 }
 
-func openDatabase(dir string, manager *manager) (*database, uint64, error) {
+func openDatabase(config Config, manager *manager) (*database, uint64, error) {
+	// get fs
+	fs := config.dbFS()
+
 	// ensure directory
-	err := os.MkdirAll(dir, 0700)
+	err := fs.MkdirAll(config.dbDir(), 0700)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -33,7 +35,8 @@ func openDatabase(dir string, manager *manager) (*database, uint64, error) {
 	cache := pebble.NewCache(64 << 20) // 64MB
 
 	// open db
-	pdb, err := pebble.Open(dir, &pebble.Options{
+	pdb, err := pebble.Open(config.dbDir(), &pebble.Options{
+		FS:                          fs,
 		Cache:                       cache,
 		MemTableSize:                16 << 20, // 16MB
 		MemTableStopWritesThreshold: 4,

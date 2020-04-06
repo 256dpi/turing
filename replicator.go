@@ -39,7 +39,7 @@ func newReplicator(config Config, manager *manager) *replicator {
 
 func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	// open database
-	database, index, err := openDatabase(r.config.dbDir(), r.manager)
+	database, index, err := openDatabase(r.config, r.manager)
 	if err != nil {
 		return 0, err
 	}

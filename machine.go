@@ -50,7 +50,7 @@ func Start(config Config) (*Machine, error) {
 
 	// create database in development mode
 	if config.Development {
-		m.development, _, err = openDatabase(config.dbDir(), m.manager)
+		m.development, _, err = openDatabase(config, m.manager)
 		if err != nil {
 			return nil, err
 		}

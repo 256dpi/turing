@@ -3,13 +3,14 @@ package turing
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	pfs "github.com/cockroachdb/pebble/vfs"
+	dfs "github.com/lni/goutils/vfs"
 )
 
 // Config is used to configure a machine.
@@ -20,7 +21,7 @@ type Config struct {
 	// All cluster members.
 	Members []Member
 
-	// The storage directory.
+	// The storage directory. If empty an in-memory filesystem is used.
 	Directory string
 
 	// The used instructions.
@@ -66,31 +67,6 @@ func (c *Config) check() error {
 		}
 	}
 
-	// check directory
-	if c.Directory == "" {
-		// return error in normal mode
-		if !c.Development {
-			return errors.New("turing: missing directory")
-		}
-
-		// otherwise use temporary director in development mode
-
-		// get temporary directory
-		tempDir, err := ioutil.TempDir("", "turing")
-		if err != nil {
-			return err
-		}
-
-		// clear temporary directory
-		err = os.RemoveAll(tempDir)
-		if err != nil {
-			return err
-		}
-
-		// set directory
-		c.Directory = tempDir
-	}
-
 	// check round trip time
 	if c.RoundTripTime == 0 {
 		c.RoundTripTime = time.Millisecond
@@ -103,8 +79,24 @@ func (c Config) raftDir() string {
 	return filepath.Join(c.Directory, "raft")
 }
 
+func (c Config) raftFS() dfs.FS {
+	if c.Directory != "" {
+		return dfs.Default
+	}
+
+	return dfs.NewMem()
+}
+
 func (c Config) dbDir() string {
 	return filepath.Join(c.Directory, "db")
+}
+
+func (c Config) dbFS() pfs.FS {
+	if c.Directory != "" {
+		return pfs.Default
+	}
+
+	return pfs.NewMem()
 }
 
 // Member specifies a cluster member.
