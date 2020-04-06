@@ -5,9 +5,9 @@ import (
 )
 
 type Get struct {
-	Key    []byte `json:"k,omitempty"`
-	Value  []byte `json:"v,omitempty"`
-	Exists bool   `json:"e,omitempty"`
+	Key    []byte `msgpack:"k,omitempty"`
+	Value  []byte `msgpack:"v,omitempty"`
+	Exists bool   `msgpack:"e,omitempty"`
 }
 
 func (g *Get) Describe() turing.Description {

@@ -11,8 +11,8 @@ import (
 var retrieveCounter = god.NewCounter("retrieve", nil)
 
 type retrieve struct {
-	Key   string
-	Value int
+	Key   string `msgpack:"k,omitempty"`
+	Value int    `msgpack:"v,omitempty"`
 }
 
 func (r *retrieve) Describe() turing.Description {

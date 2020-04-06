@@ -36,8 +36,8 @@ var IncAdd = &turing.Operator{
 }
 
 type Inc struct {
-	Key   []byte `json:"k,omitempty"`
-	Value int64  `json:"v,omitempty"`
+	Key   []byte `msgpack:"k,omitempty"`
+	Value int64  `msgpack:"v,omitempty"`
 }
 
 func (i *Inc) Describe() turing.Description {

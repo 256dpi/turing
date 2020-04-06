@@ -2,9 +2,10 @@ package turing
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/vmihailenco/msgpack/v4"
 )
 
 // TODO: How should parallel instructions executions be handled?
@@ -151,7 +152,7 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	}
 
 	// encode command
-	bytes, err := json.Marshal(cmd)
+	bytes, err := msgpack.Marshal(cmd)
 	if err != nil {
 		return err
 	}

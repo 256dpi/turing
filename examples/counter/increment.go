@@ -7,8 +7,8 @@ import (
 )
 
 type increment struct {
-	Key   string `json:"key,omitempty"`
-	Value int    `json:"value,omitempty"`
+	Key   string `msgpack:"k,omitempty"`
+	Value int    `msgpack:"v,omitempty"`
 }
 
 func (i *increment) Describe() turing.Description {

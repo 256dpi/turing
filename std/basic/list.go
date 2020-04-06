@@ -5,9 +5,9 @@ import (
 )
 
 type List struct {
-	Prefix  []byte   `json:"p,omitempty"`
-	Reverse bool     `json:"r,omitempty"`
-	Keys    [][]byte `json:"k,omitempty"`
+	Prefix  []byte   `msgpack:"p,omitempty"`
+	Reverse bool     `msgpack:"r,omitempty"`
+	Keys    [][]byte `msgpack:"k,omitempty"`
 }
 
 func (l *List) Describe() turing.Description {

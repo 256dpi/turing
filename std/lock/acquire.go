@@ -1,23 +1,24 @@
 package lock
 
 import (
-	"encoding/json"
 	"time"
+
+	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
 )
 
 type Lock struct {
-	Value string    `json:"v,omitempty"`
-	Time  time.Time `json:"t,omitempty"`
+	Value string    `msgpack:"v,omitempty"`
+	Time  time.Time `msgpack:"t,omitempty"`
 }
 
 type Acquire struct {
-	Key     []byte    `json:"k,omitempty"`
-	Value   string    `json:"v,omitempty"`
-	Time    time.Time `json:"t,omitempty"`
-	Timeout time.Time `json:"o,omitempty"`
-	Locked  bool      `json:"l,omitempty"`
+	Key     []byte    `msgpack:"k,omitempty"`
+	Value   string    `msgpack:"v,omitempty"`
+	Time    time.Time `msgpack:"t,omitempty"`
+	Timeout time.Time `msgpack:"o,omitempty"`
+	Locked  bool      `msgpack:"l,omitempty"`
 }
 
 func (a *Acquire) Describe() turing.Description {
@@ -34,7 +35,7 @@ func (a *Acquire) Execute(txn *turing.Transaction) error {
 	// get lock
 	var lock Lock
 	err := txn.Use(a.Key, func(value []byte) error {
-		return json.Unmarshal(value, &lock)
+		return msgpack.Unmarshal(value, &lock)
 	})
 	if err != nil {
 		return err
@@ -50,7 +51,7 @@ func (a *Acquire) Execute(txn *turing.Transaction) error {
 	lock.Time = a.Time
 
 	// encode lock
-	bytes, err := json.Marshal(lock)
+	bytes, err := msgpack.Marshal(lock)
 	if err != nil {
 		return err
 	}

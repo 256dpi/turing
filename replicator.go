@@ -1,16 +1,16 @@
 package turing
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
 	"github.com/lni/dragonboat/v3/statemachine"
+	"github.com/vmihailenco/msgpack/v4"
 )
 
 type command struct {
-	Name string `json:"name"`
-	Data []byte `json:"data"`
+	Name string `msgpack:"name"`
+	Data []byte `msgpack:"data"`
 }
 
 type replicator struct {
@@ -54,7 +54,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	for i, entry := range entries {
 		// parse command
 		var cmd command
-		err := json.Unmarshal(entry.Cmd, &cmd)
+		err := msgpack.Unmarshal(entry.Cmd, &cmd)
 		if err != nil {
 			return nil, err
 		}

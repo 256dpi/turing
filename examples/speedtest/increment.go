@@ -11,8 +11,8 @@ import (
 var incrementCounter = god.NewCounter("increment", nil)
 
 type increment struct {
-	Key   string `json:"k,omitempty"`
-	Value int    `json:"v,omitempty"`
+	Key   string `msgpack:"k,omitempty"`
+	Value int    `msgpack:"v,omitempty"`
 }
 
 func (i *increment) Describe() turing.Description {

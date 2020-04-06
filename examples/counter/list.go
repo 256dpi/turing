@@ -7,7 +7,7 @@ import (
 )
 
 type list struct {
-	Pairs map[string]int `json:"pairs,omitempty"`
+	Pairs map[string]int `msgpack:"p,omitempty"`
 }
 
 func (l *list) Describe() turing.Description {

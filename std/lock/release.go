@@ -1,17 +1,18 @@
 package lock
 
 import (
-	"encoding/json"
 	"time"
+
+	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
 )
 
 type Release struct {
-	Key      []byte    `json:"k,omitempty"`
-	Value    string    `json:"v,omitempty"`
-	Time     time.Time `json:"t,omitempty"`
-	Unlocked bool      `json:"u,omitempty"`
+	Key      []byte    `msgpack:"k,omitempty"`
+	Value    string    `msgpack:"v,omitempty"`
+	Time     time.Time `msgpack:"t,omitempty"`
+	Unlocked bool      `msgpack:"u,omitempty"`
 }
 
 func (r *Release) Describe() turing.Description {
@@ -28,7 +29,7 @@ func (r *Release) Execute(txn *turing.Transaction) error {
 	// get lock
 	var lock Lock
 	err := txn.Use(r.Key, func(value []byte) error {
-		return json.Unmarshal(value, &lock)
+		return msgpack.Unmarshal(value, &lock)
 	})
 	if err != nil {
 		return err

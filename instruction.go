@@ -1,9 +1,10 @@
 package turing
 
 import (
-	"encoding/json"
 	"errors"
 	"reflect"
+
+	"github.com/vmihailenco/msgpack/v4"
 )
 
 // MaxEffect is maximum effect that can be reported by an instruction.
@@ -83,8 +84,6 @@ func buildInstruction(i Instruction) Instruction {
 	return reflect.New(reflect.TypeOf(i).Elem()).Interface().(Instruction)
 }
 
-// TODO: Use msgpack for default coding?
-
 func encodeInstruction(i Instruction) ([]byte, error) {
 	// use codec if available
 	if ic, ok := i.(InstructionCodec); ok {
@@ -92,7 +91,7 @@ func encodeInstruction(i Instruction) ([]byte, error) {
 	}
 
 	// otherwise use json
-	return json.Marshal(i)
+	return msgpack.Marshal(i)
 }
 
 func decodeInstruction(data []byte, i Instruction) error {
@@ -102,5 +101,5 @@ func decodeInstruction(data []byte, i Instruction) error {
 	}
 
 	// otherwise use json
-	return json.Unmarshal(data, i)
+	return msgpack.Unmarshal(data, i)
 }
