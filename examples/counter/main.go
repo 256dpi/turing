@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/256dpi/turing"
+	"github.com/256dpi/turing/std/basic"
 )
 
 func main() {
@@ -51,7 +52,7 @@ func main() {
 		Members:   members,
 		Directory: directory,
 		Instructions: []turing.Instruction{
-			&increment{}, &list{},
+			&basic.Inc{}, &basic.Map{},
 		},
 	})
 	if err != nil {
@@ -80,8 +81,10 @@ func main() {
 		}
 
 		// increment value
-		inc := &increment{Key: strconv.FormatUint(*idFlag, 10)}
-		err = machine.Execute(nil, inc, false)
+		err = machine.Execute(nil, &basic.Inc{
+			Key:   strconv.AppendUint(nil, *idFlag, 10),
+			Value: 1,
+		}, false)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
@@ -89,8 +92,8 @@ func main() {
 		}
 
 		// list values
-		lst := &list{}
-		err = machine.Execute(nil, lst, false)
+		mp := &basic.Map{}
+		err = machine.Execute(nil, mp, false)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
@@ -98,7 +101,7 @@ func main() {
 		}
 
 		// print instruction
-		fmt.Printf("LIST: %+v\n", lst)
+		fmt.Printf("KEYS: %+v\n", mp)
 	}
 }
 
