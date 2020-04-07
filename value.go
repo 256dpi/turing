@@ -132,26 +132,21 @@ func EncodeValue(value Value) ([]byte, error) {
 
 // StackValues will stack the provided values.
 func StackValues(values []Value) (Value, error) {
-	// count values
+	// validated and count values
 	var total int
 	for _, value := range values {
-		switch value.Kind {
-		case StackValue:
-			total += len(value.Stack)
-		default:
-			return Value{}, fmt.Errorf("unexpected value")
+		if value.Kind != StackValue {
+			return Value{}, fmt.Errorf("stack values: unexpected value: %d", value.Kind)
 		}
+
+		// increment
+		total += len(value.Stack)
 	}
 
-	// allocate stack
+	// collect stack values
 	stack := make([]Operand, 0, total)
-
-	// stack values
 	for _, value := range values {
-		switch value.Kind {
-		case StackValue:
-			stack = append(stack, value.Stack...)
-		}
+		stack = append(stack, value.Stack...)
 	}
 
 	// create value
@@ -167,19 +162,31 @@ func StackValues(values []Value) (Value, error) {
 func MergeValues(values []Value, registry *registry) (Value, error) {
 	// get first value
 	value := values[0].Value
+	if values[0].Kind != FullValue {
+		return Value{}, fmt.Errorf("merge values: unexpected value: %d", values[0].Kind)
+	}
 
-	// collect operands
-	var names []string
-	var operands [][]byte
-	for _, value := range values[1:] {
-		switch value.Kind {
-		case StackValue:
-			for _, operand := range value.Stack {
-				names = append(names, operand.Name)
-				operands = append(operands, operand.Value)
-			}
-		default:
-			return Value{}, fmt.Errorf("unexpected value")
+	// slice
+	values = values[1:]
+
+	// validated and count values
+	var total int
+	for _, value := range values {
+		if value.Kind != StackValue {
+			return Value{}, fmt.Errorf("merge values: unexpected value: %d", value.Kind)
+		}
+
+		// increment
+		total += len(value.Stack)
+	}
+
+	// validate and collect operands
+	names := make([]string, 0, total)
+	operands := make([][]byte, 0, total)
+	for _, value := range values {
+		for _, operand := range value.Stack {
+			names = append(names, operand.Name)
+			operands = append(operands, operand.Value)
 		}
 	}
 
@@ -218,7 +225,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 	// lookup operator
 	operator, ok := registry.operators[name]
 	if !ok {
-		return Value{}, fmt.Errorf("unknown operator: %q", name)
+		return Value{}, fmt.Errorf("merge values: unknown operator: %q", name)
 	}
 
 	// merge value with operands
@@ -239,10 +246,12 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 // ComputeValue will compute the final value. A full value is immediately
 // returned while a stacked value is merged with the first operators zero value.
 func ComputeValue(value Value, registry *registry) (Value, error) {
-	// skip if full value
+	// directly return full value
 	if value.Kind == FullValue {
 		return value, nil
 	}
+
+	// value is a stack value
 
 	// get first operator
 	operator, ok := registry.operators[value.Stack[0].Name]
