@@ -108,7 +108,7 @@ func (r *replicator) Lookup(data interface{}) (interface{}, error) {
 	instruction := data.(Instruction)
 
 	// perform lookup
-	err := r.database.lookup(instruction)
+	err := r.database.lookup([]Instruction{instruction})
 	if err != nil {
 		return nil, err
 	}

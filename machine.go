@@ -63,7 +63,7 @@ func Start(config Config) (*Machine, error) {
 		}
 
 		// create controller
-		controller = newController(database)
+		controller = newController(config, database)
 	}
 
 	// create machine
@@ -120,16 +120,11 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	if m.config.Standalone {
 		// perform lookup
 		if description.Effect == 0 {
-			return m.database.lookup(instruction)
+			return m.controller.lookup(instruction)
 		}
 
 		// perform update
-		err := m.controller.update(instruction)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return m.controller.update(instruction)
 	}
 
 	// balance

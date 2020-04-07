@@ -11,35 +11,52 @@ type item struct {
 }
 
 type controller struct {
-	queue    chan item
+	updates  chan item
+	lookups  chan item
 	database *database
 	mutex    sync.RWMutex
-	done     chan struct{}
+	wg       sync.WaitGroup
+	closed   bool
 }
 
-func newController(database *database) *controller {
+func newController(config Config, database *database) *controller {
 	// TODO: Allow configuring queue size?
 
 	// prepare controller
 	c := &controller{
-		queue:    make(chan item, 1000),
+		updates:  make(chan item, 1000),
+		lookups:  make(chan item, 1000),
 		database: database,
-		done:     make(chan struct{}),
 	}
 
-	// run processor
-	go c.processor()
+	// run update processor
+	c.wg.Add(1)
+	go c.processor(c.updates, true)
+
+	// run lookup processors
+	c.wg.Add(config.ConcurrentReaders)
+	for i := 0; i < config.ConcurrentReaders; i++ {
+		go c.processor(c.lookups, false)
+	}
 
 	return c
 }
 
 func (c *controller) update(instruction Instruction) error {
+	return c.queue(instruction, c.updates)
+}
+
+func (c *controller) lookup(instruction Instruction) error {
+	return c.queue(instruction, c.lookups)
+}
+
+func (c *controller) queue(instruction Instruction, queue chan item) error {
 	// acquire mutex
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	// check if done
-	if c.done == nil {
+	if c.closed {
 		return fmt.Errorf("closed")
 	}
 
@@ -47,7 +64,7 @@ func (c *controller) update(instruction Instruction) error {
 	result := make(chan error, 1)
 
 	// queue instruction
-	c.queue <- item{
+	queue <- item{
 		ins: instruction,
 		ack: func(err error) {
 			result <- err
@@ -57,7 +74,7 @@ func (c *controller) update(instruction Instruction) error {
 	return <-result
 }
 
-func (c *controller) processor() {
+func (c *controller) processor(queue chan item, update bool) {
 	// TODO: Allow configuring list sizes?
 
 	// prepare list
@@ -66,9 +83,9 @@ func (c *controller) processor() {
 
 	for {
 		// await next instruction
-		item, ok := <-c.queue
+		item, ok := <-queue
 		if !ok {
-			close(c.done)
+			c.wg.Done()
 			return
 		}
 
@@ -77,16 +94,21 @@ func (c *controller) processor() {
 		acks = append(acks, item.ack)
 
 		// add buffered instructions
-		for len(c.queue) > 0 && cap(list) > 0 {
-			item, ok := <-c.queue
+		for len(queue) > 0 && cap(list) > 0 {
+			item, ok := <-queue
 			if ok {
 				list = append(list, item.ins)
 				acks = append(acks, item.ack)
 			}
 		}
 
-		// perform update
-		err := c.database.update(list, nil)
+		// perform update or lookup
+		var err error
+		if update {
+			err = c.database.update(list, nil)
+		} else {
+			err = c.database.lookup(list)
+		}
 
 		// forward results
 		for _, ack := range acks {
@@ -104,10 +126,13 @@ func (c *controller) close() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	// close queue
-	close(c.queue)
+	// close queues
+	close(c.updates)
+	close(c.lookups)
 
 	// wait until done
-	<-c.done
-	c.done = nil
+	c.wg.Wait()
+
+	// set flag
+	c.closed = true
 }

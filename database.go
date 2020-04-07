@@ -244,7 +244,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	return nil
 }
 
-func (d *database) lookup(instruction Instruction) error {
+func (d *database) lookup(list []Instruction) error {
 	// get read token
 	d.read.Acquire(nil, 0)
 	defer d.read.Release()
@@ -252,10 +252,6 @@ func (d *database) lookup(instruction Instruction) error {
 	// observe
 	timer1 := observe(operationMetrics, "database.lookup")
 	defer timer1.ObserveDuration()
-
-	// observe
-	timer2 := observe(instructionMetrics, instruction.Describe().Name)
-	defer timer2.ObserveDuration()
 
 	// get snapshot
 	snap := d.pebble.NewSnapshot()
@@ -270,14 +266,23 @@ func (d *database) lookup(instruction Instruction) error {
 	defer recycleTxn(txn)
 
 	// execute instruction
-	err := instruction.Execute(txn)
-	if err != nil {
-		return err
-	}
+	for _, instruction := range list {
+		// begin observation
+		timer := observe(instructionMetrics, instruction.Describe().Name)
 
-	// check closers
-	if txn.closers != 0 {
-		return fmt.Errorf("unclosed values after instruction execution")
+		// execute transaction
+		err := instruction.Execute(txn)
+		if err != nil {
+			return err
+		}
+
+		// check closers
+		if txn.closers != 0 {
+			return fmt.Errorf("unclosed values after instruction execution")
+		}
+
+		// finish observation
+		timer.ObserveDuration()
 	}
 
 	return nil
