@@ -180,6 +180,8 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 		total += len(value.Stack)
 	}
 
+	// TODO: Allocating those slices is expensive.
+
 	// validate and collect operands
 	names := make([]string, 0, total)
 	operands := make([][]byte, 0, total)
