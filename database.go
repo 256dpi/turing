@@ -257,10 +257,14 @@ func (d *database) lookup(instruction Instruction) error {
 	timer2 := observe(instructionMetrics, instruction.Describe().Name)
 	defer timer2.ObserveDuration()
 
+	// get snapshot
+	snap := d.pebble.NewSnapshot()
+	defer snap.Close()
+
 	// prepare transaction
 	txn := obtainTxn()
 	txn.registry = d.registry
-	txn.reader = d.pebble
+	txn.reader = snap
 
 	// ensure recycle
 	defer recycleTxn(txn)
