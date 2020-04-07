@@ -14,14 +14,15 @@ func TestDecode(t *testing.T) {
 	var buf []byte
 	var mum uint64
 	var tail []byte
-	ok := Decode(data, func(dec *Decoder) {
+	err := Decode(data, func(dec *Decoder) error {
 		dec.Int(&num)
 		dec.String(&str, false)
 		dec.Bytes(&buf, false)
 		dec.Uint(&mum)
 		dec.Tail(&tail, false)
+		return nil
 	})
-	assert.True(t, ok)
+	assert.NoError(t, err)
 	assert.Equal(t, int64(7), num)
 	assert.Equal(t, "foo", str)
 	assert.Equal(t, []byte("bar"), buf)
@@ -41,15 +42,16 @@ func BenchmarkDecode(b *testing.B) {
 		var buf []byte
 		var mum uint64
 		var tail []byte
-		ok := Decode(data, func(dec *Decoder) {
+		err := Decode(data, func(dec *Decoder) error {
 			dec.Int(&num)
 			dec.String(&str, false)
 			dec.Bytes(&buf, false)
 			dec.Uint(&mum)
 			dec.Tail(&tail, false)
+			return nil
 		})
-		if !ok {
-			panic("not ok")
+		if err != nil {
+			panic(err)
 		}
 	}
 }

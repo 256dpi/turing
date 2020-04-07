@@ -49,16 +49,19 @@ type Value struct {
 func DecodeValue(bytes []byte) (Value, error) {
 	// decode value
 	var value Value
-	ok := coding.Decode(bytes, func(dec *coding.Decoder) {
+	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// read kind
 		var kind uint64
 		dec.Uint(&kind)
 		value.Kind = Kind(kind)
+		if !value.Kind.Valid() {
+			return fmt.Errorf("decode value: invalid kind: %d", value.Kind)
+		}
 
 		// decode full value
 		if value.Kind == FullValue {
 			dec.Tail(&value.Value, false)
-			return
+			return nil
 		}
 
 		// otherwise decode stack
@@ -75,14 +78,11 @@ func DecodeValue(bytes []byte) (Value, error) {
 			dec.String(&value.Stack[i].Name, false)
 			dec.Bytes(&value.Stack[i].Value, false)
 		}
-	})
-	if !ok {
-		return Value{}, fmt.Errorf("decode value: invalid buffer")
-	}
 
-	// get kind
-	if !value.Kind.Valid() {
-		return Value{}, fmt.Errorf("decode value: invalid kind: %d", value.Kind)
+		return nil
+	})
+	if err != nil {
+		return Value{}, fmt.Errorf("decode value: %w", err)
 	}
 
 	return value, nil

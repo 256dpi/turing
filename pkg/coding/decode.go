@@ -2,21 +2,25 @@ package coding
 
 import (
 	"encoding/binary"
+	"errors"
 	"sync"
 
 	"github.com/tidwall/cast"
 )
 
+// ErrBufferTooShort if the provided buffer is too short.
+var ErrBufferTooShort = errors.New("buffer too short")
+
 // Decoder manages data decoding.
 type Decoder struct {
 	buf []byte
-	err bool
+	err error
 }
 
 // Int reads a signed integer.
 func (e *Decoder) Int(num *int64) {
 	// skip if errored
-	if e.err {
+	if e.err != nil {
 		return
 	}
 
@@ -24,7 +28,7 @@ func (e *Decoder) Int(num *int64) {
 	var n int
 	*num, n = binary.Varint(e.buf)
 	if n == 0 {
-		e.err = true
+		e.err = ErrBufferTooShort
 		return
 	}
 
@@ -35,7 +39,7 @@ func (e *Decoder) Int(num *int64) {
 // Uint reads an unsigned integer.
 func (e *Decoder) Uint(num *uint64) {
 	// skip if errored
-	if e.err {
+	if e.err != nil {
 		return
 	}
 
@@ -43,7 +47,7 @@ func (e *Decoder) Uint(num *uint64) {
 	var n int
 	*num, n = binary.Uvarint(e.buf)
 	if n == 0 {
-		e.err = true
+		e.err = ErrBufferTooShort
 		return
 	}
 
@@ -55,14 +59,14 @@ func (e *Decoder) Uint(num *uint64) {
 // change if the decoded byte slice changes.
 func (e *Decoder) String(str *string, clone bool) {
 	// skip if errored
-	if e.err {
+	if e.err != nil {
 		return
 	}
 
 	// read length
 	length, n := binary.Uvarint(e.buf)
 	if n == 0 {
-		e.err = true
+		e.err = ErrBufferTooShort
 		return
 	}
 
@@ -71,7 +75,7 @@ func (e *Decoder) String(str *string, clone bool) {
 
 	// check length
 	if len(e.buf) < int(length) {
-		e.err = true
+		e.err = ErrBufferTooShort
 		return
 	}
 
@@ -89,14 +93,14 @@ func (e *Decoder) String(str *string, clone bool) {
 // may change if the decoded byte slice changes.
 func (e *Decoder) Bytes(bytes *[]byte, clone bool) {
 	// skip if errored
-	if e.err {
+	if e.err != nil {
 		return
 	}
 
 	// read length
 	length, n := binary.Uvarint(e.buf)
 	if n == 0 {
-		e.err = true
+		e.err = ErrBufferTooShort
 		return
 	}
 
@@ -105,7 +109,7 @@ func (e *Decoder) Bytes(bytes *[]byte, clone bool) {
 
 	// check length
 	if len(e.buf) < int(length) {
-		e.err = true
+		e.err = ErrBufferTooShort
 		return
 	}
 
@@ -123,7 +127,7 @@ func (e *Decoder) Bytes(bytes *[]byte, clone bool) {
 // Tail reads a tail byte slice.
 func (e *Decoder) Tail(bytes *[]byte, clone bool) {
 	// skip if errored
-	if e.err {
+	if e.err != nil {
 		return
 	}
 
@@ -147,19 +151,21 @@ var decoderPool = sync.Pool{
 // Decode will decode data using the provided decoding function. The function is
 // run once to decode the data. It will return whether the buffer was long enough
 // to read all data.
-func Decode(buf []byte, fn func(dec *Decoder)) bool {
+func Decode(buf []byte, fn func(dec *Decoder) error) error {
 	// borrow decoder
 	dec := decoderPool.Get().(*Decoder)
 	dec.buf = buf
 
 	// decode
-	fn(dec)
-	ok := !dec.err
+	err := fn(dec)
+	if err == nil {
+		err = dec.err
+	}
 
 	// return decoder
 	dec.buf = nil
-	dec.err = false
+	dec.err = nil
 	decoderPool.Put(dec)
 
-	return ok
+	return err
 }
