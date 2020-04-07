@@ -57,7 +57,7 @@ func DecodeValue(bytes []byte) (Value, error) {
 
 		// decode full value
 		if value.Kind == FullValue {
-			dec.Tail(&value.Value)
+			dec.Tail(&value.Value, false)
 			return
 		}
 
@@ -72,8 +72,8 @@ func DecodeValue(bytes []byte) (Value, error) {
 
 		// read operands
 		for i := range value.Stack {
-			dec.String(&value.Stack[i].Name)
-			dec.Bytes(&value.Stack[i].Value)
+			dec.String(&value.Stack[i].Name, false)
+			dec.Bytes(&value.Stack[i].Value, false)
 		}
 	})
 	if !ok {

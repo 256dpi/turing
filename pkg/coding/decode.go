@@ -3,6 +3,8 @@ package coding
 import (
 	"encoding/binary"
 	"sync"
+
+	"github.com/tidwall/cast"
 )
 
 // Decoder manages data decoding.
@@ -49,8 +51,9 @@ func (e *Decoder) Uint(num *uint64) {
 	e.buf = e.buf[n:]
 }
 
-// String reads a length prefixed string.
-func (e *Decoder) String(str *string) {
+// String reads a length prefixed string. If the string is not cloned it may
+// change if the decoded byte slice changes.
+func (e *Decoder) String(str *string, clone bool) {
 	// skip if errored
 	if e.err {
 		return
@@ -72,13 +75,19 @@ func (e *Decoder) String(str *string) {
 		return
 	}
 
-	// set bytes
-	*str = string(e.buf[:length])
-	e.buf = e.buf[length:]
+	// cast or set string
+	if clone {
+		*str = string(e.buf[:length])
+		e.buf = e.buf[length:]
+	} else {
+		*str = cast.ToString(e.buf[:length])
+		e.buf = e.buf[length:]
+	}
 }
 
-// Bytes reads a length prefixed byte slice.
-func (e *Decoder) Bytes(bytes *[]byte) {
+// Bytes reads a length prefixed byte slice. If the byte slice is not cloned it
+// may change if the decoded byte slice changes.
+func (e *Decoder) Bytes(bytes *[]byte, clone bool) {
 	// skip if errored
 	if e.err {
 		return
@@ -100,21 +109,33 @@ func (e *Decoder) Bytes(bytes *[]byte) {
 		return
 	}
 
-	// set bytes
-	*bytes = e.buf[:length]
-	e.buf = e.buf[length:]
+	// clone or set bytes
+	if clone {
+		*bytes = make([]byte, length)
+		copy(*bytes, e.buf[:length])
+		e.buf = e.buf[length:]
+	} else {
+		*bytes = e.buf[:length]
+		e.buf = e.buf[length:]
+	}
 }
 
 // Tail reads a tail byte slice.
-func (e *Decoder) Tail(bytes *[]byte) {
+func (e *Decoder) Tail(bytes *[]byte, clone bool) {
 	// skip if errored
 	if e.err {
 		return
 	}
 
-	// set bytes
-	*bytes = e.buf[:len(e.buf)]
-	e.buf = e.buf[len(e.buf):]
+	// clone or set bytes
+	if clone {
+		*bytes = make([]byte, len(e.buf))
+		copy(*bytes, e.buf[:len(e.buf)])
+		e.buf = e.buf[len(e.buf):]
+	} else {
+		*bytes = e.buf[:len(e.buf)]
+		e.buf = e.buf[len(e.buf):]
+	}
 }
 
 var decoderPool = sync.Pool{

@@ -16,10 +16,10 @@ func TestDecode(t *testing.T) {
 	var tail []byte
 	ok := Decode(data, func(dec *Decoder) {
 		dec.Int(&num)
-		dec.String(&str)
-		dec.Bytes(&buf)
+		dec.String(&str, false)
+		dec.Bytes(&buf, false)
 		dec.Uint(&mum)
-		dec.Tail(&tail)
+		dec.Tail(&tail, false)
 	})
 	assert.True(t, ok)
 	assert.Equal(t, int64(7), num)
@@ -43,10 +43,10 @@ func BenchmarkDecode(b *testing.B) {
 		var tail []byte
 		ok := Decode(data, func(dec *Decoder) {
 			dec.Int(&num)
-			dec.String(&str)
-			dec.Bytes(&buf)
+			dec.String(&str, false)
+			dec.Bytes(&buf, false)
 			dec.Uint(&mum)
-			dec.Tail(&tail)
+			dec.Tail(&tail, false)
 		})
 		if !ok {
 			panic("not ok")
