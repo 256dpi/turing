@@ -42,3 +42,21 @@ func TestInc(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("6"), get.Value)
 }
+
+func BenchmarkInc(b *testing.B) {
+	machine := turing.TestMachine(&Inc{}, &Get{})
+	defer machine.Stop()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		err := machine.Execute(nil, &Inc{
+			Key:   []byte("foo"),
+			Value: 1,
+		}, false)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
