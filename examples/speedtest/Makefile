@@ -8,7 +8,7 @@ single:
 
 standalone:
 	rm -rf ./data
-	go run . --id 9 --standalone --readers 4 --writers 1
+	go run . --id 9 --standalone
 
 in-memory:
-	go run . --standalone --memory --readers 4 --writers 1
+	go run . --standalone --memory
