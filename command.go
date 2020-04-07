@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	commandVersion1 = 1 // [version:uint][name:string][data:tail]
+	commandVersion1 = 1
 )
 
 // Command represents the commands replicated between machines.

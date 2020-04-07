@@ -232,7 +232,7 @@ func BenchmarkEncodeStackValue(b *testing.B) {
 }
 
 func BenchmarkDecodeFullValue(b *testing.B) {
-	data := []byte("\x01foo")
+	data := []byte("\x01\x01foo")
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -246,7 +246,7 @@ func BenchmarkDecodeFullValue(b *testing.B) {
 }
 
 func BenchmarkDecodeStackValue(b *testing.B) {
-	data := []byte("\x02\x03\x03foo\x03foo\x03bar\x03bar\x03baz\x03baz")
+	data := []byte("\x01\x02\x03\x03foo\x03foo\x03bar\x03bar\x03baz\x03baz")
 
 	b.ReportAllocs()
 	b.ResetTimer()

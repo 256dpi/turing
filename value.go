@@ -6,6 +6,10 @@ import (
 	"github.com/256dpi/turing/pkg/coding"
 )
 
+const (
+	valueVersion1 = 1
+)
+
 // Kind represents the kind of value stored at a key.
 type Kind byte
 
@@ -45,11 +49,63 @@ type Value struct {
 	Stack []Operand
 }
 
+// EncodeValue will encode a value.
+func EncodeValue(value Value) ([]byte, error) {
+	// check Kind
+	if !value.Kind.Valid() {
+		return nil, fmt.Errorf("encode value: invalid kind: %c", value.Kind)
+	}
+
+	// check stack
+	if value.Kind == StackValue {
+		for _, op := range value.Stack {
+			if op.Name == "" {
+				return nil, fmt.Errorf("missing operand name")
+			}
+		}
+	}
+
+	// encode value
+	buf := coding.Encode(func(enc *coding.Encoder) {
+		// write version
+		enc.Uint(valueVersion1)
+
+		// write kind
+		enc.Uint(uint64(value.Kind))
+
+		// write full value
+		if value.Kind == FullValue {
+			enc.Tail(value.Value)
+			return
+		}
+
+		// otherwise write stack value
+
+		// write length
+		enc.Uint(uint64(len(value.Stack)))
+
+		// write operands
+		for _, op := range value.Stack {
+			enc.String(op.Name)
+			enc.Bytes(op.Value)
+		}
+	})
+
+	return buf, nil
+}
+
 // DecodeValue will decode a value.
 func DecodeValue(bytes []byte) (Value, error) {
 	// decode value
 	var value Value
 	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
+		// decode version
+		var version uint64
+		dec.Uint(&version)
+		if version != valueVersion1 {
+			return fmt.Errorf("decode value: invalid version")
+		}
+
 		// read kind
 		var kind uint64
 		dec.Uint(&kind)
@@ -86,48 +142,6 @@ func DecodeValue(bytes []byte) (Value, error) {
 	}
 
 	return value, nil
-}
-
-// EncodeValue will encode a value.
-func EncodeValue(value Value) ([]byte, error) {
-	// check Kind
-	if !value.Kind.Valid() {
-		return nil, fmt.Errorf("encode value: invalid kind: %c", value.Kind)
-	}
-
-	// check stack
-	if value.Kind == StackValue {
-		for _, op := range value.Stack {
-			if op.Name == "" {
-				return nil, fmt.Errorf("missing operand name")
-			}
-		}
-	}
-
-	// encode value
-	buf := coding.Encode(func(enc *coding.Encoder) {
-		// write kind
-		enc.Uint(uint64(value.Kind))
-
-		// write full value
-		if value.Kind == FullValue {
-			enc.Tail(value.Value)
-			return
-		}
-
-		// otherwise write stack
-
-		// write length
-		enc.Uint(uint64(len(value.Stack)))
-
-		// write operands
-		for _, op := range value.Stack {
-			enc.String(op.Name)
-			enc.Bytes(op.Value)
-		}
-	})
-
-	return buf, nil
 }
 
 // StackValues will stack the provided values.
