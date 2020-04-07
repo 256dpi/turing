@@ -17,7 +17,7 @@ type Decoder struct {
 	err error
 }
 
-// Int reads a boolean.
+// Bool reads a boolean.
 func (e *Decoder) Bool(bol *bool) {
 	var num uint64
 	e.Uint(&num)

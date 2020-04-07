@@ -1,12 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/256dpi/god"
-	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
+	"github.com/256dpi/turing/pkg/coding"
 )
 
 type get struct {
@@ -39,9 +40,29 @@ func (g *get) Execute(txn *turing.Transaction) error {
 }
 
 func (g *get) Encode() ([]byte, error) {
-	return msgpack.Marshal(g)
+	return coding.Encode(func(enc *coding.Encoder) {
+		// encode version
+		enc.Uint(1)
+
+		// encode body
+		enc.String(g.Key)
+		enc.Int(g.Value)
+	}), nil
 }
 
 func (g *get) Decode(bytes []byte) error {
-	return msgpack.Unmarshal(bytes, g)
+	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+		// decode version
+		var version uint64
+		dec.Uint(&version)
+		if version != 1 {
+			return fmt.Errorf("get: invalid version")
+		}
+
+		// decode body
+		dec.String(&g.Key, false)
+		dec.Int(&g.Value)
+
+		return nil
+	})
 }

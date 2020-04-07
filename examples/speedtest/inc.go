@@ -1,12 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/256dpi/god"
-	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
+	"github.com/256dpi/turing/pkg/coding"
 	"github.com/256dpi/turing/std/basic"
 )
 
@@ -66,9 +67,31 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 }
 
 func (i *inc) Encode() ([]byte, error) {
-	return msgpack.Marshal(i)
+	return coding.Encode(func(enc *coding.Encoder) {
+		// encode version
+		enc.Uint(1)
+
+		// encode body
+		enc.String(i.Key)
+		enc.Int(i.Value)
+		enc.Bool(i.Merge)
+	}), nil
 }
 
 func (i *inc) Decode(bytes []byte) error {
-	return msgpack.Unmarshal(bytes, i)
+	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+		// decode version
+		var version uint64
+		dec.Uint(&version)
+		if version != 1 {
+			return fmt.Errorf("inc: invalid version")
+		}
+
+		// decode body
+		dec.String(&i.Key, false)
+		dec.Int(&i.Value)
+		dec.Bool(&i.Merge)
+
+		return nil
+	})
 }
