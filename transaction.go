@@ -135,6 +135,11 @@ func (t *Transaction) Set(key, val []byte) error {
 		return ErrReadOnly
 	}
 
+	// check effect
+	if t.effect >= MaxEffect {
+		return ErrMaxEffect
+	}
+
 	// encode value
 	bytes, err := EncodeValue(Value{
 		Kind:  FullValue,
@@ -148,11 +153,6 @@ func (t *Transaction) Set(key, val []byte) error {
 	err = t.writer.Set(prefixUserKey(key), bytes, nil)
 	if err != nil {
 		return err
-	}
-
-	// check effect
-	if t.effect >= MaxEffect {
-		return ErrMaxEffect
 	}
 
 	// increment effect
@@ -169,15 +169,15 @@ func (t *Transaction) Unset(key []byte) error {
 		return ErrReadOnly
 	}
 
+	// check effect
+	if t.effect >= MaxEffect {
+		return ErrMaxEffect
+	}
+
 	// delete key
 	err := t.writer.Delete(prefixUserKey(key), nil)
 	if err != nil {
 		return err
-	}
-
-	// check effect
-	if t.effect >= MaxEffect {
-		return ErrMaxEffect
 	}
 
 	// increment effect
@@ -195,15 +195,15 @@ func (t *Transaction) Delete(start, end []byte) error {
 		return ErrReadOnly
 	}
 
+	// check effect
+	if t.effect >= MaxEffect {
+		return ErrMaxEffect
+	}
+
 	// delete range
 	err := t.writer.DeleteRange(prefixUserKey(start), prefixUserKey(end), nil)
 	if err != nil {
 		return err
-	}
-
-	// check effect
-	if t.effect >= MaxEffect {
-		return ErrMaxEffect
 	}
 
 	// increment effect
@@ -218,6 +218,11 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
+	}
+
+	// check effect
+	if t.effect >= MaxEffect {
+		return ErrMaxEffect
 	}
 
 	// check registry
@@ -242,11 +247,6 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 	err = t.writer.Merge(prefixUserKey(key), bytes, nil)
 	if err != nil {
 		return err
-	}
-
-	// check effect
-	if t.effect >= MaxEffect {
-		return ErrMaxEffect
 	}
 
 	// increment effect
