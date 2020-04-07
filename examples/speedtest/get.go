@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/256dpi/god"
+	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
 )
@@ -13,7 +14,7 @@ type get struct {
 	Value int64  `msgpack:"v,omitempty"`
 }
 
-func (r *get) Describe() turing.Description {
+func (g *get) Describe() turing.Description {
 	return turing.Description{
 		Name: "get",
 	}
@@ -21,13 +22,13 @@ func (r *get) Describe() turing.Description {
 
 var getCounter = god.NewCounter("get", nil)
 
-func (r *get) Execute(txn *turing.Transaction) error {
+func (g *get) Execute(txn *turing.Transaction) error {
 	getCounter.Add(1)
 
 	// get count
 	var err error
-	err = txn.Use([]byte(r.Key), func(value []byte) error {
-		r.Value, err = strconv.ParseInt(string(value), 10, 64)
+	err = txn.Use([]byte(g.Key), func(value []byte) error {
+		g.Value, err = strconv.ParseInt(string(value), 10, 64)
 		return err
 	})
 	if err != nil {
@@ -35,4 +36,12 @@ func (r *get) Execute(txn *turing.Transaction) error {
 	}
 
 	return nil
+}
+
+func (g *get) Encode() ([]byte, error) {
+	return msgpack.Marshal(g)
+}
+
+func (g *get) Decode(bytes []byte) error {
+	return msgpack.Unmarshal(bytes, g)
 }

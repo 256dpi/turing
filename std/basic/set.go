@@ -1,6 +1,8 @@
 package basic
 
 import (
+	"github.com/vmihailenco/msgpack/v4"
+
 	"github.com/256dpi/turing"
 )
 
@@ -24,4 +26,12 @@ func (s *Set) Execute(txn *turing.Transaction) error {
 	}
 
 	return nil
+}
+
+func (s *Set) Encode() ([]byte, error) {
+	return msgpack.Marshal(s)
+}
+
+func (s *Set) Decode(bytes []byte) error {
+	return msgpack.Unmarshal(bytes, s)
 }

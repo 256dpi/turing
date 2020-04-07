@@ -67,3 +67,11 @@ func (a *Acquire) Execute(txn *turing.Transaction) error {
 
 	return nil
 }
+
+func (a *Acquire) Encode() ([]byte, error) {
+	return msgpack.Marshal(a)
+}
+
+func (a *Acquire) Decode(bytes []byte) error {
+	return msgpack.Unmarshal(bytes, a)
+}

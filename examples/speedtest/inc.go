@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/256dpi/god"
+	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
 	"github.com/256dpi/turing/std/basic"
@@ -62,4 +63,12 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 	i.Value = count
 
 	return nil
+}
+
+func (i *inc) Encode() ([]byte, error) {
+	return msgpack.Marshal(i)
+}
+
+func (i *inc) Decode(bytes []byte) error {
+	return msgpack.Unmarshal(bytes, i)
 }

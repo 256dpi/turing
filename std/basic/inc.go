@@ -3,6 +3,8 @@ package basic
 import (
 	"strconv"
 
+	"github.com/vmihailenco/msgpack/v4"
+
 	"github.com/256dpi/turing"
 )
 
@@ -56,4 +58,12 @@ func (i *Inc) Execute(txn *turing.Transaction) error {
 	}
 
 	return nil
+}
+
+func (i *Inc) Encode() ([]byte, error) {
+	return msgpack.Marshal(i)
+}
+
+func (i *Inc) Decode(bytes []byte) error {
+	return msgpack.Unmarshal(bytes, i)
 }

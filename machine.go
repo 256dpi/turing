@@ -138,7 +138,7 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	}
 
 	// encode instruction
-	id, err := encodeInstruction(instruction)
+	id, err := instruction.Encode()
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 
 	// decode result
 	if result != nil {
-		err = decodeInstruction(result, instruction)
+		err = instruction.Decode(result)
 		if err != nil {
 			return err
 		}

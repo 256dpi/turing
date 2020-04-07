@@ -3,8 +3,6 @@ package turing
 import (
 	"errors"
 	"reflect"
-
-	"github.com/vmihailenco/msgpack/v4"
 )
 
 // MaxEffect is maximum effect that can be reported by an instruction.
@@ -39,17 +37,11 @@ type Instruction interface {
 
 	// Execute should execute the instruction.
 	Execute(*Transaction) error
-}
 
-// InstructionCodec is the interface that is implemented by instructions that
-// require custom encoding and decoding.
-type InstructionCodec interface {
-	// The encoder can be set to implement a custom encoding. If not set, the
-	// default JSON encoder will be used.
+	// Encode should encode the instruction.
 	Encode() ([]byte, error)
 
-	// The decoder can tbe set to implement a custom decoding. If not set, the
-	// default JSON decoder will be used.
+	// Decode should decode the instruction.
 	Decode([]byte) error
 }
 
@@ -98,24 +90,4 @@ func buildInstruction(i Instruction) Instruction {
 
 	// otherwise use reflect
 	return reflect.New(reflect.TypeOf(i).Elem()).Interface().(Instruction)
-}
-
-func encodeInstruction(i Instruction) ([]byte, error) {
-	// use codec if available
-	if ic, ok := i.(InstructionCodec); ok {
-		return ic.Encode()
-	}
-
-	// otherwise use json
-	return msgpack.Marshal(i)
-}
-
-func decodeInstruction(data []byte, i Instruction) error {
-	// use codec if available
-	if ic, ok := i.(InstructionCodec); ok {
-		return ic.Decode(data)
-	}
-
-	// otherwise use json
-	return msgpack.Unmarshal(data, i)
 }

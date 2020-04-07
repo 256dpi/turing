@@ -62,7 +62,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		instruction := buildInstruction(factory)
 
 		// decode instruction
-		err = decodeInstruction(cmd.Data, instruction)
+		err = instruction.Decode(cmd.Data)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	// encode instructions
 	for i := range entries {
 		// encode instruction
-		bytes, err := encodeInstruction(instructions[i])
+		bytes, err := instructions[i].Encode()
 		if err != nil {
 			return nil, err
 		}
