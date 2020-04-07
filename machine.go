@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/vmihailenco/msgpack/v4"
 )
 
 // TODO: How should parallel instructions executions be handled?
@@ -146,13 +144,13 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	}
 
 	// prepare command
-	cmd := &command{
+	cmd := Command{
 		Name: description.Name,
 		Data: id,
 	}
 
 	// encode command
-	bytes, err := msgpack.Marshal(cmd)
+	bytes, err := EncodeCommand(cmd)
 	if err != nil {
 		return err
 	}

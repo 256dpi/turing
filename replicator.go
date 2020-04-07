@@ -5,13 +5,7 @@ import (
 	"io"
 
 	"github.com/lni/dragonboat/v3/statemachine"
-	"github.com/vmihailenco/msgpack/v4"
 )
-
-type command struct {
-	Name string `msgpack:"n"`
-	Data []byte `msgpack:"d"`
-}
 
 type replicator struct {
 	config   Config
@@ -53,8 +47,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	// decode instructions
 	for i, entry := range entries {
 		// parse command
-		var cmd command
-		err := msgpack.Unmarshal(entry.Cmd, &cmd)
+		cmd, err := DecodeCommand(entry.Cmd, false)
 		if err != nil {
 			return nil, err
 		}
