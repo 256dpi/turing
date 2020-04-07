@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"sync"
 
 	"github.com/cockroachdb/pebble"
 	"github.com/lni/dragonboat/v3/logger"
+
+	"github.com/256dpi/turing/pkg/semaphore"
 )
 
 var indexKey = []byte("$index")
@@ -15,6 +18,8 @@ type database struct {
 	registry *registry
 	manager  *manager
 	pebble   *pebble.DB
+	write    sync.Mutex
+	read     *semaphore.Semaphore
 }
 
 func openDatabase(config Config, registry *registry, manager *manager) (*database, uint64, error) {
@@ -97,6 +102,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		registry: registry,
 		manager:  manager,
 		pebble:   pdb,
+		read:     semaphore.New(4),
 	}
 
 	// init manager
@@ -106,6 +112,10 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 }
 
 func (d *database) update(list []Instruction, indexes []uint64) error {
+	// acquire write mutex
+	d.write.Lock()
+	defer d.write.Unlock()
+
 	// observe
 	timer := observe(operationMetrics, "database.update")
 	defer timer.ObserveDuration()
@@ -226,6 +236,10 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 }
 
 func (d *database) lookup(instruction Instruction) error {
+	// get read token
+	d.read.Acquire(nil, 0)
+	defer d.read.Release()
+
 	// observe
 	timer1 := observe(operationMetrics, "database.lookup")
 	defer timer1.ObserveDuration()
@@ -257,16 +271,7 @@ func (d *database) lookup(instruction Instruction) error {
 }
 
 func (d *database) sync() error {
-	// observe
-	timer := observe(operationMetrics, "database.sync")
-	defer timer.ObserveDuration()
-
-	// flush database
-	_, err := d.pebble.AsyncFlush()
-	if err != nil {
-		return err
-	}
-
+	// TODO: Should we do something?
 	return nil
 }
 
@@ -281,6 +286,10 @@ func (d *database) backup(sink io.Writer) error {
 }
 
 func (d *database) restore(source io.Reader) error {
+	// acquire update mutex
+	d.write.Lock()
+	defer d.write.Unlock()
+
 	// observe
 	timer := observe(operationMetrics, "database.restore")
 	defer timer.ObserveDuration()
@@ -291,6 +300,10 @@ func (d *database) restore(source io.Reader) error {
 }
 
 func (d *database) close() error {
+	// acquire update mutex
+	d.write.Lock()
+	defer d.write.Unlock()
+
 	// close database
 	err := d.pebble.Close()
 	if err != nil {

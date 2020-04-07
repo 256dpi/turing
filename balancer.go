@@ -1,30 +1,26 @@
 package turing
 
+import "github.com/256dpi/turing/pkg/semaphore"
+
 // TODO: The balancer should be improved to ensure a good balance between read
-//  and writes.
+//  and write.
 
 type balancer struct {
-	read  chan struct{}
-	write chan struct{}
+	read  *semaphore.Semaphore
+	write *semaphore.Semaphore
 }
 
 func newBalancer(reads, writes int) *balancer {
-	// prepare read bucket
-	var read chan struct{}
+	// prepare read
+	var read *semaphore.Semaphore
 	if reads > 0 {
-		read = make(chan struct{}, reads)
-		for i := 0; i < reads; i++ {
-			read <- struct{}{}
-		}
+		read = semaphore.New(reads)
 	}
 
-	// prepare write bucket
-	var write chan struct{}
+	// prepare write
+	var write *semaphore.Semaphore
 	if writes > 0 {
-		write = make(chan struct{}, writes)
-		for i := 0; i < writes; i++ {
-			write <- struct{}{}
-		}
+		write = semaphore.New(writes)
 	}
 
 	return &balancer{
@@ -34,33 +30,27 @@ func newBalancer(reads, writes int) *balancer {
 }
 
 func (b *balancer) get(write bool) {
-	// get token
+	// acquire token
 	if write {
 		if b.write != nil {
-			<-b.write
+			b.write.Acquire(nil, 0)
 		}
 	} else {
 		if b.read != nil {
-			<-b.read
+			b.read.Acquire(nil, 0)
 		}
 	}
 }
 
 func (b *balancer) put(write bool) {
-	// put token
+	// release token
 	if write {
 		if b.write != nil {
-			select {
-			case b.write <- struct{}{}:
-			default:
-			}
+			b.write.Release()
 		}
 	} else {
 		if b.read != nil {
-			select {
-			case b.read <- struct{}{}:
-			default:
-			}
+			b.read.Release()
 		}
 	}
 }

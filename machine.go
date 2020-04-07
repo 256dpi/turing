@@ -41,9 +41,6 @@ func Start(config Config) (*Machine, error) {
 
 	// prepare balancer
 	balancer := newBalancer(10000, 0)
-	if config.Standalone {
-		balancer = newBalancer(4, 1)
-	}
 
 	// prepare coordinator
 	var coordinator *coordinator
@@ -112,10 +109,6 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 		return err
 	}
 
-	// balance
-	m.balancer.get(description.Effect != 0)
-	defer m.balancer.put(description.Effect != 0)
-
 	// execute directly if standalone
 	if m.config.Standalone {
 		// perform lookup
@@ -127,7 +120,11 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 		return m.database.update([]Instruction{instruction}, []uint64{0})
 	}
 
-	// immediately perform lookups
+	// balance
+	m.balancer.get(description.Effect != 0)
+	defer m.balancer.put(description.Effect != 0)
+
+	// immediately perform read
 	if description.Effect == 0 {
 		err = m.coordinator.lookup(ctx, instruction, nonLinear)
 		if err != nil {
