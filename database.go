@@ -18,6 +18,7 @@ type database struct {
 	registry *registry
 	manager  *manager
 	pebble   *pebble.DB
+	options  *pebble.WriteOptions
 	write    sync.Mutex
 	read     *semaphore.Semaphore
 }
@@ -97,11 +98,17 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		}
 	}
 
+	// prepare options
+	options := &pebble.WriteOptions{
+		Sync: config.Standalone,
+	}
+
 	// create database
 	db := &database{
 		registry: registry,
 		manager:  manager,
 		pebble:   pdb,
+		options:  options,
 		read:     semaphore.New(4),
 	}
 
@@ -149,7 +156,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 		// check if new transaction is needed for bounded transaction
 		if estimatedEffect > 0 && txn.effect+estimatedEffect >= MaxEffect {
 			// commit current batch
-			err := batch.Commit(pebble.NoSync)
+			err := batch.Commit(d.options)
 			if err != nil {
 				return err
 			}
@@ -185,7 +192,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 			// commit batch if maxed out and start over
 			if maxed {
 				// commit current batch (without index)
-				err := batch.Commit(pebble.NoSync)
+				err := batch.Commit(d.options)
 				if err != nil {
 					return err
 				}
@@ -219,7 +226,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	}
 
 	// commit final batch
-	err := batch.Commit(pebble.NoSync)
+	err := batch.Commit(d.options)
 	if err != nil {
 		return err
 	}
