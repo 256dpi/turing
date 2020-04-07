@@ -212,10 +212,12 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 				continue
 			}
 
-			// set index
-			err = batch.Set(indexKey, []byte(strconv.FormatUint(indexes[i], 10)), nil)
-			if err != nil {
-				return err
+			// set index if available
+			if indexes != nil {
+				err = batch.Set(indexKey, []byte(strconv.FormatUint(indexes[i], 10)), nil)
+				if err != nil {
+					return err
+				}
 			}
 
 			break
