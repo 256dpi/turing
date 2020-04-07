@@ -1,10 +1,9 @@
 package turing
 
 import (
-	"bytes"
 	"fmt"
 
-	"github.com/vmihailenco/msgpack/v4"
+	"github.com/256dpi/turing/pkg/coding"
 )
 
 // Kind represents the kind of value stored at a key.
@@ -30,52 +29,61 @@ func (k Kind) Valid() bool {
 
 // Operand represents a single merge operand.
 type Operand struct {
-	Name  string `msgpack:"n"`
-	Value []byte `msgpack:"v"`
+	Name  string
+	Value []byte
 }
 
 // Value represents a decoded value
 type Value struct {
 	// The kind of the value.
-	Kind Kind `msgpack:"-"`
+	Kind Kind
 
 	// The full value.
-	Value []byte `msgpack:"-"`
+	Value []byte
 
 	// The stacked operands.
-	Stack []Operand `msgpack:"s"`
+	Stack []Operand
 }
 
 // DecodeValue will decode a value.
 func DecodeValue(bytes []byte) (Value, error) {
-	// check length
-	if len(bytes) == 0 {
-		return Value{}, fmt.Errorf("decode value: zero length")
+	// decode value
+	var value Value
+	ok := coding.Decode(bytes, func(dec *coding.Decoder) {
+		// read kind
+		var kind uint64
+		dec.Uint(&kind)
+		value.Kind = Kind(kind)
+
+		// decode full value
+		if value.Kind == FullValue {
+			dec.Tail(&value.Value)
+			return
+		}
+
+		// otherwise decode stack
+
+		// get operands
+		var num uint64
+		dec.Uint(&num)
+
+		// prepare stack
+		value.Stack = make([]Operand, int(num))
+
+		// read operands
+		for i := range value.Stack {
+			dec.String(&value.Stack[i].Name)
+			dec.Bytes(&value.Stack[i].Value)
+		}
+	})
+	if !ok {
+		return Value{}, fmt.Errorf("decode value: invalid buffer")
 	}
 
 	// get kind
-	kind := Kind(bytes[0])
-	if !kind.Valid() {
-		return Value{}, fmt.Errorf("decode value: invalid kind: %c", kind)
+	if !value.Kind.Valid() {
+		return Value{}, fmt.Errorf("decode value: invalid kind: %d", value.Kind)
 	}
-
-	// decode full value
-	if kind == FullValue {
-		return Value{
-			Kind:  kind,
-			Value: bytes[1:],
-		}, nil
-	}
-
-	// decode value
-	var value Value
-	err := msgpack.Unmarshal(bytes[1:], &value)
-	if err != nil {
-		return Value{}, err
-	}
-
-	// set kind
-	value.Kind = kind
 
 	return value, nil
 }
@@ -87,11 +95,6 @@ func EncodeValue(value Value) ([]byte, error) {
 		return nil, fmt.Errorf("encode value: invalid kind: %c", value.Kind)
 	}
 
-	// encode full value
-	if value.Kind == FullValue {
-		return append([]byte{uint8(FullValue)}, value.Value...), nil
-	}
-
 	// check stack
 	if value.Kind == StackValue {
 		for _, op := range value.Stack {
@@ -101,22 +104,30 @@ func EncodeValue(value Value) ([]byte, error) {
 		}
 	}
 
-	// prepare buffer
-	var buf bytes.Buffer
-
-	// write kind
-	err := buf.WriteByte(byte(value.Kind))
-	if err != nil {
-		return nil, err
-	}
-
 	// encode value
-	err = msgpack.NewEncoder(&buf).Encode(value)
-	if err != nil {
-		return nil, err
-	}
+	buf := coding.Encode(func(enc *coding.Encoder) {
+		// write kind
+		enc.Uint(uint64(value.Kind))
 
-	return buf.Bytes(), nil
+		// write full value
+		if value.Kind == FullValue {
+			enc.Tail(value.Value)
+			return
+		}
+
+		// otherwise write stack
+
+		// write length
+		enc.Uint(uint64(len(value.Stack)))
+
+		// write operands
+		for _, op := range value.Stack {
+			enc.String(op.Name)
+			enc.Bytes(op.Value)
+		}
+	})
+
+	return buf, nil
 }
 
 // StackValues will stack the provided values.
