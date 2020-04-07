@@ -9,8 +9,8 @@ import (
 )
 
 type command struct {
-	Name string `msgpack:"name"`
-	Data []byte `msgpack:"data"`
+	Name string `msgpack:"n"`
+	Data []byte `msgpack:"d"`
 }
 
 type replicator struct {
