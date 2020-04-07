@@ -6,8 +6,8 @@ import (
 )
 
 type item struct {
-	instruction Instruction
-	ack         func(error)
+	ins Instruction
+	ack func(error)
 }
 
 type controller struct {
@@ -18,6 +18,8 @@ type controller struct {
 }
 
 func newController(database *database) *controller {
+	// TODO: Allow configuring queue size?
+
 	// prepare controller
 	c := &controller{
 		queue:    make(chan item, 1000),
@@ -46,7 +48,7 @@ func (c *controller) update(instruction Instruction) error {
 
 	// queue instruction
 	c.queue <- item{
-		instruction: instruction,
+		ins: instruction,
 		ack: func(err error) {
 			result <- err
 		},
@@ -56,6 +58,8 @@ func (c *controller) update(instruction Instruction) error {
 }
 
 func (c *controller) processor() {
+	// TODO: Allow configuring list sizes?
+
 	// prepare list
 	list := make([]Instruction, 0, 200)
 	acks := make([]func(error), 0, 200)
@@ -69,14 +73,14 @@ func (c *controller) processor() {
 		}
 
 		// add to list
-		list = append(list, item.instruction)
+		list = append(list, item.ins)
 		acks = append(acks, item.ack)
 
 		// add buffered instructions
 		for len(c.queue) > 0 && cap(list) > 0 {
 			item, ok := <-c.queue
 			if ok {
-				list = append(list, item.instruction)
+				list = append(list, item.ins)
 				acks = append(acks, item.ack)
 			}
 		}
@@ -84,7 +88,7 @@ func (c *controller) processor() {
 		// perform update
 		err := c.database.update(list, nil)
 
-		// send results
+		// forward results
 		for _, ack := range acks {
 			ack(err)
 		}
