@@ -21,7 +21,7 @@ type Operator struct {
 	// The name of the operator.
 	Name string
 
-	// The zero value for merge only keys.
+	// The zero value used as the base value if there is no full value.
 	Zero []byte
 
 	// The function called to apply operands to a value.
@@ -55,22 +55,23 @@ type InstructionCodec interface {
 
 // Description is a description of an instruction.
 type Description struct {
-	// The unique name of the instruction. We recommend the following notation:
-	// "path/package.Instruction" to ease discoverability.
+	// The unique name of the instruction. The notation "path/package/Type" is
+	// recommended to ease discoverability.
 	Name string
 
 	// The amount of modifications this instruction will make. A positive
-	// number is interpreted as the maximum amount of set and deleted keys during
-	// the execution. A zero value indicates that the instruction is read only
-	// and will not set or delete any keys. A negative number indicates that the
-	// effect is unbounded and may modify many keys.
+	// number is interpreted as the maximum amount of set, unset merged and
+	// deleted keys during the execution. A zero value indicates that the
+	// instruction is read only and will not set or delete any keys. A negative
+	// number indicates that the effect is unbounded and may modify many keys.
 	Effect int
 
 	// The builder can be set to implement a custom builder. If not set, the
 	// default reflect based builder will be used.
 	Builder func() Instruction
 
-	// The operators used by this instruction.
+	// The operators used by this instruction. Deprecated operators must be
+	// retained to ensure they can be used to compact older database levels.
 	Operators []*Operator
 }
 
