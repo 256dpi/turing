@@ -18,25 +18,24 @@ import (
 	"github.com/256dpi/turing"
 )
 
-const writers = 1000
-const readers = 1000
-const keySpace = 1000
+// prepare flags
+var id = flag.Uint64("id", 1, "the server id")
+var members = flag.String("members", "", "the cluster members")
+var directory = flag.String("directory", "data", "the data directory")
+var standalone = flag.Bool("standalone", false, "enable standalone mode")
+var memory = flag.Bool("memory", false, "enable in-memory mode")
+var readers = flag.Int("readers", 1000, "the number of parallel readers")
+var writers = flag.Int("writers", 1000, "the number of parallel writers")
+var keySpace = flag.Int("keySpace", 1000, "the size of the key space")
 
 var wg sync.WaitGroup
 
 func main() {
-	// prepare flags
-	var idFlag = flag.Uint64("id", 1, "the server id")
-	var membersFlag = flag.String("members", "", "the cluster members")
-	var directoryFlag = flag.String("directory", "data", "the data directory")
-	var standaloneFlag = flag.Bool("standalone", false, "enable standalone mode")
-	var memoryFlag = flag.Bool("memory", false, "enable in-memory mode")
-
 	// parse flags
 	flag.Parse()
 
 	// enable debugging
-	god.Debug(6060 + int(*idFlag))
+	god.Debug(6060 + int(*id))
 	god.Metrics()
 
 	// disable logging
@@ -46,9 +45,9 @@ func main() {
 	turing.RegisterMetrics()
 
 	// parse members
-	var members []turing.Member
-	if *membersFlag != "" {
-		for _, member := range strings.Split(*membersFlag, ",") {
+	var memberList []turing.Member
+	if *members != "" {
+		for _, member := range strings.Split(*members, ",") {
 			// parse member
 			member, err := turing.ParseMember(member)
 			if err != nil {
@@ -56,30 +55,30 @@ func main() {
 			}
 
 			// add member
-			members = append(members, member)
+			memberList = append(memberList, member)
 		}
 	}
 
 	// resolve directory
-	directory, err := filepath.Abs(*directoryFlag)
+	directory, err := filepath.Abs(*directory)
 	if err != nil {
 		panic(err)
 	}
 
 	// append server id
-	directory = filepath.Join(directory, strconv.FormatUint(*idFlag, 10))
+	directory = filepath.Join(directory, strconv.FormatUint(*id, 10))
 
 	// check if in-memory is requested
-	if *memoryFlag {
+	if *memory {
 		directory = ""
 	}
 
 	// start machine
 	machine, err := turing.Start(turing.Config{
-		ID:         *idFlag,
-		Members:    members,
+		ID:         *id,
+		Members:    memberList,
 		Directory:  directory,
-		Standalone: *standaloneFlag,
+		Standalone: *standalone,
 		Instructions: []turing.Instruction{
 			&inc{}, &get{},
 		},
@@ -95,14 +94,14 @@ func main() {
 	done := make(chan struct{})
 
 	// run writers
-	wg.Add(writers)
-	for i := 0; i < writers; i++ {
+	wg.Add(*writers)
+	for i := 0; i < *writers; i++ {
 		go writer(machine, done)
 	}
 
 	// run readers
-	wg.Add(readers)
-	for i := 0; i < readers; i++ {
+	wg.Add(*readers)
+	for i := 0; i < *readers; i++ {
 		go reader(machine, done)
 	}
 
@@ -133,7 +132,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 
 		// inc value
 		err := machine.Execute(nil, &inc{
-			Key:   strconv.Itoa(rand.Intn(keySpace)),
+			Key:   strconv.Itoa(rand.Intn(*keySpace)),
 			Value: 1,
 			Merge: rand.Intn(4) > 0, // 75%
 		}, false)
@@ -164,7 +163,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 
 		// get value
 		err := machine.Execute(nil, &get{
-			Key: strconv.Itoa(rand.Intn(keySpace)),
+			Key: strconv.Itoa(rand.Intn(*keySpace)),
 		}, false)
 		if err != nil {
 			handle(err)
