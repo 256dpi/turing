@@ -17,23 +17,11 @@ type Decoder struct {
 	err error
 }
 
-// Int reads a signed integer.
-func (e *Decoder) Int(num *int64) {
-	// skip if errored
-	if e.err != nil {
-		return
-	}
-
-	// read length
-	var n int
-	*num, n = binary.Varint(e.buf)
-	if n == 0 {
-		e.err = ErrBufferTooShort
-		return
-	}
-
-	// slice
-	e.buf = e.buf[n:]
+// Int reads a boolean.
+func (e *Decoder) Bool(bol *bool) {
+	var num uint64
+	e.Uint(&num)
+	*bol = num == 1
 }
 
 // Uint reads an unsigned integer.
@@ -46,6 +34,25 @@ func (e *Decoder) Uint(num *uint64) {
 	// read length
 	var n int
 	*num, n = binary.Uvarint(e.buf)
+	if n == 0 {
+		e.err = ErrBufferTooShort
+		return
+	}
+
+	// slice
+	e.buf = e.buf[n:]
+}
+
+// Int reads a signed integer.
+func (e *Decoder) Int(num *int64) {
+	// skip if errored
+	if e.err != nil {
+		return
+	}
+
+	// read length
+	var n int
+	*num, n = binary.Varint(e.buf)
 	if n == 0 {
 		e.err = ErrBufferTooShort
 		return

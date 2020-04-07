@@ -12,6 +12,15 @@ type Encoder struct {
 	buf []byte
 }
 
+// Bool writes a boolean.
+func (e *Encoder) Bool(truthy bool) {
+	if truthy {
+		e.Uint(1)
+	} else {
+		e.Uint(0)
+	}
+}
+
 // Uint writes an unsigned integer.
 func (e *Encoder) Uint(num uint64) {
 	// handle length
