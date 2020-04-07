@@ -9,16 +9,16 @@ import (
 
 type replicator struct {
 	config   Config
+	registry *registry
 	manager  *manager
 	database *database
-	registry *registry
 }
 
 func newReplicator(config Config, registry *registry, manager *manager) *replicator {
 	return &replicator{
 		config:   config,
-		manager:  manager,
 		registry: registry,
+		manager:  manager,
 	}
 }
 

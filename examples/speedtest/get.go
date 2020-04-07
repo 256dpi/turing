@@ -40,14 +40,16 @@ func (g *get) Execute(txn *turing.Transaction) error {
 }
 
 func (g *get) Encode() ([]byte, error) {
-	return coding.Encode(func(enc *coding.Encoder) {
+	return coding.Encode(func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint(1)
 
 		// encode body
 		enc.String(g.Key)
 		enc.Int(g.Value)
-	}), nil
+
+		return nil
+	})
 }
 
 func (g *get) Decode(bytes []byte) error {

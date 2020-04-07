@@ -191,7 +191,7 @@ func (m *Machine) Status() Status {
 
 // Stop will stop the machine.
 func (m *Machine) Stop() {
-	// close development db
+	// close database
 	if m.database != nil {
 		_ = m.database.close()
 	}

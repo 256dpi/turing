@@ -106,24 +106,30 @@ var encoderPool = sync.Pool{
 
 // Encode will encode data using the provided encoding function. The function
 // is run once to assess the length of the buffer and once to encode the data.
-func Encode(fn func(enc *Encoder)) []byte {
+func Encode(fn func(enc *Encoder) error) ([]byte, error) {
 	// borrow encoder
 	enc := encoderPool.Get().(*Encoder)
+	defer func() {
+		enc.len = 0
+		enc.buf = nil
+		encoderPool.Put(enc)
+	}()
 
 	// count
-	fn(enc)
+	err := fn(enc)
+	if err != nil {
+		return nil, err
+	}
 
 	// allocate
 	buf := make([]byte, enc.len)
 	enc.buf = buf
 
 	// encode
-	fn(enc)
+	err = fn(enc)
+	if err != nil {
+		return nil, err
+	}
 
-	// return encoder
-	enc.len = 0
-	enc.buf = nil
-	encoderPool.Put(enc)
-
-	return buf
+	return buf, nil
 }

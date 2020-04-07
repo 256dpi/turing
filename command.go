@@ -27,13 +27,12 @@ func EncodeCommand(cmd Command) ([]byte, error) {
 	}
 
 	// encode command
-	bytes := coding.Encode(func(enc *coding.Encoder) {
+	return coding.Encode(func(enc *coding.Encoder) error {
 		enc.Uint(commandVersion1)
 		enc.String(cmd.Name)
 		enc.Tail(cmd.Data)
+		return nil
 	})
-
-	return bytes, nil
 }
 
 // DecodeCommand will decode a command from the provided byte slice. If clone is

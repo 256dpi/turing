@@ -66,7 +66,7 @@ func EncodeValue(value Value) ([]byte, error) {
 	}
 
 	// encode value
-	buf := coding.Encode(func(enc *coding.Encoder) {
+	return coding.Encode(func(enc *coding.Encoder) error {
 		// write version
 		enc.Uint(valueVersion1)
 
@@ -76,7 +76,7 @@ func EncodeValue(value Value) ([]byte, error) {
 		// write full value
 		if value.Kind == FullValue {
 			enc.Tail(value.Value)
-			return
+			return nil
 		}
 
 		// otherwise write stack value
@@ -89,9 +89,9 @@ func EncodeValue(value Value) ([]byte, error) {
 			enc.String(op.Name)
 			enc.Bytes(op.Value)
 		}
-	})
 
-	return buf, nil
+		return nil
+	})
 }
 
 // DecodeValue will decode a value.

@@ -67,7 +67,7 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 }
 
 func (i *inc) Encode() ([]byte, error) {
-	return coding.Encode(func(enc *coding.Encoder) {
+	return coding.Encode(func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint(1)
 
@@ -75,7 +75,9 @@ func (i *inc) Encode() ([]byte, error) {
 		enc.String(i.Key)
 		enc.Int(i.Value)
 		enc.Bool(i.Merge)
-	}), nil
+
+		return nil
+	})
 }
 
 func (i *inc) Decode(bytes []byte) error {
