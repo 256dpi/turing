@@ -15,9 +15,10 @@ type Machine struct {
 	config      Config
 	registry    *registry
 	manager     *manager
-	coordinator *coordinator
-	database    *database
 	balancer    *balancer
+	coordinator *coordinator
+	controller  *controller
+	database    *database
 }
 
 // Start will create a new machine using the specified configuration.
@@ -51,13 +52,18 @@ func Start(config Config) (*Machine, error) {
 		}
 	}
 
-	// prepare database
+	// prepare database and controller
 	var database *database
+	var controller *controller
 	if config.Standalone {
+		// open database
 		database, _, err = openDatabase(config, registry, manager)
 		if err != nil {
 			return nil, err
 		}
+
+		// create controller
+		controller = newController(database)
 	}
 
 	// create machine
@@ -65,9 +71,10 @@ func Start(config Config) (*Machine, error) {
 		config:      config,
 		registry:    registry,
 		manager:     manager,
-		coordinator: coordinator,
-		database:    database,
 		balancer:    balancer,
+		coordinator: coordinator,
+		controller:  controller,
+		database:    database,
 	}
 
 	return m, nil
@@ -117,7 +124,12 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 		}
 
 		// perform update
-		return m.database.update([]Instruction{instruction}, []uint64{0})
+		err := m.controller.update(instruction)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	// balance
@@ -191,13 +203,18 @@ func (m *Machine) Status() Status {
 
 // Stop will stop the machine.
 func (m *Machine) Stop() {
-	// close database
-	if m.database != nil {
-		_ = m.database.close()
-	}
-
 	// close coordinator
 	if m.coordinator != nil {
 		m.coordinator.close()
+	}
+
+	// close controller
+	if m.controller != nil {
+		_ = m.controller.close
+	}
+
+	// close database
+	if m.database != nil {
+		_ = m.database.close()
 	}
 }
