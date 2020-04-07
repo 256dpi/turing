@@ -132,14 +132,25 @@ func EncodeValue(value Value) ([]byte, error) {
 
 // StackValues will stack the provided values.
 func StackValues(values []Value) (Value, error) {
+	// count values
+	var total int
+	for _, value := range values {
+		switch value.Kind {
+		case StackValue:
+			total += len(value.Stack)
+		default:
+			return Value{}, fmt.Errorf("unexpected value")
+		}
+	}
+
+	// allocate stack
+	stack := make([]Operand, 0, total)
+
 	// stack values
-	var stack []Operand
 	for _, value := range values {
 		switch value.Kind {
 		case StackValue:
 			stack = append(stack, value.Stack...)
-		default:
-			return Value{}, fmt.Errorf("unexpected value")
 		}
 	}
 
