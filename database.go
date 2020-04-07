@@ -109,7 +109,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		manager:  manager,
 		pebble:   pdb,
 		options:  options,
-		read:     semaphore.New(4),
+		read:     semaphore.New(config.ConcurrentReaders),
 	}
 
 	// init manager

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -27,11 +28,17 @@ type Config struct {
 	// The used instructions.
 	Instructions []Instruction
 
+	// Whether standalone mode should be enabled. In this mode the database
+	// state is not replicated and
+	Standalone bool
+
 	// The average round trip time.
 	RoundTripTime time.Duration
 
-	// Whether standalone mode should be enabled.
-	Standalone bool
+	// The number of concurrent database readers.
+	//
+	// Default: min(CPUs - 3, 2).
+	ConcurrentReaders int
 }
 
 // Local will return the local member.
@@ -68,6 +75,14 @@ func (c *Config) check() error {
 	// check round trip time
 	if c.RoundTripTime == 0 {
 		c.RoundTripTime = time.Millisecond
+	}
+
+	// check concurrent readers
+	if c.ConcurrentReaders == 0 {
+		c.ConcurrentReaders = runtime.NumCPU() - 3
+		if c.ConcurrentReaders < 2 {
+			c.ConcurrentReaders = 2
+		}
 	}
 
 	return nil
