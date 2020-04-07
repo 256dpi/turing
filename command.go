@@ -6,10 +6,6 @@ import (
 	"github.com/256dpi/turing/pkg/coding"
 )
 
-const (
-	commandVersion1 = 1
-)
-
 // Command represents the commands replicated between machines.
 type Command struct {
 	// The name of the instruction to be executed.
@@ -28,7 +24,7 @@ func EncodeCommand(cmd Command) ([]byte, error) {
 
 	// encode command
 	return coding.Encode(func(enc *coding.Encoder) error {
-		enc.Uint(commandVersion1)
+		enc.Uint(1)
 		enc.String(cmd.Name)
 		enc.Tail(cmd.Data)
 		return nil
@@ -44,7 +40,7 @@ func DecodeCommand(bytes []byte, clone bool) (Command, error) {
 		// decode version
 		var version uint64
 		dec.Uint(&version)
-		if version != commandVersion1 {
+		if version != 1 {
 			return fmt.Errorf("decode command: invalid version")
 		}
 

@@ -6,10 +6,6 @@ import (
 	"github.com/256dpi/turing/pkg/coding"
 )
 
-const (
-	valueVersion1 = 1
-)
-
 // Kind represents the kind of value stored at a key.
 type Kind byte
 
@@ -68,7 +64,7 @@ func EncodeValue(value Value) ([]byte, error) {
 	// encode value
 	return coding.Encode(func(enc *coding.Encoder) error {
 		// write version
-		enc.Uint(valueVersion1)
+		enc.Uint(1)
 
 		// write kind
 		enc.Uint(uint64(value.Kind))
@@ -102,7 +98,7 @@ func DecodeValue(bytes []byte) (Value, error) {
 		// decode version
 		var version uint64
 		dec.Uint(&version)
-		if version != valueVersion1 {
+		if version != 1 {
 			return fmt.Errorf("decode value: invalid version")
 		}
 
