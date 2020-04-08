@@ -15,6 +15,8 @@ import (
 
 // Config is used to configure a machine.
 type Config struct {
+	/* General Configuration */
+
 	// The id of this member.
 	ID uint64
 
@@ -31,13 +33,27 @@ type Config struct {
 	// state is not replicated and
 	Standalone bool
 
+	/* Performance Tuning */
+
 	// The average round trip time.
+	//
+	// Default: 1ms.
 	RoundTripTime time.Duration
 
 	// The number of concurrent database readers.
 	//
-	// Default: min(CPUs - 3, 2).
+	// Default: min(NumCPUs - 3, 2).
 	ConcurrentReaders int
+
+	// The number of concurrent raft proposers.
+	//
+	// Default: NumCPUs.
+	ConcurrentProposers int
+
+	// The maximum instruction batch size for updates and lookups.
+	//
+	// Default: 200.
+	BatchSize int
 }
 
 // Local will return the local member.
@@ -82,6 +98,16 @@ func (c *Config) check() error {
 		if c.ConcurrentReaders < 2 {
 			c.ConcurrentReaders = 2
 		}
+	}
+
+	// check concurrent proposers
+	if c.ConcurrentProposers == 0 {
+		c.ConcurrentProposers = runtime.NumCPU()
+	}
+
+	// check batch size
+	if c.BatchSize == 0 {
+		c.BatchSize = 200
 	}
 
 	return nil

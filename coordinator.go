@@ -12,8 +12,9 @@ import (
 const clusterID uint64 = 1
 
 type coordinator struct {
-	node  *dragonboat.NodeHost
-	reads *bundler
+	node   *dragonboat.NodeHost
+	reads  *bundler
+	writes *bundler
 }
 
 func createCoordinator(cfg Config, registry *registry, manager *manager) (*coordinator, error) {
@@ -68,35 +69,57 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// create coordinator
 	coordinator := &coordinator{
 		node: node,
-		reads: newBundler(1000, 200, cfg.ConcurrentReaders, func(list []Instruction) error {
-			_, err := node.StaleRead(clusterID, list)
-			return err
-		}),
 	}
+
+	// create read bundler
+	coordinator.reads = newBundler(bundlerOptions{
+		queueSize:   (cfg.ConcurrentReaders + 1) * cfg.BatchSize,
+		batchSize:   cfg.BatchSize,
+		concurrency: cfg.ConcurrentReaders,
+		handler:     coordinator.performLookup,
+	})
+
+	// create write bundler
+	coordinator.writes = newBundler(bundlerOptions{
+		queueSize:   (cfg.ConcurrentProposers + 1) * cfg.BatchSize,
+		batchSize:   cfg.BatchSize,
+		concurrency: cfg.ConcurrentProposers,
+		handler:     coordinator.performUpdates,
+	})
 
 	return coordinator, nil
 }
 
 func (c *coordinator) update(ins Instruction) error {
+	return c.writes.process(ins)
+}
+
+func (c *coordinator) performUpdates(list []Instruction) error {
 	// observe
-	timer := observe(operationMetrics, "coordinator.update")
+	timer := observe(operationMetrics, "coordinator.performUpdates")
 	defer timer.ObserveDuration()
 
 	// get session
 	session := c.node.GetNoOPSession(clusterID)
 
-	// encode instruction
-	encodedInstruction, err := ins.Encode()
-	if err != nil {
-		return err
-	}
-
 	// prepare command
 	cmd := Command{
-		Operations: []Operation{{
+		Operations: make([]Operation, 0, len(list)),
+	}
+
+	// add operations
+	for _, ins := range list {
+		// encode instructions
+		encodedInstruction, err := ins.Encode()
+		if err != nil {
+			return err
+		}
+
+		// add operation
+		cmd.Operations = append(cmd.Operations, Operation{
 			Name: ins.Describe().Name,
 			Data: encodedInstruction,
-		}},
+		})
 	}
 
 	// encode command
@@ -104,11 +127,6 @@ func (c *coordinator) update(ins Instruction) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO: Proposing multiple instructions at once might be faster. However,
-	//  the dragonboat library already batches raft entries, so the speedup might
-	//  just be marginal. Also another batching would require that we keep track
-	//  of applied instructions manually
 
 	// propose change
 	req, err := c.node.Propose(session, encodedCommand, 10*time.Second)
@@ -131,10 +149,12 @@ func (c *coordinator) update(ins Instruction) error {
 		return err
 	}
 
-	// decode instruction
-	err = ins.Decode(cmd.Operations[0].Data)
-	if err != nil {
-		return err
+	// decode instructions
+	for i, op := range cmd.Operations {
+		err = list[i].Decode(op.Data)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -169,6 +189,21 @@ func (c *coordinator) lookup(ins Instruction, options Options) error {
 
 	// lookup data
 	err = c.reads.process(ins)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *coordinator) performLookup(list []Instruction) error {
+	// observe
+	timer := observe(operationMetrics, "coordinator.performLookup")
+	defer timer.ObserveDuration()
+
+	// perform read as all instructions ar queued after their respective read
+	// index request has completed
+	_, err := c.node.StaleRead(clusterID, list)
 	if err != nil {
 		return err
 	}

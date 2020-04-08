@@ -8,11 +8,21 @@ type controller struct {
 
 func newController(config Config, database *database) *controller {
 	return &controller{
-		updates: newBundler(1000, 200, 1, func(list []Instruction) error {
-			return database.update(list, nil)
+		updates: newBundler(bundlerOptions{
+			queueSize:   2 * config.BatchSize,
+			batchSize:   config.BatchSize,
+			concurrency: 1,
+			handler: func(list []Instruction) error {
+				return database.update(list, nil)
+			},
 		}),
-		lookups: newBundler(1000, 200, config.ConcurrentReaders, func(list []Instruction) error {
-			return database.lookup(list)
+		lookups: newBundler(bundlerOptions{
+			queueSize:   (config.ConcurrentReaders + 1) * config.BatchSize,
+			batchSize:   config.BatchSize,
+			concurrency: config.ConcurrentReaders,
+			handler: func(list []Instruction) error {
+				return database.lookup(list)
+			},
 		}),
 	}
 }

@@ -5,31 +5,36 @@ import (
 	"sync"
 )
 
+type bundlerOptions struct {
+	queueSize   int
+	batchSize   int
+	concurrency int
+	handler     func([]Instruction) error
+}
+
 type item struct {
 	ins Instruction
 	ack func(error)
 }
 
 type bundler struct {
-	batch   int
-	queue   chan item
-	handler func([]Instruction) error
-	mutex   sync.RWMutex
-	group   sync.WaitGroup
-	closed  bool
+	opts   bundlerOptions
+	queue  chan item
+	mutex  sync.RWMutex
+	group  sync.WaitGroup
+	closed bool
 }
 
-func newBundler(queue, batch, concurrency int, handler func([]Instruction) error) *bundler {
+func newBundler(opts bundlerOptions) *bundler {
 	// prepare bundler
 	c := &bundler{
-		batch:   batch,
-		queue:   make(chan item, queue),
-		handler: handler,
+		opts:  opts,
+		queue: make(chan item, opts.queueSize),
 	}
 
 	// run processors
-	c.group.Add(concurrency)
-	for i := 0; i < concurrency; i++ {
+	c.group.Add(opts.concurrency)
+	for i := 0; i < opts.concurrency; i++ {
 		go c.processor()
 	}
 
@@ -65,8 +70,8 @@ func (b *bundler) processor() {
 	defer b.group.Done()
 
 	// prepare list
-	list := make([]Instruction, 0, b.batch)
-	acks := make([]func(error), 0, b.batch)
+	list := make([]Instruction, 0, b.opts.batchSize)
+	acks := make([]func(error), 0, b.opts.batchSize)
 
 	for {
 		// await next instruction
@@ -80,7 +85,7 @@ func (b *bundler) processor() {
 		acks = append(acks, item.ack)
 
 		// add buffered instructions
-		for len(b.queue) > 0 && len(list) < b.batch {
+		for len(b.queue) > 0 && len(list) < b.opts.batchSize {
 			item, ok := <-b.queue
 			if ok {
 				list = append(list, item.ins)
@@ -89,7 +94,7 @@ func (b *bundler) processor() {
 		}
 
 		// call handler and forward result
-		err := b.handler(list)
+		err := b.opts.handler(list)
 		for _, ack := range acks {
 			ack(err)
 		}
