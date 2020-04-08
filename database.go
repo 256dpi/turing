@@ -2,7 +2,6 @@ package turing
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"strconv"
 	"sync"
@@ -17,6 +16,25 @@ import (
 var ErrDatabaseClosed = errors.New("turing: database closed")
 
 var indexKey = []byte("$index")
+
+var transactionPool = sync.Pool{
+	New: func() interface{} {
+		return &Transaction{}
+	},
+}
+
+func obtainTransaction() *Transaction {
+	return transactionPool.Get().(*Transaction)
+}
+
+func recycleTransaction(txn *Transaction) {
+	txn.registry = nil
+	txn.reader = nil
+	txn.writer = nil
+	txn.closers = 0
+	txn.effect = 0
+	transactionPool.Put(txn)
+}
 
 type database struct {
 	registry *registry
@@ -136,34 +154,28 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	timer := observe(operationMetrics, "database.update")
 	defer timer.ObserveDuration()
 
-	// count batch size
-	getObserver(databaseMetrics, "batch_length").Observe(float64(len(list)))
-
 	// create initial batch
 	batch := d.pebble.NewIndexedBatch()
 
 	// create initial transaction
-	txn := obtainTxn()
+	txn := obtainTransaction()
 	txn.registry = d.registry
 	txn.reader = batch
 	txn.writer = batch
 
 	// ensure recycle
-	defer recycleTxn(txn)
-
-	// prepare counters
-	transactionCount := 1
+	defer recycleTransaction(txn)
 
 	// execute all instructions
 	for i, instruction := range list {
-		// begin observation
-		timer := observe(instructionMetrics, instruction.Describe().Name)
+		// get description
+		desc := instruction.Describe()
 
-		// get estimated effect of instruction
-		estimatedEffect := instruction.Describe().Effect
+		// begin observation
+		timer := observe(instructionMetrics, desc.Name)
 
 		// check if new transaction is needed for bounded transaction
-		if estimatedEffect > 0 && txn.effect+estimatedEffect >= MaxEffect {
+		if desc.Effect > 0 && txn.effect+desc.Effect >= MaxEffect {
 			// commit current batch
 			err := batch.Commit(d.options)
 			if err != nil {
@@ -177,30 +189,18 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 			txn.reader = batch
 			txn.writer = batch
 			txn.effect = 0
-			txn.closers = 0
-
-			// update counters
-			transactionCount++
 		}
 
 		for {
 			// execute transaction
-			var maxed bool
-			err := instruction.Execute(txn)
-			if err == ErrMaxEffect {
-				maxed = true
-			} else if err != nil {
+			exhausted, err := txn.execute(instruction)
+			if err != nil {
 				return err
 			}
 
-			// check closers
-			if txn.closers != 0 {
-				return fmt.Errorf("turing: unclosed values after instruction execution")
-			}
-
-			// commit batch if maxed out and start over
-			if maxed {
-				// commit current batch (without index)
+			// commit batch if exhausted and start over
+			if exhausted {
+				// commit current batch
 				err := batch.Commit(d.options)
 				if err != nil {
 					return err
@@ -213,10 +213,6 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 				txn.reader = batch
 				txn.writer = batch
 				txn.effect = 0
-				txn.closers = 0
-
-				// update counters
-				transactionCount++
 
 				continue
 			}
@@ -247,9 +243,6 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 		d.manager.process(instruction)
 	}
 
-	// count transaction count
-	getObserver(databaseMetrics, "transaction_count").Observe(float64(transactionCount))
-
 	return nil
 }
 
@@ -276,12 +269,12 @@ func (d *database) lookup(list []Instruction) error {
 	defer snapshot.Close()
 
 	// prepare transaction
-	txn := obtainTxn()
+	txn := obtainTransaction()
 	txn.registry = d.registry
 	txn.reader = snapshot
 
 	// ensure recycle
-	defer recycleTxn(txn)
+	defer recycleTransaction(txn)
 
 	// execute instruction
 	for _, instruction := range list {
@@ -289,14 +282,9 @@ func (d *database) lookup(list []Instruction) error {
 		timer := observe(instructionMetrics, instruction.Describe().Name)
 
 		// execute transaction
-		err := instruction.Execute(txn)
+		_, err := txn.execute(instruction)
 		if err != nil {
 			return err
-		}
-
-		// check closers
-		if txn.closers != 0 {
-			return fmt.Errorf("turing: unclosed values after instruction execution")
 		}
 
 		// finish observation

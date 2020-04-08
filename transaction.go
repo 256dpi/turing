@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
 
 	"github.com/cockroachdb/pebble"
 )
@@ -15,25 +14,6 @@ type closerFunc func() error
 
 func (f closerFunc) Close() error {
 	return f()
-}
-
-var txnPool = sync.Pool{
-	New: func() interface{} {
-		return &Transaction{}
-	},
-}
-
-func obtainTxn() *Transaction {
-	return txnPool.Get().(*Transaction)
-}
-
-func recycleTxn(txn *Transaction) {
-	txn.registry = nil
-	txn.reader = nil
-	txn.writer = nil
-	txn.closers = 0
-	txn.effect = 0
-	txnPool.Put(txn)
 }
 
 // ErrReadOnly is returned by by a transaction on write operations if the
@@ -52,6 +32,24 @@ type Transaction struct {
 	writer   pebble.Writer
 	closers  int
 	effect   int
+}
+
+func (t *Transaction) execute(ins Instruction) (bool, error) {
+	// execute transaction
+	var exhausted bool
+	err := ins.Execute(t)
+	if err == ErrMaxEffect {
+		exhausted = true
+	} else if err != nil {
+		return false, err
+	}
+
+	// check closers
+	if t.closers != 0 {
+		return false, fmt.Errorf("turing: unclosed values after instruction execution")
+	}
+
+	return exhausted, nil
 }
 
 // Get will lookup the specified key. The returned slice must not be modified by

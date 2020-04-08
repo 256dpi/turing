@@ -20,20 +20,12 @@ var instructionMetrics = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Help:      "Instruction execution timings in milliseconds.",
 }, []string{"name"})
 
-var databaseMetrics = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "turing",
-	Subsystem: "",
-	Name:      "database",
-	Help:      "Various database metrics.",
-}, []string{"metric"})
-
 var observerCacheCache sync.Map
 
 // RegisterMetrics will register prometheus metrics.
 func RegisterMetrics() {
 	prometheus.MustRegister(operationMetrics)
 	prometheus.MustRegister(instructionMetrics)
-	prometheus.MustRegister(databaseMetrics)
 }
 
 func getObserver(summary *prometheus.HistogramVec, label string) prometheus.Observer {
