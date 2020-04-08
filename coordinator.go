@@ -99,7 +99,7 @@ func (c *coordinator) update(ins Instruction) error {
 func (c *coordinator) performUpdates(list []Instruction) error {
 	// observe
 	timer := observe(operationMetrics, "coordinator.performUpdates")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// get session
 	session := c.node.GetNoOPSession(clusterID)
@@ -165,7 +165,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 func (c *coordinator) lookup(ins Instruction, options Options) error {
 	// observe
 	timer := observe(operationMetrics, "coordinator.lookup")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// immediately queue stale reads
 	if options.StaleRead {
@@ -201,7 +201,7 @@ func (c *coordinator) lookup(ins Instruction, options Options) error {
 func (c *coordinator) performLookup(list []Instruction) error {
 	// observe
 	timer := observe(operationMetrics, "coordinator.performLookup")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// perform read as all instructions ar queued after their respective read
 	// index request has completed
@@ -216,7 +216,7 @@ func (c *coordinator) performLookup(list []Instruction) error {
 func (c *coordinator) status() Status {
 	// observe
 	timer := observe(operationMetrics, "coordinator.status")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// get info
 	info := c.node.GetNodeHostInfo(dragonboat.NodeHostInfoOption{

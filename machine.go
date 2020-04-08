@@ -75,7 +75,7 @@ func Start(config Config) (*Machine, error) {
 func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	// observe
 	timer := observe(operationMetrics, "Machine.Execute")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// get options
 	var options Options

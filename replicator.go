@@ -38,7 +38,7 @@ func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry, error) {
 	// observe
 	timer := observe(operationMetrics, "replicator.Update")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// handle entries
 	for i, entry := range entries {
@@ -117,7 +117,7 @@ func (r *replicator) Sync() error {
 func (r *replicator) Lookup(data interface{}) (interface{}, error) {
 	// observe
 	timer := observe(operationMetrics, "replicator.Lookup")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// get instructions
 	list := data.([]Instruction)

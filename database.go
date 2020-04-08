@@ -154,7 +154,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 
 	// observe
 	timer := observe(operationMetrics, "database.update")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// create initial batch
 	batch := d.pebble.NewIndexedBatch()
@@ -231,7 +231,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 		}
 
 		// finish observation
-		timer.ObserveDuration()
+		timer.finish()
 	}
 
 	// commit final batch
@@ -264,7 +264,7 @@ func (d *database) lookup(list []Instruction) error {
 
 	// observe
 	timer1 := observe(operationMetrics, "database.lookup")
-	defer timer1.ObserveDuration()
+	defer timer1.finish()
 
 	// get snapshot
 	snapshot := d.pebble.NewSnapshot()
@@ -290,7 +290,7 @@ func (d *database) lookup(list []Instruction) error {
 		}
 
 		// finish observation
-		timer.ObserveDuration()
+		timer.finish()
 	}
 
 	return nil
@@ -314,7 +314,7 @@ func (d *database) backup(sink io.Writer) error {
 
 	// observe
 	timer := observe(operationMetrics, "database.backup")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// TODO: Implement.
 
@@ -333,7 +333,7 @@ func (d *database) restore(source io.Reader) error {
 
 	// observe
 	timer := observe(operationMetrics, "database.restore")
-	defer timer.ObserveDuration()
+	defer timer.finish()
 
 	// TODO: Implement.
 

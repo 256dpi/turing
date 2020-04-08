@@ -2,18 +2,19 @@ package turing
 
 import (
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var operationMetrics = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+var operationMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "turing",
 	Subsystem: "",
 	Name:      "operations",
 	Help:      "Internal operation timings in milliseconds.",
 }, []string{"name"})
 
-var instructionMetrics = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+var instructionMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "turing",
 	Subsystem: "",
 	Name:      "instructions",
@@ -28,7 +29,7 @@ func RegisterMetrics() {
 	prometheus.MustRegister(instructionMetrics)
 }
 
-func getObserver(summary *prometheus.HistogramVec, label string) prometheus.Observer {
+func getObserver(summary prometheus.ObserverVec, label string) prometheus.Observer {
 	// get cache from cache
 	var cache *sync.Map
 	value, ok := observerCacheCache.Load(summary)
@@ -52,7 +53,20 @@ func getObserver(summary *prometheus.HistogramVec, label string) prometheus.Obse
 	return observer
 }
 
-func observe(summary *prometheus.HistogramVec, label string) prometheus.Timer {
-	// dereference to prevent allocation
-	return *prometheus.NewTimer(getObserver(summary, label))
+type timer struct {
+	begin    time.Time
+	observer prometheus.Observer
+}
+
+func observe(summary prometheus.ObserverVec, label string) timer {
+	return timer{
+		begin:    time.Now(),
+		observer: getObserver(summary, label),
+	}
+}
+
+func (t *timer) finish() {
+	if t.observer != nil {
+		t.observer.Observe(time.Since(t.begin).Seconds() * 1000.0)
+	}
 }
