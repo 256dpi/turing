@@ -13,7 +13,8 @@ import (
 const clusterID uint64 = 1
 
 type coordinator struct {
-	node *dragonboat.NodeHost
+	node  *dragonboat.NodeHost
+	reads *bundler
 }
 
 func createCoordinator(cfg Config, registry *registry, manager *manager) (*coordinator, error) {
@@ -68,6 +69,10 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// create coordinator
 	coordinator := &coordinator{
 		node: node,
+		reads: newBundler(1000, 200, 4, func(list []Instruction) error {
+			_, err := node.StaleRead(clusterID, list)
+			return err
+		}),
 	}
 
 	return coordinator, nil
@@ -125,33 +130,46 @@ func (c *coordinator) update(instruction Instruction) error {
 	return nil
 }
 
-func (c *coordinator) lookup(instruction Instruction, nonLinear bool) (e error) {
+func (c *coordinator) lookup(ins Instruction, rc ReadConcern) error {
 	// observe
 	timer := observe(operationMetrics, "coordinator.lookup")
 	defer timer.ObserveDuration()
 
-	// use faster non linear read if available
-	if nonLinear {
-		_, err := c.node.StaleRead(clusterID, []Instruction{instruction})
-		if err != nil {
-			return err
-		}
-
-		return nil
+	// immediately queue local ready
+	if rc == Local {
+		return c.reads.process(ins)
 	}
 
-	// create context
-	var cancel context.CancelFunc
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// otherwise read for linear reads
 
-	// lookup data
-	_, err := c.node.SyncRead(ctx, clusterID, []Instruction{instruction})
+	// read index
+	req, err := c.node.ReadIndex(clusterID, 10*time.Second)
 	if err != nil {
 		return err
 	}
 
-	// TODO: Retry on ErrTimeout.
+	// ensure release
+	defer req.Release()
+
+	// TODO: Retry on Timeout?
+
+	// await completion
+	res := <-req.CompletedC
+	if !res.Completed() {
+		if res.Timeout() {
+			return dragonboat.ErrTimeout
+		} else if res.Terminated() {
+			return dragonboat.ErrClusterClosed
+		} else if res.Dropped() {
+			return dragonboat.ErrClusterNotReady
+		}
+	}
+
+	// lookup data
+	err = c.reads.process(ins)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

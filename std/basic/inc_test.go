@@ -15,30 +15,30 @@ func TestInc(t *testing.T) {
 	err := machine.Execute(&Inc{
 		Key:   []byte("foo"),
 		Value: 1,
-	}, false)
+	}, turing.Linear)
 	assert.NoError(t, err)
 
 	err = machine.Execute(&Inc{
 		Key:   []byte("foo"),
 		Value: 2,
-	}, false)
+	}, turing.Linear)
 	assert.NoError(t, err)
 
 	var get = Get{
 		Key: []byte("foo"),
 	}
 
-	err = machine.Execute(&get, false)
+	err = machine.Execute(&get, turing.Linear)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("3"), get.Value)
 
 	err = machine.Execute(&Inc{
 		Key:   []byte("foo"),
 		Value: 3,
-	}, false)
+	}, turing.Linear)
 	assert.NoError(t, err)
 
-	err = machine.Execute(&get, false)
+	err = machine.Execute(&get, turing.Linear)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("6"), get.Value)
 }
@@ -54,7 +54,7 @@ func BenchmarkInc(b *testing.B) {
 		err := machine.Execute(&Inc{
 			Key:   []byte("foo"),
 			Value: 1,
-		}, false)
+		}, turing.Linear)
 		if err != nil {
 			panic(err)
 		}
