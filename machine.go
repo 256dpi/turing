@@ -4,9 +4,6 @@ import (
 	"fmt"
 )
 
-// TODO: How should parallel instructions executions be handled?
-//  Should we try to batch requests before handing them over to raft?
-
 // Options define options used during instruction execution.
 type Options struct {
 	// StaleRead can be set to execute a stale read. While this is much faster

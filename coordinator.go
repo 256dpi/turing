@@ -103,10 +103,10 @@ func (c *coordinator) update(instruction Instruction) error {
 		return err
 	}
 
-	// proposing multiple instructions at once might be tempting. however, the
-	// dragonboat library already batches raft entries, so the speedup might
-	// just be marginal. also another batching would require that we keep track
-	// of applied instructions manually
+	// TODO: Proposing multiple instructions at once might be faster. However,
+	//  the dragonboat library already batches raft entries, so the speedup might
+	//  just be marginal. Also another batching would require that we keep track
+	//  of applied instructions manually
 
 	// propose change
 	req, err := c.node.Propose(session, encodedCommand, 10*time.Second)
