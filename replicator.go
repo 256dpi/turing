@@ -40,7 +40,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	timer := observe(operationMetrics, "replicator.Update")
 	defer timer.ObserveDuration()
 
-	// decode instructions
+	// handle entries
 	for i, entry := range entries {
 		// decode command
 		var cmd Command
@@ -61,7 +61,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 				return nil, fmt.Errorf("turing: missing instruction: " + op.Name)
 			}
 
-			// create new instruction
+			// build instruction
 			instruction := buildInstruction(factory)
 
 			// decode instruction
@@ -69,6 +69,10 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 			if err != nil {
 				return nil, err
 			}
+
+			// TODO: We need to manually keep records on which instructions
+			//  have already executed to ensure we do not accidentally apply
+			//  an instruction multiple times.
 
 			// set instruction and index
 			instructions = append(instructions, instruction)
