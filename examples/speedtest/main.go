@@ -19,7 +19,7 @@ import (
 )
 
 // prepare flags
-var id = flag.Uint64("id", 1, "the server id")
+var id = flag.Uint64("id", 0, "the server id")
 var members = flag.String("members", "", "the cluster members")
 var directory = flag.String("directory", "data", "the data directory")
 var standalone = flag.Bool("standalone", false, "enable standalone mode")
