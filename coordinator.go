@@ -1,7 +1,6 @@
 package turing
 
 import (
-	"context"
 	"time"
 
 	"github.com/lni/dragonboat/v3"
@@ -83,13 +82,6 @@ func (c *coordinator) update(instruction Instruction) error {
 	timer := observe(operationMetrics, "coordinator.update")
 	defer timer.ObserveDuration()
 
-	// TODO: Make timeout configurable.
-
-	// create context
-	var cancel context.CancelFunc
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	// get session
 	session := c.node.GetNoOPSession(clusterID)
 
@@ -111,17 +103,26 @@ func (c *coordinator) update(instruction Instruction) error {
 		return err
 	}
 
-	// TODO: Retry on ErrTimeout.
+	// propose change
+	req, err := c.node.Propose(session, encodedCommand, 10*time.Second)
+	if err != nil {
+		return err
+	}
 
-	// perform update
-	result, err := c.node.SyncPropose(ctx, session, encodedCommand)
+	// ensure release
+	defer req.Release()
+
+	// TODO: Retry on Timeout?
+
+	// await completion
+	data, err := awaitRequest(req)
 	if err != nil {
 		return err
 	}
 
 	// decode result
-	if result.Data != nil {
-		err = instruction.Decode(result.Data)
+	if data != nil {
+		err = instruction.Decode(data)
 		if err != nil {
 			return err
 		}
@@ -154,15 +155,9 @@ func (c *coordinator) lookup(ins Instruction, rc ReadConcern) error {
 	// TODO: Retry on Timeout?
 
 	// await completion
-	res := <-req.CompletedC
-	if !res.Completed() {
-		if res.Timeout() {
-			return dragonboat.ErrTimeout
-		} else if res.Terminated() {
-			return dragonboat.ErrClusterClosed
-		} else if res.Dropped() {
-			return dragonboat.ErrClusterNotReady
-		}
+	_, err = awaitRequest(req)
+	if err != nil {
+		return err
 	}
 
 	// lookup data
@@ -241,4 +236,21 @@ func (c *coordinator) status() Status {
 func (c *coordinator) close() {
 	// stop node
 	c.node.Stop()
+}
+
+func awaitRequest(rs *dragonboat.RequestState) ([]byte, error) {
+	r := <-rs.CompletedC
+	if r.Completed() {
+		return r.GetResult().Data, nil
+	} else if r.Rejected() {
+		return nil, dragonboat.ErrRejected
+	} else if r.Timeout() {
+		return nil, dragonboat.ErrTimeout
+	} else if r.Terminated() {
+		return nil, dragonboat.ErrClusterClosed
+	} else if r.Dropped() {
+		return nil, dragonboat.ErrClusterNotReady
+	} else {
+		panic("unknown result")
+	}
 }
