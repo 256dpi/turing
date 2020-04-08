@@ -49,14 +49,14 @@ type Value struct {
 func EncodeValue(value Value) ([]byte, error) {
 	// check Kind
 	if !value.Kind.Valid() {
-		return nil, fmt.Errorf("encode value: invalid kind: %c", value.Kind)
+		return nil, fmt.Errorf("turing: encode value: invalid kind: %c", value.Kind)
 	}
 
 	// check stack
 	if value.Kind == StackValue {
 		for _, op := range value.Stack {
 			if op.Name == "" {
-				return nil, fmt.Errorf("missing operand name")
+				return nil, fmt.Errorf("turing: encode value: missing operand name")
 			}
 		}
 	}
@@ -99,7 +99,7 @@ func DecodeValue(bytes []byte) (Value, error) {
 		var version uint64
 		dec.Uint(&version)
 		if version != 1 {
-			return fmt.Errorf("decode value: invalid version")
+			return fmt.Errorf("turing: decode value: invalid version")
 		}
 
 		// read kind
@@ -107,7 +107,7 @@ func DecodeValue(bytes []byte) (Value, error) {
 		dec.Uint(&kind)
 		value.Kind = Kind(kind)
 		if !value.Kind.Valid() {
-			return fmt.Errorf("decode value: invalid kind: %d", value.Kind)
+			return fmt.Errorf("turing: decode value: invalid kind: %d", value.Kind)
 		}
 
 		// decode full value
@@ -134,7 +134,7 @@ func DecodeValue(bytes []byte) (Value, error) {
 		return nil
 	})
 	if err != nil {
-		return Value{}, fmt.Errorf("decode value: %w", err)
+		return Value{}, fmt.Errorf("turing: decode value: %w", err)
 	}
 
 	return value, nil
@@ -146,7 +146,7 @@ func StackValues(values []Value) (Value, error) {
 	var total int
 	for _, value := range values {
 		if value.Kind != StackValue {
-			return Value{}, fmt.Errorf("stack values: unexpected value: %d", value.Kind)
+			return Value{}, fmt.Errorf("turing: stack values: unexpected value: %d", value.Kind)
 		}
 
 		// increment
@@ -173,7 +173,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 	// get first value
 	value := values[0].Value
 	if values[0].Kind != FullValue {
-		return Value{}, fmt.Errorf("merge values: unexpected value: %d", values[0].Kind)
+		return Value{}, fmt.Errorf("turing: merge values: unexpected value: %d", values[0].Kind)
 	}
 
 	// slice
@@ -183,7 +183,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 	var total int
 	for _, value := range values {
 		if value.Kind != StackValue {
-			return Value{}, fmt.Errorf("merge values: unexpected value: %d", value.Kind)
+			return Value{}, fmt.Errorf("turing: merge values: unexpected value: %d", value.Kind)
 		}
 
 		// increment
@@ -220,7 +220,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 		// lookup operator
 		operator, ok := registry.operators[name]
 		if !ok {
-			return Value{}, fmt.Errorf("merge values: unknown operator: %q", name)
+			return Value{}, fmt.Errorf("turing: merge values: unknown operator: %q", name)
 		}
 
 		// merge value with operands
@@ -237,7 +237,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 	// lookup operator
 	operator, ok := registry.operators[name]
 	if !ok {
-		return Value{}, fmt.Errorf("merge values: unknown operator: %q", name)
+		return Value{}, fmt.Errorf("turing: merge values: unknown operator: %q", name)
 	}
 
 	// merge value with operands
@@ -268,7 +268,7 @@ func ComputeValue(value Value, registry *registry) (Value, error) {
 	// get first operator
 	operator, ok := registry.operators[value.Stack[0].Name]
 	if !ok {
-		return Value{}, fmt.Errorf("compute value: missing operator: %s", value.Stack[0].Name)
+		return Value{}, fmt.Errorf("turing: compute value: missing operator: %s", value.Stack[0].Name)
 	}
 
 	// prepare zero value

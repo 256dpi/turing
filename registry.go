@@ -21,7 +21,7 @@ func buildRegistry(config Config) (*registry, error) {
 
 		// check existence
 		if reg.instructions[dsc.Name] != nil {
-			return nil, fmt.Errorf("duplicate instruction: %s", dsc.Name)
+			return nil, fmt.Errorf("turing: duplicate instruction: %s", dsc.Name)
 		}
 
 		// store instruction
@@ -35,7 +35,7 @@ func buildRegistry(config Config) (*registry, error) {
 			// check existing operator
 			eop := reg.operators[name]
 			if eop != nil && eop != op {
-				return nil, fmt.Errorf("different operator for same name: %s", name)
+				return nil, fmt.Errorf("turing: different operator for same name: %s", name)
 			}
 
 			// store operator

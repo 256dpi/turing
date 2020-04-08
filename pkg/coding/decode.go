@@ -9,7 +9,7 @@ import (
 )
 
 // ErrBufferTooShort if the provided buffer is too short.
-var ErrBufferTooShort = errors.New("buffer too short")
+var ErrBufferTooShort = errors.New("turing: buffer too short")
 
 // Decoder manages data decoding.
 type Decoder struct {

@@ -43,7 +43,7 @@ func (b *bundler) process(instruction Instruction) error {
 
 	// check if done
 	if b.closed {
-		return fmt.Errorf("closed")
+		return fmt.Errorf("turing: bundler closed")
 	}
 
 	// prepare result channel

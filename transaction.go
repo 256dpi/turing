@@ -38,12 +38,12 @@ func recycleTxn(txn *Transaction) {
 
 // ErrReadOnly is returned by by a transaction on write operations if the
 // instruction has been flagged as read only.
-var ErrReadOnly = errors.New("read only")
+var ErrReadOnly = errors.New("turing: read only")
 
 // ErrMaxEffect is returned by a transaction if the effect limit has been
 // reached. The instruction should return with this error to have the current
 // changes persistent and be executed again to persist the remaining changes.
-var ErrMaxEffect = errors.New("max effect")
+var ErrMaxEffect = errors.New("turing: max effect")
 
 // Transaction is used by an instruction to perform changes to the database.
 type Transaction struct {
@@ -228,7 +228,7 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 	// check registry
 	if t.registry.operators[operator.Name] == nil {
 		// TODO: Make sure current instruction registered operator.
-		return fmt.Errorf("unknown operator: %s", operator.Name)
+		return fmt.Errorf("turing: unknown operator: %s", operator.Name)
 	}
 
 	// encode value

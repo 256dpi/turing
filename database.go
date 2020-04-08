@@ -125,7 +125,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("database closed")
+		return fmt.Errorf("turing: database closed")
 	}
 
 	// observe
@@ -191,7 +191,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 
 			// check closers
 			if txn.closers != 0 {
-				return fmt.Errorf("unclosed values after instruction execution")
+				return fmt.Errorf("turing: unclosed values after instruction execution")
 			}
 
 			// commit batch if maxed out and start over
@@ -260,7 +260,7 @@ func (d *database) lookup(list []Instruction) error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("database closed")
+		return fmt.Errorf("turing: database closed")
 	}
 
 	// observe
@@ -292,7 +292,7 @@ func (d *database) lookup(list []Instruction) error {
 
 		// check closers
 		if txn.closers != 0 {
-			return fmt.Errorf("unclosed values after instruction execution")
+			return fmt.Errorf("turing: unclosed values after instruction execution")
 		}
 
 		// finish observation
@@ -315,7 +315,7 @@ func (d *database) backup(sink io.Writer) error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("database closed")
+		return fmt.Errorf("turing: database closed")
 	}
 
 	// observe
@@ -334,7 +334,7 @@ func (d *database) restore(source io.Reader) error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("database closed")
+		return fmt.Errorf("turing: database closed")
 	}
 
 	// observe
@@ -357,7 +357,7 @@ func (d *database) close() error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("database closed")
+		return fmt.Errorf("turing: database closed")
 	}
 
 	// close database

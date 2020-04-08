@@ -93,8 +93,8 @@ func (c *coordinator) update(instruction Instruction) error {
 
 	// prepare command
 	cmd := Command{
-		Name: instruction.Describe().Name,
-		Data: encodedInstruction,
+		Name:        instruction.Describe().Name,
+		Instruction: encodedInstruction,
 	}
 
 	// encode command

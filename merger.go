@@ -83,7 +83,7 @@ func (m *merger) Finish() ([]byte, error) {
 
 		return bytes, nil
 	default:
-		return nil, fmt.Errorf("merger: finish: unexpected kind: %c", values[0].Kind)
+		return nil, fmt.Errorf("turing: merger: unexpected kind: %c", values[0].Kind)
 	}
 }
 

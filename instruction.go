@@ -1,7 +1,7 @@
 package turing
 
 import (
-	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -71,14 +71,14 @@ type Description struct {
 func (d Description) Validate() error {
 	// check name
 	if d.Name == "" {
-		return errors.New("turing: missing instruction name")
+		return fmt.Errorf("turing: missing instruction name")
 	}
 
 	// check effect
 	if d.Effect > MaxEffect {
-		return errors.New("turing: instruction effect too high")
+		return fmt.Errorf("turing: instruction effect too high")
 	} else if d.Effect < 0 && d.Effect != UnboundedEffect {
-		return errors.New("turing: invalid instruction effect")
+		return fmt.Errorf("turing: invalid instruction effect")
 	}
 
 	return nil

@@ -1,7 +1,6 @@
 package turing
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"path/filepath"
@@ -56,12 +55,12 @@ func (c *Config) Local() *Member {
 func (c *Config) check() error {
 	// check id
 	if c.ID == 0 && !c.Standalone {
-		return errors.New("turing: missing id")
+		return fmt.Errorf("turing: missing id")
 	}
 
 	// check local member
 	if c.Local() == nil && !c.Standalone {
-		return errors.New("turing: missing local member")
+		return fmt.Errorf("turing: missing local member")
 	}
 
 	// check members
@@ -164,12 +163,12 @@ func ParseMember(str string) (Member, error) {
 func (m Member) check() error {
 	// check host
 	if m.Host == "" {
-		return errors.New("turing: missing host")
+		return fmt.Errorf("turing: missing host")
 	}
 
 	// check port
 	if m.Port <= 0 {
-		return errors.New("turing: invalid port")
+		return fmt.Errorf("turing: invalid port")
 	}
 
 	return nil

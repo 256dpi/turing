@@ -55,14 +55,14 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		// get factory instruction
 		factory, ok := r.registry.instructions[cmd.Name]
 		if !ok {
-			return nil, fmt.Errorf("missing instruction: " + cmd.Name)
+			return nil, fmt.Errorf("turing: missing instruction: " + cmd.Name)
 		}
 
 		// create new instruction
 		instruction := buildInstruction(factory)
 
 		// decode instruction
-		err = instruction.Decode(cmd.Data)
+		err = instruction.Decode(cmd.Instruction)
 		if err != nil {
 			return nil, err
 		}

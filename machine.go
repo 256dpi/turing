@@ -104,7 +104,7 @@ func (m *Machine) Execute(instruction Instruction, opts ...Options) error {
 
 	// check registry
 	if m.registry.instructions[description.Name] == nil {
-		return fmt.Errorf("missing instruction: %s", description.Name)
+		return fmt.Errorf("turing: missing instruction: %s", description.Name)
 	}
 
 	// execute directly if standalone

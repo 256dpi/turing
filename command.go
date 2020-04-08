@@ -8,25 +8,25 @@ import (
 
 // Command represents the commands replicated between machines.
 type Command struct {
-	// The name of the instruction to be executed.
+	// The name of the instruction.
 	Name string
 
-	// The encoded instruction to be executed.
-	Data []byte
+	// The encoded instruction.
+	Instruction []byte
 }
 
 // EncodeCommand will encode the provided command into a byte slice.
 func EncodeCommand(cmd Command) ([]byte, error) {
 	// check name
 	if cmd.Name == "" {
-		return nil, fmt.Errorf("encode command: missing name")
+		return nil, fmt.Errorf("turing: encode command: missing name")
 	}
 
 	// encode command
 	return coding.Encode(func(enc *coding.Encoder) error {
 		enc.Uint(1)
 		enc.String(cmd.Name)
-		enc.Tail(cmd.Data)
+		enc.Tail(cmd.Instruction)
 		return nil
 	})
 }
@@ -41,17 +41,17 @@ func DecodeCommand(bytes []byte, clone bool) (Command, error) {
 		var version uint64
 		dec.Uint(&version)
 		if version != 1 {
-			return fmt.Errorf("decode command: invalid version")
+			return fmt.Errorf("turing: decode command: invalid version")
 		}
 
-		// decode name and data
+		// decode name and instruction
 		dec.String(&cmd.Name, clone)
-		dec.Tail(&cmd.Data, clone)
+		dec.Tail(&cmd.Instruction, clone)
 
 		return nil
 	})
 	if err != err {
-		return Command{}, fmt.Errorf("decode command: %w", err)
+		return Command{}, fmt.Errorf("turing: decode command: %w", err)
 	}
 
 	return cmd, nil
