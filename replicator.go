@@ -104,16 +104,16 @@ func (r *replicator) Lookup(data interface{}) (interface{}, error) {
 	timer := observe(operationMetrics, "replicator.lookup")
 	defer timer.ObserveDuration()
 
-	// get instruction
-	instruction := data.(Instruction)
+	// get instructions
+	list := data.([]Instruction)
 
 	// perform lookup
-	err := r.database.lookup([]Instruction{instruction})
+	err := r.database.lookup(list)
 	if err != nil {
 		return nil, err
 	}
 
-	return instruction, nil
+	return nil, nil
 }
 
 func (r *replicator) PrepareSnapshot() (interface{}, error) {

@@ -132,7 +132,7 @@ func (c *coordinator) lookup(instruction Instruction, nonLinear bool) (e error) 
 
 	// use faster non linear read if available
 	if nonLinear {
-		_, err := c.node.StaleRead(clusterID, instruction)
+		_, err := c.node.StaleRead(clusterID, []Instruction{instruction})
 		if err != nil {
 			return err
 		}
@@ -146,7 +146,7 @@ func (c *coordinator) lookup(instruction Instruction, nonLinear bool) (e error) 
 	defer cancel()
 
 	// lookup data
-	_, err := c.node.SyncRead(ctx, clusterID, instruction)
+	_, err := c.node.SyncRead(ctx, clusterID, []Instruction{instruction})
 	if err != nil {
 		return err
 	}
