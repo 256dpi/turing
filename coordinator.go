@@ -93,7 +93,17 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 }
 
 func (c *coordinator) update(ins Instruction) error {
-	return c.writes.process(ins)
+	// observe
+	timer := observe(operationMetrics, "coordinator.update")
+	defer timer.finish()
+
+	// queue update
+	err := c.writes.process(ins)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *coordinator) performUpdates(list []Instruction) error {
@@ -189,7 +199,7 @@ func (c *coordinator) lookup(ins Instruction, options Options) error {
 		return err
 	}
 
-	// lookup data
+	// queue lookup
 	err = c.reads.process(ins)
 	if err != nil {
 		return err
