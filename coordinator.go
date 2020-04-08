@@ -68,7 +68,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// create coordinator
 	coordinator := &coordinator{
 		node: node,
-		reads: newBundler(1000, 200, 4, func(list []Instruction) error {
+		reads: newBundler(1000, 200, cfg.ConcurrentReaders, func(list []Instruction) error {
 			_, err := node.StaleRead(clusterID, list)
 			return err
 		}),
