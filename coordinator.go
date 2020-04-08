@@ -93,8 +93,10 @@ func (c *coordinator) update(instruction Instruction) error {
 
 	// prepare command
 	cmd := Command{
-		Name:        instruction.Describe().Name,
-		Instruction: encodedInstruction,
+		Operations: []Operation{{
+			Name: instruction.Describe().Name,
+			Data: encodedInstruction,
+		}},
 	}
 
 	// encode command
@@ -123,12 +125,16 @@ func (c *coordinator) update(instruction Instruction) error {
 		return err
 	}
 
-	// decode result
-	if data != nil {
-		err = instruction.Decode(data)
-		if err != nil {
-			return err
-		}
+	// decode command
+	cmd, err = DecodeCommand(data, false)
+	if err != nil {
+		return err
+	}
+
+	// decode instruction
+	err = instruction.Decode(cmd.Operations[0].Data)
+	if err != nil {
+		return err
 	}
 
 	return nil

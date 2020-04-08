@@ -6,27 +6,44 @@ import (
 	"github.com/256dpi/turing/pkg/coding"
 )
 
-// Command represents the commands replicated between machines.
-type Command struct {
-	// The name of the instruction.
+// Operation is a single operation executed as part of a command.
+type Operation struct {
+	// The instruction name.
 	Name string
 
-	// The encoded instruction.
-	Instruction []byte
+	// The instruction data.
+	Data []byte
+}
+
+// Command represents a set of operations to be executed together.
+type Command struct {
+	// The operations.
+	Operations []Operation
 }
 
 // EncodeCommand will encode the provided command into a byte slice.
 func EncodeCommand(cmd Command) ([]byte, error) {
-	// check name
-	if cmd.Name == "" {
-		return nil, fmt.Errorf("turing: encode command: missing name")
+	// check operations
+	for _, op := range cmd.Operations {
+		if op.Name == "" {
+			return nil, fmt.Errorf("turing: encode command: missing operation name")
+		}
 	}
 
 	// encode command
 	return coding.Encode(func(enc *coding.Encoder) error {
+		// encode version
 		enc.Uint(1)
-		enc.String(cmd.Name)
-		enc.Tail(cmd.Instruction)
+
+		// encode number of operations
+		enc.Uint(uint64(len(cmd.Operations)))
+
+		// encode operations
+		for _, op := range cmd.Operations {
+			enc.String(op.Name)
+			enc.Bytes(op.Data)
+		}
+
 		return nil
 	})
 }
@@ -44,9 +61,16 @@ func DecodeCommand(bytes []byte, clone bool) (Command, error) {
 			return fmt.Errorf("turing: decode command: invalid version")
 		}
 
-		// decode name and instruction
-		dec.String(&cmd.Name, clone)
-		dec.Tail(&cmd.Instruction, clone)
+		// decode number of operations
+		var length uint64
+		dec.Uint(&length)
+
+		// decode operations
+		cmd.Operations = make([]Operation, length)
+		for i := 0; i < int(length); i++ {
+			dec.String(&cmd.Operations[i].Name, clone)
+			dec.Bytes(&cmd.Operations[i].Data, clone)
+		}
 
 		return nil
 	})

@@ -40,56 +40,66 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	timer := observe(operationMetrics, "replicator.update")
 	defer timer.ObserveDuration()
 
-	// prepare instruction and index list
-	instructions := make([]Instruction, len(entries))
-	indexes := make([]uint64, len(entries))
-
 	// decode instructions
 	for i, entry := range entries {
-		// parse command
+		// decode command
 		cmd, err := DecodeCommand(entry.Cmd, false)
 		if err != nil {
 			return nil, err
 		}
 
-		// get factory instruction
-		factory, ok := r.registry.instructions[cmd.Name]
-		if !ok {
-			return nil, fmt.Errorf("turing: missing instruction: " + cmd.Name)
+		// prepare instruction and index list
+		instructions := make([]Instruction, 0, len(cmd.Operations))
+		indexes := make([]uint64, 0, len(cmd.Operations))
+
+		// decode operations
+		for _, op := range cmd.Operations {
+			// get factory instruction
+			factory, ok := r.registry.instructions[op.Name]
+			if !ok {
+				return nil, fmt.Errorf("turing: missing instruction: " + op.Name)
+			}
+
+			// create new instruction
+			instruction := buildInstruction(factory)
+
+			// decode instruction
+			err = instruction.Decode(op.Data)
+			if err != nil {
+				return nil, err
+			}
+
+			// set instruction and index
+			instructions = append(instructions, instruction)
+			indexes = append(indexes, entry.Index)
 		}
 
-		// create new instruction
-		instruction := buildInstruction(factory)
-
-		// decode instruction
-		err = instruction.Decode(cmd.Instruction)
+		// execute instructions
+		err = r.database.update(instructions, indexes)
 		if err != nil {
 			return nil, err
 		}
 
-		// set instruction and index
-		instructions[i] = instruction
-		indexes[i] = entry.Index
-	}
+		// encode operations
+		for j, ins := range instructions {
+			// encode instruction
+			bytes, err := ins.Encode()
+			if err != nil {
+				return nil, err
+			}
 
-	// execute instructions
-	err := r.database.update(instructions, indexes)
-	if err != nil {
-		return nil, err
-	}
+			// set bytes
+			cmd.Operations[j].Data = bytes
+		}
 
-	// encode instructions
-	for i := range entries {
-		// encode instruction
-		bytes, err := instructions[i].Encode()
+		// encode command
+		bytes, err := EncodeCommand(cmd)
 		if err != nil {
 			return nil, err
 		}
 
 		// set result
-		entries[i].Result = statemachine.Result{
-			Data: bytes,
-		}
+		entries[i].Result.Data = bytes
 	}
 
 	return entries, nil
