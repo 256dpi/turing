@@ -12,13 +12,13 @@ func TestInc(t *testing.T) {
 	machine := turing.TestMachine(&Inc{}, &Get{})
 	defer machine.Stop()
 
-	err := machine.Execute(nil, &Inc{
+	err := machine.Execute(&Inc{
 		Key:   []byte("foo"),
 		Value: 1,
 	}, false)
 	assert.NoError(t, err)
 
-	err = machine.Execute(nil, &Inc{
+	err = machine.Execute(&Inc{
 		Key:   []byte("foo"),
 		Value: 2,
 	}, false)
@@ -28,17 +28,17 @@ func TestInc(t *testing.T) {
 		Key: []byte("foo"),
 	}
 
-	err = machine.Execute(nil, &get, false)
+	err = machine.Execute(&get, false)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("3"), get.Value)
 
-	err = machine.Execute(nil, &Inc{
+	err = machine.Execute(&Inc{
 		Key:   []byte("foo"),
 		Value: 3,
 	}, false)
 	assert.NoError(t, err)
 
-	err = machine.Execute(nil, &get, false)
+	err = machine.Execute(&get, false)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("6"), get.Value)
 }
@@ -51,7 +51,7 @@ func BenchmarkInc(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := machine.Execute(nil, &Inc{
+		err := machine.Execute(&Inc{
 			Key:   []byte("foo"),
 			Value: 1,
 		}, false)

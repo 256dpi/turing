@@ -1,9 +1,7 @@
 package turing
 
 import (
-	"context"
 	"fmt"
-	"time"
 )
 
 // TODO: How should parallel instructions executions be handled?
@@ -83,24 +81,10 @@ func Start(config Config) (*Machine, error) {
 // Execute will execute the specified instruction. NonLinear may be set to true
 // to allow read only instructions to query data without linearizability
 // guarantees. This may be substantially faster but return stale data.
-func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinear bool) error {
+func (m *Machine) Execute(instruction Instruction, nonLinear bool) error {
 	// observe
 	timer := observe(operationMetrics, "Machine.Execute")
 	defer timer.ObserveDuration()
-
-	// ensure context
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	// TODO: Make timeout configurable.
-
-	// ensure deadline
-	if _, ok := ctx.Deadline(); !ok {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-	}
 
 	// get description
 	description := instruction.Describe()
@@ -133,7 +117,7 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 
 	// immediately perform read
 	if description.Effect == 0 {
-		err = m.coordinator.lookup(ctx, instruction, nonLinear)
+		err = m.coordinator.lookup(instruction, nonLinear)
 		if err != nil {
 			return err
 		}
@@ -142,7 +126,7 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 	}
 
 	// perform update
-	err = m.coordinator.update(ctx, instruction)
+	err = m.coordinator.update(instruction)
 	if err != nil {
 		return err
 	}

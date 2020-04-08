@@ -73,10 +73,20 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	return coordinator, nil
 }
 
-func (c *coordinator) update(ctx context.Context, instruction Instruction) error {
+func (c *coordinator) update(instruction Instruction) error {
 	// observe
 	timer := observe(operationMetrics, "coordinator.update")
 	defer timer.ObserveDuration()
+
+	// TODO: Make timeout configurable.
+
+	// create context
+	var cancel context.CancelFunc
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// get session
+	session := c.node.GetNoOPSession(clusterID)
 
 	// encode instruction
 	encodedInstruction, err := instruction.Encode()
@@ -95,9 +105,6 @@ func (c *coordinator) update(ctx context.Context, instruction Instruction) error
 	if err != nil {
 		return err
 	}
-
-	// get session
-	session := c.node.GetNoOPSession(clusterID)
 
 	// TODO: Retry on ErrTimeout.
 
@@ -118,7 +125,7 @@ func (c *coordinator) update(ctx context.Context, instruction Instruction) error
 	return nil
 }
 
-func (c *coordinator) lookup(ctx context.Context, instruction Instruction, nonLinear bool) (e error) {
+func (c *coordinator) lookup(instruction Instruction, nonLinear bool) (e error) {
 	// observe
 	timer := observe(operationMetrics, "coordinator.lookup")
 	defer timer.ObserveDuration()
@@ -132,6 +139,11 @@ func (c *coordinator) lookup(ctx context.Context, instruction Instruction, nonLi
 
 		return nil
 	}
+
+	// create context
+	var cancel context.CancelFunc
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// lookup data
 	_, err := c.node.SyncRead(ctx, clusterID, instruction)

@@ -131,7 +131,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// inc value
-		err := machine.Execute(nil, &inc{
+		err := machine.Execute(&inc{
 			Key:   strconv.Itoa(rand.Intn(*keySpace)),
 			Value: 1,
 			Merge: rand.Intn(4) > 0, // 75%
@@ -162,7 +162,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// get value
-		err := machine.Execute(nil, &get{
+		err := machine.Execute(&get{
 			Key: strconv.Itoa(rand.Intn(*keySpace)),
 		}, false)
 		if err != nil {

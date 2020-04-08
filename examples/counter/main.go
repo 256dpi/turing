@@ -81,7 +81,7 @@ func main() {
 		}
 
 		// increment value
-		err = machine.Execute(nil, &basic.Inc{
+		err = machine.Execute(&basic.Inc{
 			Key:   strconv.AppendUint(nil, *idFlag, 10),
 			Value: 1,
 		}, false)
@@ -93,7 +93,7 @@ func main() {
 
 		// list values
 		mp := &basic.Map{}
-		err = machine.Execute(nil, mp, false)
+		err = machine.Execute(mp, false)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
