@@ -138,11 +138,14 @@ func (t *Transaction) Set(key, val []byte) error {
 		return ErrMaxEffect
 	}
 
-	// encode value
-	bytes, err := EncodeValue(Value{
+	// prepare value
+	value := Value{
 		Kind:  FullValue,
 		Value: val,
-	})
+	}
+
+	// encode value
+	bytes, err := value.Encode()
 	if err != nil {
 		return err
 	}
@@ -229,14 +232,17 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 		return fmt.Errorf("turing: unknown operator: %s", operator.Name)
 	}
 
-	// encode value
-	bytes, err := EncodeValue(Value{
+	// prepare value
+	value := Value{
 		Kind: StackValue,
 		Stack: []Operand{{
 			Name:  operator.Name,
 			Value: val,
 		}},
-	})
+	}
+
+	// encode value
+	bytes, err := value.Encode()
 	if err != nil {
 		return err
 	}
@@ -278,7 +284,8 @@ func (t *Transaction) get(key []byte) ([]byte, bool, io.Closer, error) {
 	}
 
 	// parse value
-	value, err := DecodeValue(bytes)
+	var value Value
+	err = value.Decode(bytes)
 	if err != nil {
 		_ = closer.Close()
 		return nil, false, nil, err
@@ -360,7 +367,8 @@ func (i *Iterator) Value(copy bool) ([]byte, error) {
 	}
 
 	// parse value
-	value, err := DecodeValue(bytes)
+	var value Value
+	err := value.Decode(bytes)
 	if err != nil {
 		return nil, err
 	}

@@ -21,25 +21,24 @@ type Command struct {
 	Operations []Operation
 }
 
-// EncodeCommand will encode the provided command into a byte slice.
-func EncodeCommand(cmd Command) ([]byte, error) {
+// Encode will encode the command into a byte slice.
+func (c *Command) Encode() ([]byte, error) {
 	// check operations
-	for _, op := range cmd.Operations {
+	for _, op := range c.Operations {
 		if op.Name == "" {
 			return nil, fmt.Errorf("turing: encode command: missing operation name")
 		}
 	}
 
-	// encode command
 	return coding.Encode(func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint(1)
 
 		// encode number of operations
-		enc.Uint(uint64(len(cmd.Operations)))
+		enc.Uint(uint64(len(c.Operations)))
 
 		// encode operations
-		for _, op := range cmd.Operations {
+		for _, op := range c.Operations {
 			enc.String(op.Name)
 			enc.Bytes(op.Data)
 		}
@@ -48,12 +47,10 @@ func EncodeCommand(cmd Command) ([]byte, error) {
 	})
 }
 
-// DecodeCommand will decode a command from the provided byte slice. If clone is
-// not set, the command may changed if the decoded byte slice changes.
-func DecodeCommand(bytes []byte, clone bool) (Command, error) {
-	// decode command
-	var cmd Command
-	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
+// Decode will decode a command from the provided byte slice. If clone is
+// not set, the command may change if the decoded byte slice changes.
+func (c *Command) Decode(bytes []byte, clone bool) error {
+	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
 		dec.Uint(&version)
@@ -66,17 +63,12 @@ func DecodeCommand(bytes []byte, clone bool) (Command, error) {
 		dec.Uint(&length)
 
 		// decode operations
-		cmd.Operations = make([]Operation, length)
+		c.Operations = make([]Operation, length)
 		for i := 0; i < int(length); i++ {
-			dec.String(&cmd.Operations[i].Name, clone)
-			dec.Bytes(&cmd.Operations[i].Data, clone)
+			dec.String(&c.Operations[i].Name, clone)
+			dec.Bytes(&c.Operations[i].Data, clone)
 		}
 
 		return nil
 	})
-	if err != err {
-		return Command{}, fmt.Errorf("turing: decode command: %w", err)
-	}
-
-	return cmd, nil
 }

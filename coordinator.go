@@ -100,7 +100,7 @@ func (c *coordinator) update(instruction Instruction) error {
 	}
 
 	// encode command
-	encodedCommand, err := EncodeCommand(cmd)
+	encodedCommand, err := cmd.Encode()
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (c *coordinator) update(instruction Instruction) error {
 	}
 
 	// decode command
-	cmd, err = DecodeCommand(data, false)
+	err = cmd.Decode(data, false)
 	if err != nil {
 		return err
 	}

@@ -79,7 +79,8 @@ func (m *merger) Finish() ([]byte, error) {
 
 	// decode values
 	for _, op := range m.stack {
-		value, err := DecodeValue(op)
+		var value Value
+		err := value.Decode(op)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +97,7 @@ func (m *merger) Finish() ([]byte, error) {
 		}
 
 		// encode result
-		bytes, err := EncodeValue(value)
+		bytes, err := value.Encode()
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +111,7 @@ func (m *merger) Finish() ([]byte, error) {
 		}
 
 		// encode value
-		bytes, err := EncodeValue(value)
+		bytes, err := value.Encode()
 		if err != nil {
 			return nil, err
 		}

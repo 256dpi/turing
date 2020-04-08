@@ -45,43 +45,42 @@ type Value struct {
 	Stack []Operand
 }
 
-// EncodeValue will encode a value.
-func EncodeValue(value Value) ([]byte, error) {
-	// check Kind
-	if !value.Kind.Valid() {
-		return nil, fmt.Errorf("turing: encode value: invalid kind: %c", value.Kind)
+// Encode will encode the value.
+func (v *Value) Encode() ([]byte, error) {
+	// check kind
+	if !v.Kind.Valid() {
+		return nil, fmt.Errorf("turing: encode value: invalid kind: %c", v.Kind)
 	}
 
 	// check stack
-	if value.Kind == StackValue {
-		for _, op := range value.Stack {
+	if v.Kind == StackValue {
+		for _, op := range v.Stack {
 			if op.Name == "" {
 				return nil, fmt.Errorf("turing: encode value: missing operand name")
 			}
 		}
 	}
 
-	// encode value
 	return coding.Encode(func(enc *coding.Encoder) error {
 		// write version
 		enc.Uint(1)
 
 		// write kind
-		enc.Uint(uint64(value.Kind))
+		enc.Uint(uint64(v.Kind))
 
 		// write full value
-		if value.Kind == FullValue {
-			enc.Tail(value.Value)
+		if v.Kind == FullValue {
+			enc.Tail(v.Value)
 			return nil
 		}
 
 		// otherwise write stack value
 
 		// write length
-		enc.Uint(uint64(len(value.Stack)))
+		enc.Uint(uint64(len(v.Stack)))
 
 		// write operands
-		for _, op := range value.Stack {
+		for _, op := range v.Stack {
 			enc.String(op.Name)
 			enc.Bytes(op.Value)
 		}
@@ -90,11 +89,9 @@ func EncodeValue(value Value) ([]byte, error) {
 	})
 }
 
-// DecodeValue will decode a value.
-func DecodeValue(bytes []byte) (Value, error) {
-	// decode value
-	var value Value
-	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
+// Decode will decode the value.
+func (v *Value) Decode(bytes []byte) error {
+	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
 		dec.Uint(&version)
@@ -105,14 +102,14 @@ func DecodeValue(bytes []byte) (Value, error) {
 		// read kind
 		var kind uint64
 		dec.Uint(&kind)
-		value.Kind = Kind(kind)
-		if !value.Kind.Valid() {
-			return fmt.Errorf("turing: decode value: invalid kind: %d", value.Kind)
+		v.Kind = Kind(kind)
+		if !v.Kind.Valid() {
+			return fmt.Errorf("turing: decode value: invalid kind: %d", v.Kind)
 		}
 
 		// decode full value
-		if value.Kind == FullValue {
-			dec.Tail(&value.Value, false)
+		if v.Kind == FullValue {
+			dec.Tail(&v.Value, false)
 			return nil
 		}
 
@@ -123,21 +120,16 @@ func DecodeValue(bytes []byte) (Value, error) {
 		dec.Uint(&num)
 
 		// prepare stack
-		value.Stack = make([]Operand, int(num))
+		v.Stack = make([]Operand, int(num))
 
 		// read operands
-		for i := range value.Stack {
-			dec.String(&value.Stack[i].Name, false)
-			dec.Bytes(&value.Stack[i].Value, false)
+		for i := range v.Stack {
+			dec.String(&v.Stack[i].Name, false)
+			dec.Bytes(&v.Stack[i].Value, false)
 		}
 
 		return nil
 	})
-	if err != nil {
-		return Value{}, fmt.Errorf("turing: decode value: %w", err)
-	}
-
-	return value, nil
 }
 
 // StackValues will stack the provided values.

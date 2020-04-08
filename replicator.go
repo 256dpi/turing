@@ -43,7 +43,8 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	// decode instructions
 	for i, entry := range entries {
 		// decode command
-		cmd, err := DecodeCommand(entry.Cmd, false)
+		var cmd Command
+		err := cmd.Decode(entry.Cmd, false)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +94,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		}
 
 		// encode command
-		bytes, err := EncodeCommand(cmd)
+		bytes, err := cmd.Encode()
 		if err != nil {
 			return nil, err
 		}
