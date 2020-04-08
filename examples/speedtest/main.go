@@ -118,6 +118,9 @@ func main() {
 var writeCounter = god.NewCounter("write", nil)
 
 func writer(machine *turing.Machine, done <-chan struct{}) {
+	// create rng
+	rng := rand.New(rand.NewSource(rand.Int63()))
+
 	// signal return
 	defer wg.Done()
 
@@ -131,11 +134,11 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// determine merge
-		merge := rand.Intn(4) > 0 // 75%
+		merge := rng.Intn(4) > 0 // 75%
 
 		// inc value
 		err := machine.Execute(&inc{
-			Key:   strconv.Itoa(rand.Intn(*keySpace)),
+			Key:   strconv.Itoa(rng.Intn(*keySpace)),
 			Value: 1,
 			Merge: merge,
 		})
@@ -152,6 +155,9 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 var readCounter = god.NewCounter("read", nil)
 
 func reader(machine *turing.Machine, done <-chan struct{}) {
+	// create rng
+	rng := rand.New(rand.NewSource(rand.Int63()))
+
 	// signal return
 	defer wg.Done()
 
@@ -165,11 +171,11 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// determine stale read
-		staleRead := rand.Intn(4) > 0 // 75%
+		staleRead := rng.Intn(4) > 0 // 75%
 
 		// get value
 		err := machine.Execute(&get{
-			Key: strconv.Itoa(rand.Intn(*keySpace)),
+			Key: strconv.Itoa(rng.Intn(*keySpace)),
 		}, turing.Options{
 			StaleRead: staleRead,
 		})
