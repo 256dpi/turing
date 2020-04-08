@@ -80,7 +80,7 @@ func (b *bundler) processor() {
 		acks = append(acks, item.ack)
 
 		// add buffered instructions
-		for len(b.queue) > 0 && cap(list) > 0 {
+		for len(b.queue) > 0 && len(list) < b.batch {
 			item, ok := <-b.queue
 			if ok {
 				list = append(list, item.ins)
