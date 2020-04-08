@@ -2,6 +2,7 @@ package turing
 
 import (
 	"fmt"
+	"sync"
 )
 
 type merger struct {
@@ -10,12 +11,22 @@ type merger struct {
 	order    bool
 }
 
+var mergerPool = sync.Pool{
+	New: func() interface{} {
+		return &merger{
+			values: make([][]byte, 0, 100),
+		}
+	},
+}
+
 func newMerger(registry *registry, value []byte) *merger {
-	return &merger{
-		registry: registry,
-		values:   [][]byte{value},
-		order:    true,
-	}
+	// borrow merger
+	merger := mergerPool.Get().(*merger)
+	merger.registry = registry
+	merger.values = append(merger.values, value)
+	merger.order = true
+
+	return merger
 }
 
 func (m *merger) MergeNewer(value []byte) error {
@@ -39,6 +50,16 @@ func (m *merger) MergeOlder(value []byte) error {
 }
 
 func (m *merger) Finish() ([]byte, error) {
+	// return merger
+	defer func() {
+		m.registry = nil
+		for i := range m.values {
+			m.values[i] = nil
+		}
+		m.values = m.values[:0]
+		mergerPool.Put(m)
+	}()
+
 	// sort values
 	m.sort(true)
 
