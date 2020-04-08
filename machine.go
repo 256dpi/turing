@@ -79,7 +79,7 @@ func Start(config Config) (*Machine, error) {
 // Execute will execute the specified instruction. NonLinear may be set to true
 // to allow read only instructions to query data without linearizability
 // guarantees. This may be substantially faster but return stale data.
-func (m *Machine) Execute(instruction Instruction, opts ...Options) error {
+func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	// observe
 	timer := observe(operationMetrics, "Machine.Execute")
 	defer timer.ObserveDuration()
@@ -91,7 +91,7 @@ func (m *Machine) Execute(instruction Instruction, opts ...Options) error {
 	}
 
 	// get description
-	description := instruction.Describe()
+	description := ins.Describe()
 
 	// validate description
 	err := description.Validate()
@@ -108,16 +108,16 @@ func (m *Machine) Execute(instruction Instruction, opts ...Options) error {
 	if m.config.Standalone {
 		// perform lookup
 		if description.Effect == 0 {
-			return m.controller.lookup(instruction)
+			return m.controller.lookup(ins)
 		}
 
 		// perform update
-		return m.controller.update(instruction)
+		return m.controller.update(ins)
 	}
 
 	// immediately perform read
 	if description.Effect == 0 {
-		err = m.coordinator.lookup(instruction, options)
+		err = m.coordinator.lookup(ins, options)
 		if err != nil {
 			return err
 		}
@@ -126,7 +126,7 @@ func (m *Machine) Execute(instruction Instruction, opts ...Options) error {
 	}
 
 	// perform update
-	err = m.coordinator.update(instruction)
+	err = m.coordinator.update(ins)
 	if err != nil {
 		return err
 	}

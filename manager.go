@@ -23,20 +23,25 @@ func (m *manager) init() {
 	})
 }
 
-func (m *manager) process(instruction Instruction) {
-	// prepare removable observers
-	var removable []Observer
+func (m *manager) process(ins Instruction) {
+	// prepare cancelled observers
+	var cancelled []Observer
 
 	// call process on all subscribed observers
 	m.observers.Range(func(_, value interface{}) bool {
-		if !value.(Observer).Process(instruction) {
-			removable = append(removable, value.(Observer))
+		// get observer
+		observer := value.(Observer)
+
+		// process instruction
+		if !observer.Process(ins) {
+			cancelled = append(cancelled, observer)
 		}
+
 		return true
 	})
 
-	// delete all removable observers
-	for _, observer := range removable {
+	// delete all cancelled observers
+	for _, observer := range cancelled {
 		m.observers.Delete(observer)
 	}
 }

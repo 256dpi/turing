@@ -77,7 +77,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	return coordinator, nil
 }
 
-func (c *coordinator) update(instruction Instruction) error {
+func (c *coordinator) update(ins Instruction) error {
 	// observe
 	timer := observe(operationMetrics, "coordinator.update")
 	defer timer.ObserveDuration()
@@ -86,7 +86,7 @@ func (c *coordinator) update(instruction Instruction) error {
 	session := c.node.GetNoOPSession(clusterID)
 
 	// encode instruction
-	encodedInstruction, err := instruction.Encode()
+	encodedInstruction, err := ins.Encode()
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (c *coordinator) update(instruction Instruction) error {
 	// prepare command
 	cmd := Command{
 		Operations: []Operation{{
-			Name: instruction.Describe().Name,
+			Name: ins.Describe().Name,
 			Data: encodedInstruction,
 		}},
 	}
@@ -132,7 +132,7 @@ func (c *coordinator) update(instruction Instruction) error {
 	}
 
 	// decode instruction
-	err = instruction.Decode(cmd.Operations[0].Data)
+	err = ins.Decode(cmd.Operations[0].Data)
 	if err != nil {
 		return err
 	}

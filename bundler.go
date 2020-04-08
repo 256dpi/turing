@@ -36,7 +36,7 @@ func newBundler(queue, batch, concurrency int, handler func([]Instruction) error
 	return c
 }
 
-func (b *bundler) process(instruction Instruction) error {
+func (b *bundler) process(ins Instruction) error {
 	// acquire mutex
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
@@ -51,7 +51,7 @@ func (b *bundler) process(instruction Instruction) error {
 
 	// queue instruction
 	b.queue <- item{
-		ins: instruction,
+		ins: ins,
 		ack: func(err error) {
 			result <- err
 		},
