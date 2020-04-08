@@ -1,6 +1,7 @@
 package turing
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -11,6 +12,9 @@ import (
 
 	"github.com/256dpi/turing/pkg/semaphore"
 )
+
+// ErrDatabaseClosed is returned if the database has been closed.
+var ErrDatabaseClosed = errors.New("turing: database closed")
 
 var indexKey = []byte("$index")
 
@@ -125,7 +129,7 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("turing: database closed")
+		return ErrDatabaseClosed
 	}
 
 	// observe
@@ -260,7 +264,7 @@ func (d *database) lookup(list []Instruction) error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("turing: database closed")
+		return ErrDatabaseClosed
 	}
 
 	// observe
@@ -315,7 +319,7 @@ func (d *database) backup(sink io.Writer) error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("turing: database closed")
+		return ErrDatabaseClosed
 	}
 
 	// observe
@@ -334,7 +338,7 @@ func (d *database) restore(source io.Reader) error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("turing: database closed")
+		return ErrDatabaseClosed
 	}
 
 	// observe
@@ -357,7 +361,7 @@ func (d *database) close() error {
 
 	// check if closed
 	if d.closed {
-		return fmt.Errorf("turing: database closed")
+		return ErrDatabaseClosed
 	}
 
 	// close database
