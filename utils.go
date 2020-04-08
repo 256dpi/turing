@@ -2,10 +2,12 @@ package turing
 
 // Copy will make a copy of the provided slice.
 func Copy(dst []byte, src []byte) []byte {
+	// allocate if missing
 	if dst == nil {
 		dst = make([]byte, len(src))
 	}
 
+	// copy bytes
 	copy(dst, src)
 
 	return dst

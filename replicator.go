@@ -42,7 +42,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 
 	// handle entries
 	for i, entry := range entries {
-		// decode command
+		// decode command (no need to clone as only used temporary)
 		var cmd Command
 		err := cmd.Decode(entry.Cmd, false)
 		if err != nil {

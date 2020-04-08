@@ -27,6 +27,8 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// calculate rrt in ms
 	var rttMS = uint64(cfg.RoundTripTime / time.Millisecond)
 
+	// TODO: Allow node host tuning.
+
 	// prepare node config
 	nodeConfig := config.Config{
 		NodeID:             cfg.ID,
@@ -35,7 +37,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 		ElectionRTT:        rttMS * 1000, // 1000ms @ 1ms RTT
 		HeartbeatRTT:       rttMS * 100,  // 100ms @ 1ms RTT
 		SnapshotEntries:    10000,
-		CompactionOverhead: 10000,
+		CompactionOverhead: 20000,
 	}
 
 	// prepare node host config
@@ -143,7 +145,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 		return err
 	}
 
-	// decode command
+	// decode command (no need to clone as result is not reused)
 	err = cmd.Decode(data, false)
 	if err != nil {
 		return err

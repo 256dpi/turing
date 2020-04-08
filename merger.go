@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-const mergerPreAllocationSize = 100
+const mergerPreAllocationSize = 1000
 
 type merger struct {
 	registry *registry
@@ -77,10 +77,10 @@ func (m *merger) Finish() ([]byte, error) {
 	// sort stack
 	m.sortStack(true)
 
-	// decode values
+	// decode values (no need to clone as only used temporary)
 	for _, op := range m.stack {
 		var value Value
-		err := value.Decode(op)
+		err := value.Decode(op, false)
 		if err != nil {
 			return nil, err
 		}

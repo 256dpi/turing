@@ -17,7 +17,7 @@ func TestFullValueCoding(t *testing.T) {
 	assert.NotEmpty(t, bytes)
 
 	var out Value
-	err = out.Decode(bytes)
+	err = out.Decode(bytes, false)
 	assert.NoError(t, err)
 	assert.Equal(t, in, out)
 }
@@ -46,7 +46,7 @@ func TestStackValueCoding(t *testing.T) {
 	assert.NotEmpty(t, bytes)
 
 	var out Value
-	err = out.Decode(bytes)
+	err = out.Decode(bytes, false)
 	assert.NoError(t, err)
 	assert.Equal(t, in, out)
 }
@@ -241,7 +241,7 @@ func BenchmarkDecodeFullValue(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var value Value
-		err := value.Decode(data)
+		err := value.Decode(data, false)
 		if err != nil {
 			panic(err)
 		}
@@ -256,7 +256,7 @@ func BenchmarkDecodeStackValue(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var value Value
-		err := value.Decode(data)
+		err := value.Decode(data, false)
 		if err != nil {
 			panic(err)
 		}

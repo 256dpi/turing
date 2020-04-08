@@ -71,6 +71,8 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		},
 	}
 
+	// TODO: Allow database tuning.
+
 	// open db
 	pdb, err := pebble.Open(config.dbDir(), &pebble.Options{
 		FS:                          fs,

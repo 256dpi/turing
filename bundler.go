@@ -5,13 +5,6 @@ import (
 	"sync"
 )
 
-type bundlerOptions struct {
-	queueSize   int
-	batchSize   int
-	concurrency int
-	handler     func([]Instruction) error
-}
-
 type item struct {
 	ins Instruction
 	ack func(error)
@@ -23,6 +16,13 @@ type bundler struct {
 	mutex  sync.RWMutex
 	group  sync.WaitGroup
 	closed bool
+}
+
+type bundlerOptions struct {
+	queueSize   int
+	batchSize   int
+	concurrency int
+	handler     func([]Instruction) error
 }
 
 func newBundler(opts bundlerOptions) *bundler {
@@ -84,7 +84,7 @@ func (b *bundler) processor() {
 		list = append(list, item.ins)
 		acks = append(acks, item.ack)
 
-		// add buffered instructions
+		// add buffered instructions if list has room
 		for len(b.queue) > 0 && len(list) < b.opts.batchSize {
 			item, ok := <-b.queue
 			if ok {

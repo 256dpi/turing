@@ -90,7 +90,7 @@ func (v *Value) Encode() ([]byte, error) {
 }
 
 // Decode will decode the value.
-func (v *Value) Decode(bytes []byte) error {
+func (v *Value) Decode(bytes []byte, clone bool) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
@@ -109,7 +109,7 @@ func (v *Value) Decode(bytes []byte) error {
 
 		// decode full value
 		if v.Kind == FullValue {
-			dec.Tail(&v.Value, false)
+			dec.Tail(&v.Value, clone)
 			return nil
 		}
 
@@ -124,8 +124,8 @@ func (v *Value) Decode(bytes []byte) error {
 
 		// read operands
 		for i := range v.Stack {
-			dec.String(&v.Stack[i].Name, false)
-			dec.Bytes(&v.Stack[i].Value, false)
+			dec.String(&v.Stack[i].Name, clone)
+			dec.Bytes(&v.Stack[i].Value, clone)
 		}
 
 		return nil

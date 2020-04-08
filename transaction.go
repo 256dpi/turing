@@ -264,6 +264,8 @@ func (t *Transaction) Effect() int {
 	return t.effect
 }
 
+// TODO: Track opened/closed iterators.
+
 // Iterator will construct and return a new iterator. The iterator must be
 // closed as soon as it is not used anymore. There can be only one iterator
 // created at a time.
@@ -283,9 +285,9 @@ func (t *Transaction) get(key []byte) ([]byte, bool, io.Closer, error) {
 		return nil, false, nil, err
 	}
 
-	// parse value
+	// decode value (no need to clone as available until closed)
 	var value Value
-	err = value.Decode(bytes)
+	err = value.Decode(bytes, false)
 	if err != nil {
 		_ = closer.Close()
 		return nil, false, nil, err
@@ -366,9 +368,9 @@ func (i *Iterator) Value(copy bool) ([]byte, error) {
 		return nil, nil
 	}
 
-	// parse value
+	// decode value (no need to clone as copying is explicit)
 	var value Value
-	err := value.Decode(bytes)
+	err := value.Decode(bytes, false)
 	if err != nil {
 		return nil, err
 	}

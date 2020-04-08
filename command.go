@@ -6,7 +6,7 @@ import (
 	"github.com/256dpi/turing/pkg/coding"
 )
 
-// Operation is a single operation executed as part of a command.
+// Operation is a single instruction executed as part of a command.
 type Operation struct {
 	// The instruction name.
 	Name string
