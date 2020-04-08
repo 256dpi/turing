@@ -7,27 +7,12 @@ import (
 // TODO: How should parallel instructions executions be handled?
 //  Should we try to batch requests before handing them over to raft?
 
-// ReadConcern defines the available read concerns.
-type ReadConcern byte
-
-const (
-	// Local queries the locally committed state that may not yet have
-	// previously executed instructions applied yet.
-	Local ReadConcern = 0
-
-	// Linear queries the majority committed state that has previously executed
-	// instructions applied.
-	Linear ReadConcern = 1
-)
-
-// Valid returns whether the provided read concern is valid.
-func (rc ReadConcern) Valid() bool {
-	switch rc {
-	case Local, Linear:
-		return true
-	default:
-		return false
-	}
+// Options define options used during instruction execution.
+type Options struct {
+	// StaleRead can be set to execute a stale read. While this is much faster
+	// the instruction might not yet see the changes of previously executed
+	// instructions.
+	StaleRead bool
 }
 
 // Machine maintains a raft cluster with members and maintains consensus about the
@@ -97,10 +82,16 @@ func Start(config Config) (*Machine, error) {
 // Execute will execute the specified instruction. NonLinear may be set to true
 // to allow read only instructions to query data without linearizability
 // guarantees. This may be substantially faster but return stale data.
-func (m *Machine) Execute(instruction Instruction, rc ReadConcern) error {
+func (m *Machine) Execute(instruction Instruction, opts ...Options) error {
 	// observe
 	timer := observe(operationMetrics, "Machine.Execute")
 	defer timer.ObserveDuration()
+
+	// get options
+	var options Options
+	if len(opts) == 1 {
+		options = opts[0]
+	}
 
 	// get description
 	description := instruction.Describe()
@@ -116,11 +107,6 @@ func (m *Machine) Execute(instruction Instruction, rc ReadConcern) error {
 		return fmt.Errorf("missing instruction: %s", description.Name)
 	}
 
-	// check read concern
-	if !rc.Valid() {
-		return fmt.Errorf("invalid read concern: %d", rc)
-	}
-
 	// execute directly if standalone
 	if m.config.Standalone {
 		// perform lookup
@@ -134,7 +120,7 @@ func (m *Machine) Execute(instruction Instruction, rc ReadConcern) error {
 
 	// immediately perform read
 	if description.Effect == 0 {
-		err = m.coordinator.lookup(instruction, rc)
+		err = m.coordinator.lookup(instruction, options)
 		if err != nil {
 			return err
 		}

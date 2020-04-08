@@ -84,7 +84,7 @@ func main() {
 		err = machine.Execute(&basic.Inc{
 			Key:   strconv.AppendUint(nil, *idFlag, 10),
 			Value: 1,
-		}, turing.Linear)
+		})
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
@@ -93,7 +93,7 @@ func main() {
 
 		// list values
 		mp := &basic.Map{}
-		err = machine.Execute(mp, turing.Linear)
+		err = machine.Execute(mp)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)

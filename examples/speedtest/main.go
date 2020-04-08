@@ -138,7 +138,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 			Key:   strconv.Itoa(rand.Intn(*keySpace)),
 			Value: 1,
 			Merge: merge,
-		}, turing.Linear)
+		})
 		if err != nil {
 			handle(err)
 			continue
@@ -164,16 +164,15 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		default:
 		}
 
-		// determine read concern
-		rc := turing.Local
-		if rand.Intn(4) == 0 {
-			rc = turing.Linear // 25%
-		}
+		// determine stale read
+		staleRead := rand.Intn(4) > 0 // 75%
 
 		// get value
 		err := machine.Execute(&get{
 			Key: strconv.Itoa(rand.Intn(*keySpace)),
-		}, rc)
+		}, turing.Options{
+			StaleRead: staleRead,
+		})
 		if err != nil {
 			handle(err)
 			continue

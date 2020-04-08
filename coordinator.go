@@ -131,13 +131,13 @@ func (c *coordinator) update(instruction Instruction) error {
 	return nil
 }
 
-func (c *coordinator) lookup(ins Instruction, rc ReadConcern) error {
+func (c *coordinator) lookup(ins Instruction, options Options) error {
 	// observe
 	timer := observe(operationMetrics, "coordinator.lookup")
 	defer timer.ObserveDuration()
 
-	// immediately queue local ready
-	if rc == Local {
+	// immediately queue stale reads
+	if options.StaleRead {
 		return c.reads.process(ins)
 	}
 
@@ -250,7 +250,7 @@ func awaitRequest(rs *dragonboat.RequestState) ([]byte, error) {
 		return nil, dragonboat.ErrClusterClosed
 	} else if r.Dropped() {
 		return nil, dragonboat.ErrClusterNotReady
-	} else {
-		panic("unknown result")
 	}
+
+	panic("unknown result")
 }
