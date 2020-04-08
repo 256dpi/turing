@@ -20,7 +20,9 @@ type database struct {
 	pebble   *pebble.DB
 	options  *pebble.WriteOptions
 	write    sync.Mutex
-	read     *semaphore.Semaphore
+	read     sync.RWMutex
+	readers  *semaphore.Semaphore
+	closed   bool
 }
 
 func openDatabase(config Config, registry *registry, manager *manager) (*database, uint64, error) {
@@ -41,7 +43,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 
 	// prepare merger
 	merger := &pebble.Merger{
-		Name: "turing",
+		Name: "turing", // DO NOT CHANGE!
 		Merge: func(key, value []byte) (pebble.ValueMerger, error) {
 			return newMerger(registry, value), nil
 		},
@@ -71,9 +73,6 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	// unref cache
 	cache.Unref()
 
-	// prepare index
-	var index uint64
-
 	// get last committed index
 	value, closer, err := pdb.Get(indexKey)
 	if err != nil && err != pebble.ErrNotFound {
@@ -81,6 +80,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	}
 
 	// parse index if available
+	var index uint64
 	if value != nil {
 		// ensure close
 		defer closer.Close()
@@ -109,7 +109,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		manager:  manager,
 		pebble:   pdb,
 		options:  options,
-		read:     semaphore.New(config.ConcurrentReaders),
+		readers:  semaphore.New(config.ConcurrentReaders),
 	}
 
 	// init manager
@@ -122,6 +122,11 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	// acquire write mutex
 	d.write.Lock()
 	defer d.write.Unlock()
+
+	// check if closed
+	if d.closed {
+		return fmt.Errorf("database closed")
+	}
 
 	// observe
 	timer := observe(operationMetrics, "database.update")
@@ -245,22 +250,31 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 }
 
 func (d *database) lookup(list []Instruction) error {
-	// get read token
-	d.read.Acquire(nil, 0)
-	defer d.read.Release()
+	// get reader token
+	d.readers.Acquire(nil, 0)
+	defer d.readers.Release()
+
+	// acquire read mutex
+	d.read.RLock()
+	defer d.read.RUnlock()
+
+	// check if closed
+	if d.closed {
+		return fmt.Errorf("database closed")
+	}
 
 	// observe
 	timer1 := observe(operationMetrics, "database.lookup")
 	defer timer1.ObserveDuration()
 
 	// get snapshot
-	snap := d.pebble.NewSnapshot()
-	defer snap.Close()
+	snapshot := d.pebble.NewSnapshot()
+	defer snapshot.Close()
 
 	// prepare transaction
 	txn := obtainTxn()
 	txn.registry = d.registry
-	txn.reader = snap
+	txn.reader = snapshot
 
 	// ensure recycle
 	defer recycleTxn(txn)
@@ -290,10 +304,20 @@ func (d *database) lookup(list []Instruction) error {
 
 func (d *database) sync() error {
 	// TODO: Should we do something?
+
 	return nil
 }
 
 func (d *database) backup(sink io.Writer) error {
+	// acquire read mutex
+	d.read.RLock()
+	defer d.read.RUnlock()
+
+	// check if closed
+	if d.closed {
+		return fmt.Errorf("database closed")
+	}
+
 	// observe
 	timer := observe(operationMetrics, "database.backup")
 	defer timer.ObserveDuration()
@@ -304,9 +328,14 @@ func (d *database) backup(sink io.Writer) error {
 }
 
 func (d *database) restore(source io.Reader) error {
-	// acquire update mutex
+	// acquire write mutex
 	d.write.Lock()
 	defer d.write.Unlock()
+
+	// check if closed
+	if d.closed {
+		return fmt.Errorf("database closed")
+	}
 
 	// observe
 	timer := observe(operationMetrics, "database.restore")
@@ -318,15 +347,27 @@ func (d *database) restore(source io.Reader) error {
 }
 
 func (d *database) close() error {
-	// acquire update mutex
+	// acquire read mutex
+	d.read.Lock()
+	defer d.read.Unlock()
+
+	// acquire write mutex
 	d.write.Lock()
 	defer d.write.Unlock()
+
+	// check if closed
+	if d.closed {
+		return fmt.Errorf("database closed")
+	}
 
 	// close database
 	err := d.pebble.Close()
 	if err != nil {
 		return err
 	}
+
+	// set flag
+	d.closed = true
 
 	return nil
 }
