@@ -77,6 +77,8 @@ func (d Description) Validate() error {
 	// check effect
 	if d.Effect > MaxEffect {
 		return errors.New("turing: instruction effect too high")
+	} else if d.Effect < 0 && d.Effect != UnboundedEffect {
+		return errors.New("turing: invalid instruction effect")
 	}
 
 	return nil
