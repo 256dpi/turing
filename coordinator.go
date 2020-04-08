@@ -73,23 +73,49 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	return coordinator, nil
 }
 
-func (c *coordinator) update(ctx context.Context, cmd []byte) ([]byte, error) {
+func (c *coordinator) update(ctx context.Context, instruction Instruction) error {
 	// observe
 	timer := observe(operationMetrics, "coordinator.update")
 	defer timer.ObserveDuration()
 
+	// encode instruction
+	encodedInstruction, err := instruction.Encode()
+	if err != nil {
+		return err
+	}
+
+	// prepare command
+	cmd := Command{
+		Name: instruction.Describe().Name,
+		Data: encodedInstruction,
+	}
+
+	// encode command
+	encodedCommand, err := EncodeCommand(cmd)
+	if err != nil {
+		return err
+	}
+
 	// get session
 	session := c.node.GetNoOPSession(clusterID)
 
-	// update data
-	result, err := c.node.SyncPropose(ctx, session, cmd)
-	if err != nil {
-		return nil, err
-	}
-
 	// TODO: Retry on ErrTimeout.
 
-	return result.Data, nil
+	// perform update
+	result, err := c.node.SyncPropose(ctx, session, encodedCommand)
+	if err != nil {
+		return err
+	}
+
+	// decode result
+	if result.Data != nil {
+		err = instruction.Decode(result.Data)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c *coordinator) lookup(ctx context.Context, instruction Instruction, nonLinear bool) (e error) {

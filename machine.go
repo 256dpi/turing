@@ -141,36 +141,10 @@ func (m *Machine) Execute(ctx context.Context, instruction Instruction, nonLinea
 		return nil
 	}
 
-	// encode instruction
-	id, err := instruction.Encode()
-	if err != nil {
-		return err
-	}
-
-	// prepare command
-	cmd := Command{
-		Name: description.Name,
-		Data: id,
-	}
-
-	// encode command
-	bytes, err := EncodeCommand(cmd)
-	if err != nil {
-		return err
-	}
-
 	// perform update
-	result, err := m.coordinator.update(ctx, bytes)
+	err = m.coordinator.update(ctx, instruction)
 	if err != nil {
 		return err
-	}
-
-	// decode result
-	if result != nil {
-		err = instruction.Decode(result)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
