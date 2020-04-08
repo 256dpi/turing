@@ -89,15 +89,15 @@ func (m *Machine) Execute(instruction Instruction, nonLinear bool) error {
 	// get description
 	description := instruction.Describe()
 
-	// check registry
-	if m.registry.instructions[description.Name] == nil {
-		return fmt.Errorf("missing instruction: %s", description.Name)
-	}
-
-	// validate instruction
+	// validate description
 	err := description.Validate()
 	if err != nil {
 		return err
+	}
+
+	// check registry
+	if m.registry.instructions[description.Name] == nil {
+		return fmt.Errorf("missing instruction: %s", description.Name)
 	}
 
 	// execute directly if standalone
