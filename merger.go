@@ -1,20 +1,23 @@
 package turing
 
 import (
-	"fmt"
 	"sync"
 )
+
+const mergerPreAllocationSize = 100
 
 type merger struct {
 	registry *registry
 	stack    [][]byte
+	values   []Value
 	order    bool
 }
 
 var mergerPool = sync.Pool{
 	New: func() interface{} {
 		return &merger{
-			stack: make([][]byte, 0, 100),
+			stack:  make([][]byte, 0, mergerPreAllocationSize),
+			values: make([]Value, 0, mergerPreAllocationSize),
 		}
 	},
 }
@@ -52,11 +55,22 @@ func (m *merger) MergeOlder(value []byte) error {
 func (m *merger) Finish() ([]byte, error) {
 	// return merger
 	defer func() {
+		// unset registry
 		m.registry = nil
+
+		// reset stack
 		for i := range m.stack {
 			m.stack[i] = nil
 		}
 		m.stack = m.stack[:0]
+
+		// reset values
+		for i := range m.values {
+			m.values[i] = Value{}
+		}
+		m.values = m.values[:0]
+
+		// return
 		mergerPool.Put(m)
 	}()
 
@@ -64,20 +78,19 @@ func (m *merger) Finish() ([]byte, error) {
 	m.sortStack(true)
 
 	// decode values
-	values := make([]Value, 0, len(m.stack))
 	for _, op := range m.stack {
 		value, err := DecodeValue(op)
 		if err != nil {
 			return nil, err
 		}
-		values = append(values, value)
+		m.values = append(m.values, value)
 	}
 
 	// merge values if first value is a full value, otherwise stack all values
-	switch values[0].Kind {
+	switch m.values[0].Kind {
 	case FullValue:
 		// merge values
-		value, err := MergeValues(values, m.registry)
+		value, err := MergeValues(m.values, m.registry)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +104,7 @@ func (m *merger) Finish() ([]byte, error) {
 		return bytes, nil
 	case StackValue:
 		// stack values
-		value, err := StackValues(values)
+		value, err := StackValues(m.values)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +117,7 @@ func (m *merger) Finish() ([]byte, error) {
 
 		return bytes, nil
 	default:
-		return nil, fmt.Errorf("turing: merger: unexpected kind: %c", values[0].Kind)
+		panic("unexpected condition")
 	}
 }
 
