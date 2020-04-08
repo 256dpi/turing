@@ -36,7 +36,6 @@ type Machine struct {
 	config      Config
 	registry    *registry
 	manager     *manager
-	balancer    *balancer
 	coordinator *coordinator
 	controller  *controller
 	database    *database
@@ -58,11 +57,6 @@ func Start(config Config) (*Machine, error) {
 
 	// prepare manager
 	manager := newManager()
-
-	// TODO: Balancer should be configurable.
-
-	// prepare balancer
-	balancer := newBalancer(10000, 0)
 
 	// prepare coordinator
 	var coordinator *coordinator
@@ -92,7 +86,6 @@ func Start(config Config) (*Machine, error) {
 		config:      config,
 		registry:    registry,
 		manager:     manager,
-		balancer:    balancer,
 		coordinator: coordinator,
 		controller:  controller,
 		database:    database,
@@ -138,10 +131,6 @@ func (m *Machine) Execute(instruction Instruction, rc ReadConcern) error {
 		// perform update
 		return m.controller.update(instruction)
 	}
-
-	// balance
-	m.balancer.get(description.Effect != 0)
-	defer m.balancer.put(description.Effect != 0)
 
 	// immediately perform read
 	if description.Effect == 0 {

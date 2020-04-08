@@ -11,4 +11,4 @@ standalone:
 	go run . --id 9 --standalone
 
 in-memory:
-	go run . --standalone --memory
+	go run . --id 1 --standalone --memory
