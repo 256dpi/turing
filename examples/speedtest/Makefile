@@ -4,7 +4,7 @@ cluster:
 
 single:
 	rm -rf ./data
-	go run . --id 4 --members "7@0.0.0.0:42070"
+	go run . --id 4 --members "4@0.0.0.0:42070"
 
 standalone:
 	rm -rf ./data
