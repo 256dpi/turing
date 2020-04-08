@@ -20,7 +20,6 @@ type Machine struct {
 	manager     *manager
 	coordinator *coordinator
 	controller  *controller
-	database    *database
 }
 
 // Start will create a new machine using the specified configuration.
@@ -49,18 +48,13 @@ func Start(config Config) (*Machine, error) {
 		}
 	}
 
-	// prepare database and controller
-	var database *database
+	// prepare controller
 	var controller *controller
 	if config.Standalone {
-		// open database
-		database, _, err = openDatabase(config, registry, manager)
+		controller, err = createController(config, registry, manager)
 		if err != nil {
 			return nil, err
 		}
-
-		// create controller
-		controller = newController(config, database)
 	}
 
 	// create machine
@@ -70,7 +64,6 @@ func Start(config Config) (*Machine, error) {
 		manager:     manager,
 		coordinator: coordinator,
 		controller:  controller,
-		database:    database,
 	}
 
 	return m, nil
@@ -163,11 +156,6 @@ func (m *Machine) Stop() {
 
 	// close controller
 	if m.controller != nil {
-		_ = m.controller.close
-	}
-
-	// close database
-	if m.database != nil {
-		_ = m.database.close()
+		_ = m.controller.close()
 	}
 }
