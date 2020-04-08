@@ -42,7 +42,7 @@ func main() {
 	turing.SetLogger(nil)
 
 	// register metrics
-	turing.RegisterMetrics()
+	turing.EnableMetrics()
 
 	// parse members
 	var memberList []turing.Member

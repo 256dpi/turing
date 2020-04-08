@@ -23,13 +23,24 @@ var instructionMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 
 var observerCacheCache sync.Map
 
-// RegisterMetrics will register prometheus metrics.
-func RegisterMetrics() {
+var metricsEnabled bool
+
+// EnableMetrics will register and enable prometheus metrics.
+func EnableMetrics() {
+	// set flag
+	metricsEnabled = true
+
+	// register metrics
 	prometheus.MustRegister(operationMetrics)
 	prometheus.MustRegister(instructionMetrics)
 }
 
 func getObserver(summary prometheus.ObserverVec, label string) prometheus.Observer {
+	// check if enabled
+	if !metricsEnabled {
+		return nil
+	}
+
 	// get cache from cache
 	var cache *sync.Map
 	value, ok := observerCacheCache.Load(summary)
