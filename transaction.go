@@ -27,11 +27,12 @@ var ErrMaxEffect = errors.New("turing: max effect")
 
 // Transaction is used by an instruction to perform changes to the database.
 type Transaction struct {
-	registry *registry
-	reader   pebble.Reader
-	writer   pebble.Writer
-	closers  int
-	effect   int
+	registry  *registry
+	reader    pebble.Reader
+	writer    pebble.Writer
+	closers   int
+	iterators int
+	effect    int
 }
 
 func (t *Transaction) execute(ins Instruction) (bool, error) {
@@ -47,6 +48,11 @@ func (t *Transaction) execute(ins Instruction) (bool, error) {
 	// check closers
 	if t.closers != 0 {
 		return false, fmt.Errorf("turing: unclosed values after instruction execution")
+	}
+
+	// check iterators
+	if t.iterators != 0 {
+		return false, fmt.Errorf("turing: unclosed iterators after instruction execution")
 	}
 
 	return exhausted, nil
@@ -269,12 +275,13 @@ func (t *Transaction) Effect() int {
 	return t.effect
 }
 
-// TODO: Track opened/closed iterators.
-
 // Iterator will construct and return a new iterator. The iterator must be
 // closed as soon as it is not used anymore. There can be only one iterator
 // created at a time.
 func (t *Transaction) Iterator(prefix []byte) *Iterator {
+	// increment
+	t.iterators++
+
 	return &Iterator{
 		txn:  t,
 		iter: t.reader.NewIter(prefixIterator(prefixUserKey(prefix))),
@@ -404,6 +411,9 @@ func (i *Iterator) Error() error {
 
 // Close will close the iterator.
 func (i *Iterator) Close() error {
+	// decrement
+	i.txn.iterators--
+
 	return i.iter.Close()
 }
 

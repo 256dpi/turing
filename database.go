@@ -71,6 +71,7 @@ func recycleTransaction(txn *Transaction) {
 	txn.reader = nil
 	txn.writer = nil
 	txn.closers = 0
+	txn.iterators = 0
 	txn.effect = 0
 	transactionPool.Put(txn)
 }
