@@ -144,8 +144,8 @@ type Member struct {
 	Port int
 }
 
-// ParseMember will parse the provided string in the form of "7@0.0.0.0:1337"
-// and return a member.
+// ParseMember will parse the provided string and return a member. The string is
+// expected to have the form "id@[host]:port".
 func ParseMember(str string) (Member, error) {
 	// split name and addr
 	s := strings.Split(str, "@")
@@ -184,6 +184,25 @@ func ParseMember(str string) (Member, error) {
 	}
 
 	return r, nil
+}
+
+// ParseMembers will parse the provided string and return a list of members. The
+// string is expected to have the form "id@[host]:port,...".
+func ParseMembers(str string) ([]Member, error) {
+	// parse members
+	var members []Member
+	for _, member := range strings.Split(str, ",") {
+		// parse member
+		member, err := ParseMember(member)
+		if err != nil {
+			return nil, err
+		}
+
+		// add member
+		members = append(members, member)
+	}
+
+	return members, nil
 }
 
 func (m Member) check() error {

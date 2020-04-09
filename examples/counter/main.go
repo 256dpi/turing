@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -15,41 +14,33 @@ import (
 	"github.com/256dpi/turing/std/basic"
 )
 
-func main() {
-	// prepare flags
-	var idFlag = flag.Uint64("id", 1, "the server id")
-	var membersFlag = flag.String("members", "", "the cluster members")
-	var directoryFlag = flag.String("directory", "data", "the data directory")
+var id = flag.Uint64("id", 0, "the server id")
+var members = flag.String("members", "", "the cluster members")
+var directory = flag.String("directory", "data", "the data directory")
 
+func main() {
 	// parse flags
 	flag.Parse()
 
 	// parse members
-	var members []turing.Member
-	for _, member := range strings.Split(*membersFlag, ",") {
-		// parse member
-		member, err := turing.ParseMember(member)
-		if err != nil {
-			panic(err)
-		}
-
-		// add member
-		members = append(members, member)
+	memberList, err := turing.ParseMembers(*members)
+	if err != nil {
+		panic(err)
 	}
 
 	// resolve directory
-	directory, err := filepath.Abs(*directoryFlag)
+	directory, err := filepath.Abs(*directory)
 	if err != nil {
 		panic(err)
 	}
 
 	// append server id
-	directory = filepath.Join(directory, strconv.FormatUint(*idFlag, 10))
+	directory = filepath.Join(directory, strconv.FormatUint(*id, 10))
 
 	// start machine
 	machine, err := turing.Start(turing.Config{
-		ID:        *idFlag,
-		Members:   members,
+		ID:        *id,
+		Members:   memberList,
 		Directory: directory,
 		Instructions: []turing.Instruction{
 			&basic.Inc{}, &basic.Map{},
@@ -82,7 +73,7 @@ func main() {
 
 		// increment value
 		err = machine.Execute(&basic.Inc{
-			Key:   strconv.AppendUint(nil, *idFlag, 10),
+			Key:   strconv.AppendUint(nil, *id, 10),
 			Value: 1,
 		})
 		if err != nil {

@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -18,7 +17,6 @@ import (
 	"github.com/256dpi/turing"
 )
 
-// prepare flags
 var id = flag.Uint64("id", 0, "the server id")
 var members = flag.String("members", "", "the cluster members")
 var directory = flag.String("directory", "data", "the data directory")
@@ -46,16 +44,11 @@ func main() {
 
 	// parse members
 	var memberList []turing.Member
+	var err error
 	if *members != "" {
-		for _, member := range strings.Split(*members, ",") {
-			// parse member
-			member, err := turing.ParseMember(member)
-			if err != nil {
-				panic(err)
-			}
-
-			// add member
-			memberList = append(memberList, member)
+		memberList, err = turing.ParseMembers(*members)
+		if err != nil {
+			panic(err)
 		}
 	}
 

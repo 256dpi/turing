@@ -1,6 +1,8 @@
 package turing
 
 import (
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/lni/dragonboat/v3"
@@ -257,9 +259,13 @@ func (c *coordinator) status() Status {
 
 		// parse members
 		for id, addr := range info.ClusterInfoList[0].Nodes {
-			member, _ := ParseMember(addr)
-			member.ID = id
-			members = append(members, member)
+			host, port, _ := net.SplitHostPort(addr)
+			portNum, _ := strconv.Atoi(port)
+			members = append(members, Member{
+				ID:   id,
+				Host: host,
+				Port: portNum,
+			})
 		}
 	}
 
