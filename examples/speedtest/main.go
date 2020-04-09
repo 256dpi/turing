@@ -101,6 +101,10 @@ func main() {
 		go reader(machine, done)
 	}
 
+	// TODO: Run scanners (full keyspace scan)
+	// TODO: Run unsetter (single key deletion)
+	// TODO: Run deleter (key range deletion)
+
 	// prepare exit
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
