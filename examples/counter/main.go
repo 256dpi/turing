@@ -10,6 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/256dpi/god"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/256dpi/turing"
 	"github.com/256dpi/turing/std/basic"
 )
@@ -21,6 +24,15 @@ var directory = flag.String("directory", "data", "the data directory")
 func main() {
 	// parse flags
 	flag.Parse()
+
+	// enable debugging
+	god.Init(god.Options{
+		Port:           6060 + int(*id),
+		MetricsHandler: promhttp.Handler().ServeHTTP,
+	})
+
+	// register metrics
+	turing.EnableMetrics()
 
 	// parse members
 	memberList, err := turing.ParseMembers(*members)
