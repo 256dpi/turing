@@ -45,8 +45,10 @@ type Inc struct {
 
 func (i *Inc) Describe() turing.Description {
 	return turing.Description{
-		Name:      "std/basic/Inc",
-		Operators: []*turing.Operator{IncAdd},
+		Name: "std/basic/Inc",
+		Operators: func() []*turing.Operator {
+			return []*turing.Operator{IncAdd}
+		},
 	}
 }
 

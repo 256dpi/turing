@@ -76,7 +76,7 @@ type Description struct {
 
 	// The operators used by this instruction. Deprecated operators must be
 	// retained to ensure they can be used to compact older database levels.
-	Operators []*Operator
+	Operators func() []*Operator
 }
 
 // Validate will validate the instruction description.

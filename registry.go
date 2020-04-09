@@ -31,18 +31,20 @@ func buildRegistry(config Config) (*registry, error) {
 		reg.instructions[desc.Name] = ins
 
 		// add operators
-		for _, op := range desc.Operators {
-			// get name
-			name := op.Name
+		if desc.Operators != nil {
+			for _, op := range desc.Operators() {
+				// get name
+				name := op.Name
 
-			// check existing operator
-			eop := reg.operators[name]
-			if eop != nil && eop != op {
-				return nil, fmt.Errorf("turing: different operator for same name: %s", name)
+				// check existing operator
+				eop := reg.operators[name]
+				if eop != nil && eop != op {
+					return nil, fmt.Errorf("turing: different operator for same name: %s", name)
+				}
+
+				// store operator
+				reg.operators[name] = op
 			}
-
-			// store operator
-			reg.operators[name] = op
 		}
 	}
 
