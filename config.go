@@ -81,7 +81,7 @@ func (c *Config) check() error {
 
 	// check members
 	for _, member := range c.Members {
-		err := member.check()
+		err := member.Validate()
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,8 @@ func ParseMembers(str string) ([]Member, error) {
 	return members, nil
 }
 
-func (m Member) check() error {
+// Validate will validate the member.
+func (m Member) Validate() error {
 	// check host
 	if m.Host == "" {
 		return fmt.Errorf("turing: missing host")
@@ -219,22 +220,12 @@ func (m Member) check() error {
 	return nil
 }
 
-func (m Member) raftPort() int {
-	return m.Port
+// Address will return the members full address in the form "host:port".
+func (m Member) Address() string {
+	return net.JoinHostPort(m.Host, strconv.Itoa(m.Port))
 }
 
-func (m Member) raftAddr() string {
-	return net.JoinHostPort(m.Host, strconv.Itoa(m.raftPort()))
-}
-
-func (m Member) rpcPort() int {
-	return m.Port + 1
-}
-
-func (m Member) rpcAddr() string {
-	return net.JoinHostPort(m.Host, strconv.Itoa(m.rpcPort()))
-}
-
-func (m Member) string() string {
-	return fmt.Sprintf("%d@%s", m.ID, m.raftAddr())
+// String will return a formatted member string "id@host:port".
+func (m Member) String() string {
+	return fmt.Sprintf("%d@%s", m.ID, m.Address())
 }

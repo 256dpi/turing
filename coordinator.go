@@ -23,7 +23,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// prepare members
 	members := make(map[uint64]string)
 	for _, member := range cfg.Members {
-		members[member.ID] = member.raftAddr()
+		members[member.ID] = member.Address()
 	}
 
 	// calculate rrt in ms
@@ -50,7 +50,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 		NodeHostDir:    cfg.raftDir(),
 		LogDBFactory:   pebble.NewBatchedLogDB,
 		RTTMillisecond: rttMS,
-		RaftAddress:    cfg.Local().raftAddr(),
+		RaftAddress:    cfg.Local().Address(),
 	}
 
 	// create node host
