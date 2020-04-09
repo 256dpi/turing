@@ -2,20 +2,59 @@ package turing
 
 import (
 	"errors"
+	"fmt"
 	"io"
-	"strconv"
 	"sync"
 
 	"github.com/cockroachdb/pebble"
 	"github.com/lni/dragonboat/v3/logger"
 
+	"github.com/256dpi/turing/pkg/coding"
 	"github.com/256dpi/turing/pkg/semaphore"
 )
 
 // ErrDatabaseClosed is returned if the database has been closed.
 var ErrDatabaseClosed = errors.New("turing: database closed")
 
-var indexKey = []byte("$index")
+var stateKey = []byte("$state")
+
+type state struct {
+	Index uint64
+	Batch uint64
+	Last  uint64
+}
+
+func (s *state) Encode() ([]byte, error) {
+	return coding.Encode(func(enc *coding.Encoder) error {
+		// encode version
+		enc.Uint(1)
+
+		// encode body
+		enc.Uint(s.Index)
+		enc.Uint(s.Batch)
+		enc.Uint(s.Last)
+
+		return nil
+	})
+}
+
+func (s *state) Decode(data []byte) error {
+	return coding.Decode(data, func(dec *coding.Decoder) error {
+		// decode version
+		var version uint64
+		dec.Uint(&version)
+		if version != 1 {
+			return fmt.Errorf("turing: state decode: invalid version")
+		}
+
+		// decode body
+		dec.Uint(&s.Index)
+		dec.Uint(&s.Batch)
+		dec.Uint(&s.Last)
+
+		return nil
+	})
+}
 
 var transactionPool = sync.Pool{
 	New: func() interface{} {
@@ -37,6 +76,7 @@ func recycleTransaction(txn *Transaction) {
 }
 
 type database struct {
+	state    state
 	registry *registry
 	manager  *manager
 	pebble   *pebble.DB
@@ -97,20 +137,20 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	// unref cache
 	cache.Unref()
 
-	// get last committed index
-	value, closer, err := pdb.Get(indexKey)
+	// get stored state
+	value, closer, err := pdb.Get(stateKey)
 	if err != nil && err != pebble.ErrNotFound {
 		return nil, 0, err
 	}
 
-	// parse index if available
-	var index uint64
-	if value != nil {
+	// parse state if available
+	var state state
+	if len(value) > 0 {
 		// ensure close
 		defer closer.Close()
 
-		// parse value
-		index, err = strconv.ParseUint(string(value), 10, 64)
+		// parse state
+		err = state.Decode(value)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -129,6 +169,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 
 	// create database
 	db := &database{
+		state:    state,
 		registry: registry,
 		manager:  manager,
 		pebble:   pdb,
@@ -139,10 +180,10 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	// init manager
 	manager.init()
 
-	return db, index, nil
+	return db, state.Index, nil
 }
 
-func (d *database) update(list []Instruction, indexes []uint64) error {
+func (d *database) update(list []Instruction, index uint64) error {
 	// acquire write mutex
 	d.write.Lock()
 	defer d.write.Unlock()
@@ -150,6 +191,11 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 	// check if closed
 	if d.closed {
 		return ErrDatabaseClosed
+	}
+
+	// check index
+	if index != 0 && d.state.Index >= index {
+		return fmt.Errorf("turing: database update: already applied index: %d", index)
 	}
 
 	// observe
@@ -170,6 +216,11 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 
 	// execute all instructions
 	for i, instruction := range list {
+		// skip instruction if already applied
+		if index != 0 && d.state.Batch == index && d.state.Last >= uint64(i) {
+			continue
+		}
+
 		// get description
 		desc := instruction.Describe()
 
@@ -219,12 +270,20 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 				continue
 			}
 
-			// set index if available
-			if indexes != nil {
-				err = batch.Set(indexKey, []byte(strconv.FormatUint(indexes[i], 10)), nil)
-				if err != nil {
-					return err
-				}
+			// update state
+			d.state.Batch = index
+			d.state.Last = uint64(i)
+
+			// encode state
+			encodedState, err := d.state.Encode()
+			if err != nil {
+				return err
+			}
+
+			// set state
+			err = batch.Set(stateKey, encodedState, nil)
+			if err != nil {
+				return err
 			}
 
 			break
@@ -234,8 +293,25 @@ func (d *database) update(list []Instruction, indexes []uint64) error {
 		timer.finish()
 	}
 
+	// update state
+	d.state.Index = index
+	d.state.Batch = 0
+	d.state.Last = 0
+
+	// encode state
+	encodedState, err := d.state.Encode()
+	if err != nil {
+		return err
+	}
+
+	// set state
+	err = batch.Set(stateKey, encodedState, nil)
+	if err != nil {
+		return err
+	}
+
 	// commit final batch
-	err := batch.Commit(d.options)
+	err = batch.Commit(d.options)
 	if err != nil {
 		return err
 	}

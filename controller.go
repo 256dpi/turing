@@ -20,7 +20,7 @@ func createController(config Config, registry *registry, manager *manager) (*con
 			batchSize:   config.UpdateBatchSize,
 			concurrency: 1, // database anyway only allows one writer
 			handler: func(list []Instruction) error {
-				return database.update(list, nil)
+				return database.update(list, 0)
 			},
 		}),
 		lookups: newBundler(bundlerOptions{

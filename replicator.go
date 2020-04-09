@@ -49,9 +49,8 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 			return nil, err
 		}
 
-		// prepare instruction and index list
+		// prepare instruction list
 		instructions := make([]Instruction, 0, len(cmd.Operations))
-		indexes := make([]uint64, 0, len(cmd.Operations))
 
 		// decode operations
 		for _, op := range cmd.Operations {
@@ -70,17 +69,12 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 				return nil, err
 			}
 
-			// TODO: We need to manually keep records on which instructions
-			//  have already executed to ensure we do not accidentally apply
-			//  an instruction multiple times.
-
-			// set instruction and index
+			// add instruction
 			instructions = append(instructions, instruction)
-			indexes = append(indexes, entry.Index)
 		}
 
 		// execute instructions
-		err = r.database.update(instructions, indexes)
+		err = r.database.update(instructions, entry.Index)
 		if err != nil {
 			return nil, err
 		}
