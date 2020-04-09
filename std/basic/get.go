@@ -29,8 +29,9 @@ func (g *Get) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (g *Get) Encode() ([]byte, error) {
-	return msgpack.Marshal(g)
+func (g *Get) Encode() ([]byte, turing.Ref, error) {
+	buf, err := msgpack.Marshal(g)
+	return buf, turing.NoopRef, err
 }
 
 func (g *Get) Decode(bytes []byte) error {

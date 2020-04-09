@@ -145,10 +145,13 @@ func (t *Transaction) Set(key, val []byte) error {
 	}
 
 	// encode value
-	bytes, err := value.Encode()
+	bytes, ref, err := value.Encode(true)
 	if err != nil {
 		return err
 	}
+
+	// ensure release
+	defer ref.Release()
 
 	// set key to value
 	err = t.writer.Set(prefixUserKey(key), bytes, nil)
@@ -242,10 +245,13 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 	}
 
 	// encode value
-	bytes, err := value.Encode()
+	bytes, ref, err := value.Encode(true)
 	if err != nil {
 		return err
 	}
+
+	// ensure release
+	defer ref.Release()
 
 	// set key to value
 	err = t.writer.Merge(prefixUserKey(key), bytes, nil)

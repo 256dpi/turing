@@ -52,8 +52,9 @@ func (r *Release) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (r *Release) Encode() ([]byte, error) {
-	return msgpack.Marshal(r)
+func (r *Release) Encode() ([]byte, turing.Ref, error) {
+	buf, err := msgpack.Marshal(r)
+	return buf, nil, err
 }
 
 func (r *Release) Decode(bytes []byte) error {

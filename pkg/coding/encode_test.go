@@ -7,7 +7,7 @@ import (
 )
 
 func TestEncode(t *testing.T) {
-	res, err := Encode(func(enc *Encoder) error {
+	res, _, err := Encode(true, func(enc *Encoder) error {
 		enc.Bool(true)
 		enc.Int(7)
 		enc.String("foo")
@@ -25,7 +25,7 @@ func BenchmarkEncode(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := Encode(func(enc *Encoder) error {
+		_, ref, err := Encode(true, func(enc *Encoder) error {
 			enc.Bool(true)
 			enc.Int(7)
 			enc.String("foo")
@@ -37,5 +37,7 @@ func BenchmarkEncode(b *testing.B) {
 		if err != nil {
 			panic(err)
 		}
+
+		ref.Release()
 	}
 }

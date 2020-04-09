@@ -29,6 +29,18 @@ type Operator struct {
 	// Combine func(ops [][]byte) ([]byte, error)
 }
 
+// Ref manages the reference to buffer that can be released.
+type Ref interface {
+	Release()
+}
+
+type noopRef struct{}
+
+func (*noopRef) Release() {}
+
+// NoopRef can be return instead of nil.
+var NoopRef = &noopRef{}
+
 // Instruction is the interface that is implemented by instructions that are
 // executed by the machine.
 type Instruction interface {
@@ -39,7 +51,7 @@ type Instruction interface {
 	Execute(*Transaction) error
 
 	// Encode should encode the instruction.
-	Encode() ([]byte, error)
+	Encode() ([]byte, Ref, error)
 
 	// Decode should decode the instruction.
 	Decode([]byte) error

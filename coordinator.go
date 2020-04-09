@@ -124,10 +124,13 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	// add operations
 	for _, ins := range list {
 		// encode instructions
-		encodedInstruction, err := ins.Encode()
+		encodedInstruction, ref, err := ins.Encode()
 		if err != nil {
 			return err
 		}
+
+		// ensure release
+		defer ref.Release()
 
 		// add operation
 		cmd.Operations = append(cmd.Operations, Operation{
@@ -137,10 +140,13 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	}
 
 	// encode command
-	encodedCommand, err := cmd.Encode()
+	encodedCommand, ref, err := cmd.Encode(true)
 	if err != nil {
 		return err
 	}
+
+	// release
+	defer ref.Release()
 
 	// propose change
 	req, err := c.node.Propose(session, encodedCommand, 10*time.Second)

@@ -68,8 +68,9 @@ func (a *Acquire) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (a *Acquire) Encode() ([]byte, error) {
-	return msgpack.Marshal(a)
+func (a *Acquire) Encode() ([]byte, turing.Ref, error) {
+	buf, err := msgpack.Marshal(a)
+	return buf, nil, err
 }
 
 func (a *Acquire) Decode(bytes []byte) error {

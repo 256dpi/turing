@@ -34,8 +34,9 @@ func (l *List) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (l *List) Encode() ([]byte, error) {
-	return msgpack.Marshal(l)
+func (l *List) Encode() ([]byte, turing.Ref, error) {
+	buf, err := msgpack.Marshal(l)
+	return buf, turing.NoopRef, err
 }
 
 func (l *List) Decode(bytes []byte) error {

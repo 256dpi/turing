@@ -96,8 +96,10 @@ func (m *merger) Finish() ([]byte, error) {
 			return nil, err
 		}
 
+		// TODO: Borrow?
+
 		// encode result
-		bytes, err := value.Encode()
+		bytes, _, err := value.Encode(false)
 		if err != nil {
 			return nil, err
 		}
@@ -110,8 +112,10 @@ func (m *merger) Finish() ([]byte, error) {
 			return nil, err
 		}
 
+		// TODO: Borrow?
+
 		// encode value
-		bytes, err := value.Encode()
+		bytes, _, err := value.Encode(false)
 		if err != nil {
 			return nil, err
 		}

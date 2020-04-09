@@ -22,15 +22,15 @@ type Command struct {
 }
 
 // Encode will encode the command into a byte slice.
-func (c *Command) Encode() ([]byte, error) {
+func (c *Command) Encode(borrow bool) ([]byte, Ref, error) {
 	// check operations
 	for _, op := range c.Operations {
 		if op.Name == "" {
-			return nil, fmt.Errorf("turing: encode command: missing operation name")
+			return nil, NoopRef, fmt.Errorf("turing: encode command: missing operation name")
 		}
 	}
 
-	return coding.Encode(func(enc *coding.Encoder) error {
+	return coding.Encode(borrow, func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint(1)
 

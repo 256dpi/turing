@@ -40,8 +40,9 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (m *Map) Encode() ([]byte, error) {
-	return msgpack.Marshal(m)
+func (m *Map) Encode() ([]byte, turing.Ref, error) {
+	buf, err := msgpack.Marshal(m)
+	return buf, turing.NoopRef, err
 }
 
 func (m *Map) Decode(bytes []byte) error {

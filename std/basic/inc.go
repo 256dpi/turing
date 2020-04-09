@@ -61,8 +61,9 @@ func (i *Inc) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (i *Inc) Encode() ([]byte, error) {
-	return msgpack.Marshal(i)
+func (i *Inc) Encode() ([]byte, turing.Ref, error) {
+	buf, err := msgpack.Marshal(i)
+	return buf, turing.NoopRef, err
 }
 
 func (i *Inc) Decode(bytes []byte) error {

@@ -82,17 +82,22 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		// encode operations
 		for j, ins := range instructions {
 			// encode instruction
-			bytes, err := ins.Encode()
+			bytes, ref, err := ins.Encode()
 			if err != nil {
 				return nil, err
 			}
+
+			// ensure release
+			defer ref.Release()
 
 			// set bytes
 			cmd.Operations[j].Data = bytes
 		}
 
+		// TODO: Borrow?
+
 		// encode command
-		bytes, err := cmd.Encode()
+		bytes, _, err := cmd.Encode(false)
 		if err != nil {
 			return nil, err
 		}

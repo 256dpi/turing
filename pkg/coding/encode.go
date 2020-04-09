@@ -106,7 +106,7 @@ var encoderPool = sync.Pool{
 
 // Encode will encode data using the provided encoding function. The function
 // is run once to assess the length of the buffer and once to encode the data.
-func Encode(fn func(enc *Encoder) error) ([]byte, error) {
+func Encode(borrow bool, fn func(enc *Encoder) error) ([]byte, *Ref, error) {
 	// borrow encoder
 	enc := encoderPool.Get().(*Encoder)
 	defer func() {
@@ -118,18 +118,28 @@ func Encode(fn func(enc *Encoder) error) ([]byte, error) {
 	// count
 	err := fn(enc)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	// allocate
-	buf := make([]byte, enc.len)
+	// get buffer
+	var buf []byte
+	var ref *Ref
+	if borrow {
+		buf, ref = Borrow(enc.len)
+		buf = buf[:enc.len]
+	} else {
+		buf = make([]byte, enc.len)
+	}
+
+	// set buffer
 	enc.buf = buf
 
 	// encode
 	err = fn(enc)
 	if err != nil {
-		return nil, err
+		ref.Release()
+		return nil, nil, err
 	}
 
-	return buf, nil
+	return buf, ref, nil
 }

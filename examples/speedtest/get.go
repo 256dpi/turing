@@ -39,8 +39,8 @@ func (g *get) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (g *get) Encode() ([]byte, error) {
-	return coding.Encode(func(enc *coding.Encoder) error {
+func (g *get) Encode() ([]byte, turing.Ref, error) {
+	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint(1)
 

@@ -28,8 +28,9 @@ func (s *Set) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (s *Set) Encode() ([]byte, error) {
-	return msgpack.Marshal(s)
+func (s *Set) Encode() ([]byte, turing.Ref, error) {
+	buf, err := msgpack.Marshal(s)
+	return buf, turing.NoopRef, err
 }
 
 func (s *Set) Decode(bytes []byte) error {

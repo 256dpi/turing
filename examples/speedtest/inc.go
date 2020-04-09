@@ -63,8 +63,8 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
-func (i *inc) Encode() ([]byte, error) {
-	return coding.Encode(func(enc *coding.Encoder) error {
+func (i *inc) Encode() ([]byte, turing.Ref, error) {
+	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint(1)
 

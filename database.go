@@ -24,8 +24,8 @@ type state struct {
 	Last  uint64
 }
 
-func (s *state) Encode() ([]byte, error) {
-	return coding.Encode(func(enc *coding.Encoder) error {
+func (s *state) Encode() ([]byte, Ref, error) {
+	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint(1)
 
@@ -275,7 +275,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 			d.state.Last = uint64(i)
 
 			// encode state
-			encodedState, err := d.state.Encode()
+			encodedState, ref, err := d.state.Encode()
 			if err != nil {
 				return err
 			}
@@ -283,8 +283,12 @@ func (d *database) update(list []Instruction, index uint64) error {
 			// set state
 			err = batch.Set(stateKey, encodedState, nil)
 			if err != nil {
+				ref.Release()
 				return err
 			}
+
+			// release
+			ref.Release()
 
 			break
 		}
@@ -299,10 +303,13 @@ func (d *database) update(list []Instruction, index uint64) error {
 	d.state.Last = 0
 
 	// encode state
-	encodedState, err := d.state.Encode()
+	encodedState, ref, err := d.state.Encode()
 	if err != nil {
 		return err
 	}
+
+	// ensure release
+	defer ref.Release()
 
 	// set state
 	err = batch.Set(stateKey, encodedState, nil)

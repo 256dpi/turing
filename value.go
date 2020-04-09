@@ -46,22 +46,22 @@ type Value struct {
 }
 
 // Encode will encode the value.
-func (v *Value) Encode() ([]byte, error) {
+func (v *Value) Encode(borrow bool) ([]byte, Ref, error) {
 	// check kind
 	if !v.Kind.Valid() {
-		return nil, fmt.Errorf("turing: encode value: invalid kind: %c", v.Kind)
+		return nil, NoopRef, fmt.Errorf("turing: encode value: invalid kind: %c", v.Kind)
 	}
 
 	// check stack
 	if v.Kind == StackValue {
 		for _, op := range v.Stack {
 			if op.Name == "" {
-				return nil, fmt.Errorf("turing: encode value: missing operand name")
+				return nil, NoopRef, fmt.Errorf("turing: encode value: missing operand name")
 			}
 		}
 	}
 
-	return coding.Encode(func(enc *coding.Encoder) error {
+	return coding.Encode(borrow, func(enc *coding.Encoder) error {
 		// write version
 		enc.Uint(1)
 
@@ -165,7 +165,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 	// get first value
 	value := values[0].Value
 	if values[0].Kind != FullValue {
-		return Value{}, fmt.Errorf("turing: merge values: unexpected value: %d", values[0].Kind)
+		return Value{}, fmt.Errorf("turing: merge values: expected full value, got: %d", values[0].Kind)
 	}
 
 	// slice
@@ -175,7 +175,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 	var total int
 	for _, value := range values {
 		if value.Kind != StackValue {
-			return Value{}, fmt.Errorf("turing: merge values: unexpected value: %d", value.Kind)
+			return Value{}, fmt.Errorf("turing: merge values: expected stack value, got: %d", value.Kind)
 		}
 
 		// increment

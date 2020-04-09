@@ -12,7 +12,7 @@ func TestFullValueCoding(t *testing.T) {
 		Value: []byte("foo"),
 	}
 
-	bytes, err := in.Encode()
+	bytes, _, err := in.Encode(false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
 
@@ -41,7 +41,7 @@ func TestStackValueCoding(t *testing.T) {
 		},
 	}
 
-	bytes, err := in.Encode()
+	bytes, _, err := in.Encode(false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
 
@@ -196,10 +196,12 @@ func BenchmarkEncodeFullValue(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := value.Encode()
+		_, ref, err := value.Encode(true)
 		if err != nil {
 			panic(err)
 		}
+
+		ref.Release()
 	}
 }
 
@@ -226,10 +228,12 @@ func BenchmarkEncodeStackValue(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := value.Encode()
+		_, ref, err := value.Encode(true)
 		if err != nil {
 			panic(err)
 		}
+
+		ref.Release()
 	}
 }
 
