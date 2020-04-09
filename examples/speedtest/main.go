@@ -13,6 +13,7 @@ import (
 
 	"github.com/256dpi/god"
 	"github.com/lni/dragonboat/v3"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/256dpi/turing"
 )
@@ -34,7 +35,8 @@ func main() {
 
 	// enable debugging
 	god.Init(god.Options{
-		Port: 6060 + int(*id),
+		Port:           6060 + int(*id),
+		MetricsHandler: promhttp.Handler().ServeHTTP,
 	})
 
 	// disable logging
