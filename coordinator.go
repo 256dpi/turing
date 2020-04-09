@@ -77,16 +77,16 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 
 	// create read bundler
 	coordinator.reads = newBundler(bundlerOptions{
-		queueSize:   (cfg.ConcurrentReaders + 1) * cfg.BatchSize,
-		batchSize:   cfg.BatchSize,
+		queueSize:   (cfg.ConcurrentReaders + 1) * cfg.LookupBatchSize,
+		batchSize:   cfg.LookupBatchSize,
 		concurrency: cfg.ConcurrentReaders,
 		handler:     coordinator.performLookup,
 	})
 
 	// create write bundler
 	coordinator.writes = newBundler(bundlerOptions{
-		queueSize:   (cfg.ConcurrentProposers + 1) * cfg.BatchSize,
-		batchSize:   cfg.BatchSize,
+		queueSize:   (cfg.ConcurrentProposers + 1) * cfg.ProposalBatchSize,
+		batchSize:   cfg.ProposalBatchSize,
 		concurrency: cfg.ConcurrentProposers,
 		handler:     coordinator.performUpdates,
 	})

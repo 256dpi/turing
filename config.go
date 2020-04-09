@@ -50,10 +50,12 @@ type Config struct {
 	// Default: NumCPUs.
 	ConcurrentProposers int
 
-	// The maximum instruction batch size for updates and lookups.
+	// The maximum instruction batch sizes.
 	//
-	// Default: 200.
-	BatchSize int
+	// Default: 600, 200, 200.
+	UpdateBatchSize   int
+	LookupBatchSize   int
+	ProposalBatchSize int
 }
 
 // Local will return the local member.
@@ -105,9 +107,15 @@ func (c *Config) check() error {
 		c.ConcurrentProposers = runtime.NumCPU()
 	}
 
-	// check batch size
-	if c.BatchSize == 0 {
-		c.BatchSize = 200
+	// check batch sizes
+	if c.UpdateBatchSize == 0 {
+		c.UpdateBatchSize = 600
+	}
+	if c.LookupBatchSize == 0 {
+		c.LookupBatchSize = 200
+	}
+	if c.ProposalBatchSize == 0 {
+		c.ProposalBatchSize = 200
 	}
 
 	return nil

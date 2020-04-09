@@ -16,16 +16,16 @@ func createController(config Config, registry *registry, manager *manager) (*con
 	return &controller{
 		database: database,
 		updates: newBundler(bundlerOptions{
-			queueSize:   2 * config.BatchSize,
-			batchSize:   config.BatchSize,
+			queueSize:   2 * config.UpdateBatchSize,
+			batchSize:   config.UpdateBatchSize,
 			concurrency: 1, // database anyway only allows one writer
 			handler: func(list []Instruction) error {
 				return database.update(list, nil)
 			},
 		}),
 		lookups: newBundler(bundlerOptions{
-			queueSize:   (config.ConcurrentReaders + 1) * config.BatchSize,
-			batchSize:   config.BatchSize,
+			queueSize:   (config.ConcurrentReaders + 1) * config.LookupBatchSize,
+			batchSize:   config.LookupBatchSize,
 			concurrency: config.ConcurrentReaders,
 			handler: func(list []Instruction) error {
 				return database.lookup(list)
