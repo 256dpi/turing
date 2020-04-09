@@ -22,7 +22,7 @@ func (g *get) Describe() turing.Description {
 }
 
 func (g *get) Effect() int {
-	return 1
+	return 0
 }
 
 var getCounter = god.NewCounter("get", nil)
