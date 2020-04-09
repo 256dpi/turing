@@ -111,20 +111,19 @@ func main() {
 var writeCounter = god.NewCounter("write", nil)
 
 func writer(machine *turing.Machine, done <-chan struct{}) {
+	defer wg.Done()
+
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
 	// prepare buffer
 	buf := make([]byte, 0, 10)
 
-	// signal return
-	defer wg.Done()
+	// prepare instruction
+	ins := &inc{}
 
 	// write entries forever
 	for {
-		// reset buffer
-		buf = buf[:0]
-
 		// check if done
 		select {
 		case <-done:
@@ -132,15 +131,14 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		default:
 		}
 
-		// determine merge
-		merge := rng.Intn(4) > 0 // 75%
+		// prepare instruction
+		buf = buf[:0]
+		ins.Key = strconv.AppendInt(buf, int64(rng.Intn(*keySpace)), 10)
+		ins.Value = int64(rng.Intn(*keySpace))
+		ins.Merge = rng.Intn(4) > 0 // 75%
 
 		// inc value
-		err := machine.Execute(&inc{
-			Key:   strconv.AppendInt(buf, int64(rng.Intn(*keySpace)), 10),
-			Value: 1,
-			Merge: merge,
-		})
+		err := machine.Execute(ins)
 		if err != nil {
 			handle(err)
 			continue
@@ -154,20 +152,22 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 var readCounter = god.NewCounter("read", nil)
 
 func reader(machine *turing.Machine, done <-chan struct{}) {
+	defer wg.Done()
+
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
 	// prepare buffer
 	buf := make([]byte, 0, 10)
 
-	// signal return
-	defer wg.Done()
+	// prepare instruction
+	ins := &get{}
+
+	// prepare options
+	opts := turing.Options{}
 
 	// write entries forever
 	for {
-		// reset buffer
-		buf = buf[:0]
-
 		// check if done
 		select {
 		case <-done:
@@ -175,15 +175,15 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		default:
 		}
 
-		// determine stale read
-		staleRead := rng.Intn(4) > 0 // 75%
+		// prepare instruction
+		buf = buf[:0]
+		ins.Key = strconv.AppendInt(buf, int64(rng.Intn(*keySpace)), 10)
+
+		// prepare options
+		opts.StaleRead = rng.Intn(4) > 0 // 75%
 
 		// get value
-		err := machine.Execute(&get{
-			Key: strconv.AppendInt(buf, int64(rng.Intn(*keySpace)), 10),
-		}, turing.Options{
-			StaleRead: staleRead,
-		})
+		err := machine.Execute(ins, opts)
 		if err != nil {
 			handle(err)
 			continue
