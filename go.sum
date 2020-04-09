@@ -1,5 +1,5 @@
-github.com/256dpi/god v0.4.0 h1:sOKzDPqRB8ddtpPqe7pxn+OYrWI9EeBjleRt64D/gng=
-github.com/256dpi/god v0.4.0/go.mod h1:OuJmZ/ljHwJs4bSlWgwpznHDUdAN1JSOCycqWfStjhk=
+github.com/256dpi/god v0.4.1 h1:rDgxSjFW3F4x/zWGKZwz2KNBUTwEJwRGroJmgpMTb8w=
+github.com/256dpi/god v0.4.1/go.mod h1:OuJmZ/ljHwJs4bSlWgwpznHDUdAN1JSOCycqWfStjhk=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/VictoriaMetrics/metrics v1.6.2 h1:VMe8c8ZBPgNVZkPoT06LsoU2nb+8e7iPaOWbVRNhxjo=
 github.com/VictoriaMetrics/metrics v1.6.2/go.mod h1:LU2j9qq7xqZYXz8tF3/RQnB2z2MbZms5TDiIg9/NHiQ=

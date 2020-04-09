@@ -33,8 +33,9 @@ func main() {
 	flag.Parse()
 
 	// enable debugging
-	god.Debug(6060 + int(*id))
-	god.Metrics()
+	god.Init(god.Options{
+		Port: 6060 + int(*id),
+	})
 
 	// disable logging
 	turing.SetLogger(nil)
