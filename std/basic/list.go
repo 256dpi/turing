@@ -18,6 +18,10 @@ func (l *List) Describe() turing.Description {
 	}
 }
 
+func (l *List) Effect() int {
+	return 0
+}
+
 func (l *List) Execute(txn *turing.Transaction) error {
 	// reset Map
 	l.Keys = make([][]byte, 0)

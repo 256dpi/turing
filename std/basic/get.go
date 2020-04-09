@@ -18,6 +18,10 @@ func (g *Get) Describe() turing.Description {
 	}
 }
 
+func (g *Get) Effect() int {
+	return 0
+}
+
 func (g *Get) Execute(txn *turing.Transaction) error {
 	// get value
 	var err error

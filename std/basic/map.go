@@ -17,6 +17,10 @@ func (m *Map) Describe() turing.Description {
 	}
 }
 
+func (m *Map) Effect() int {
+	return 0
+}
+
 func (m *Map) Execute(txn *turing.Transaction) error {
 	// create map
 	m.Pairs = make(map[string][]byte)

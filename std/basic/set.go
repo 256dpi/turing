@@ -13,9 +13,12 @@ type Set struct {
 
 func (s *Set) Describe() turing.Description {
 	return turing.Description{
-		Name:   "std/basic/Set",
-		Effect: 1,
+		Name: "std/basic/Set",
 	}
+}
+
+func (s *Set) Effect() int {
+	return 1
 }
 
 func (s *Set) Execute(txn *turing.Transaction) error {

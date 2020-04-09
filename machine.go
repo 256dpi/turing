@@ -92,6 +92,14 @@ func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 		return err
 	}
 
+	// get effect
+	effect := ins.Effect()
+	if effect > MaxEffect {
+		return fmt.Errorf("turing: instruction effect too high")
+	} else if effect < 0 && effect != UnboundedEffect {
+		return fmt.Errorf("turing: invalid instruction effect")
+	}
+
 	// check registry
 	if m.registry.instructions[description.Name] == nil {
 		return fmt.Errorf("turing: missing instruction: %s", description.Name)
@@ -100,7 +108,7 @@ func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	// execute directly if standalone
 	if m.config.Standalone {
 		// perform lookup
-		if description.Effect == 0 {
+		if effect == 0 {
 			return m.controller.lookup(ins)
 		}
 
@@ -109,7 +117,7 @@ func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	}
 
 	// immediately perform read
-	if description.Effect == 0 {
+	if effect == 0 {
 		err = m.coordinator.lookup(ins, options)
 		if err != nil {
 			return err

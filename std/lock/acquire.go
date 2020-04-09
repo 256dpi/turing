@@ -23,9 +23,12 @@ type Acquire struct {
 
 func (a *Acquire) Describe() turing.Description {
 	return turing.Description{
-		Name:   "std/lock/Acquire",
-		Effect: 1,
+		Name: "std/lock/Acquire",
 	}
+}
+
+func (a *Acquire) Effect() int {
+	return 1
 }
 
 func (a *Acquire) Execute(txn *turing.Transaction) error {

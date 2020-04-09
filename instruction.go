@@ -47,6 +47,14 @@ type Instruction interface {
 	// Describe should return a description of the instruction.
 	Describe() Description
 
+	// Effect should return the amount of modifications this instruction will
+	// make. A positive number is interpreted as the maximum amount of set,
+	// unset merged and deleted keys during the execution. A zero value
+	// indicates that the instruction is read only and will not set or delete
+	// any keys. A negative number indicates that the effect is unbounded and
+	// may modify many keys.
+	Effect() int
+
 	// Execute should execute the instruction.
 	Execute(*Transaction) error
 
@@ -63,13 +71,6 @@ type Description struct {
 	// recommended to ease discoverability.
 	Name string
 
-	// The amount of modifications this instruction will make. A positive
-	// number is interpreted as the maximum amount of set, unset merged and
-	// deleted keys during the execution. A zero value indicates that the
-	// instruction is read only and will not set or delete any keys. A negative
-	// number indicates that the effect is unbounded and may modify many keys.
-	Effect int
-
 	// The builder can be set to implement a custom builder. If not set, the
 	// default reflect based builder will be used.
 	Builder func() Instruction
@@ -84,13 +85,6 @@ func (d Description) Validate() error {
 	// check name
 	if d.Name == "" {
 		return fmt.Errorf("turing: missing instruction name")
-	}
-
-	// check effect
-	if d.Effect > MaxEffect {
-		return fmt.Errorf("turing: instruction effect too high")
-	} else if d.Effect < 0 && d.Effect != UnboundedEffect {
-		return fmt.Errorf("turing: invalid instruction effect")
 	}
 
 	return nil

@@ -21,6 +21,10 @@ func (g *get) Describe() turing.Description {
 	}
 }
 
+func (g *get) Effect() int {
+	return 1
+}
+
 var getCounter = god.NewCounter("get", nil)
 
 func (g *get) Execute(txn *turing.Transaction) error {

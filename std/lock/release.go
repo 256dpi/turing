@@ -17,9 +17,12 @@ type Release struct {
 
 func (r *Release) Describe() turing.Description {
 	return turing.Description{
-		Name:   "std/lock/Release",
-		Effect: 1,
+		Name: "std/lock/Release",
 	}
+}
+
+func (r *Release) Effect() int {
+	return 1
 }
 
 func (r *Release) Execute(txn *turing.Transaction) error {

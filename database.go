@@ -221,14 +221,15 @@ func (d *database) update(list []Instruction, index uint64) error {
 			continue
 		}
 
-		// get description
+		// get description and effect
 		desc := instruction.Describe()
+		effect := instruction.Effect()
 
 		// begin observation
 		timer := observe(instructionMetrics, desc.Name)
 
 		// check if new transaction is needed for bounded transaction
-		if desc.Effect > 0 && txn.effect+desc.Effect >= MaxEffect {
+		if effect > 0 && txn.effect+effect >= MaxEffect {
 			// commit current batch
 			err := batch.Commit(d.options)
 			if err != nil {

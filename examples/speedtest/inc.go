@@ -22,9 +22,12 @@ type inc struct {
 func (i *inc) Describe() turing.Description {
 	return turing.Description{
 		Name:      "inc",
-		Effect:    1,
 		Operators: []*turing.Operator{incAdd},
 	}
+}
+
+func (i *inc) Effect() int {
+	return 1
 }
 
 var incCounter = god.NewCounter("inc", nil)
