@@ -114,11 +114,17 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
+	// prepare buffer
+	buf := make([]byte, 0, 10)
+
 	// signal return
 	defer wg.Done()
 
 	// write entries forever
 	for {
+		// reset buffer
+		buf = buf[:0]
+
 		// check if done
 		select {
 		case <-done:
@@ -131,7 +137,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 
 		// inc value
 		err := machine.Execute(&inc{
-			Key:   strconv.AppendInt(nil, int64(rng.Intn(*keySpace)), 10),
+			Key:   strconv.AppendInt(buf, int64(rng.Intn(*keySpace)), 10),
 			Value: 1,
 			Merge: merge,
 		})
@@ -151,11 +157,17 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
+	// prepare buffer
+	buf := make([]byte, 0, 10)
+
 	// signal return
 	defer wg.Done()
 
 	// write entries forever
 	for {
+		// reset buffer
+		buf = buf[:0]
+
 		// check if done
 		select {
 		case <-done:
@@ -168,7 +180,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 
 		// get value
 		err := machine.Execute(&get{
-			Key: strconv.AppendInt(nil, int64(rng.Intn(*keySpace)), 10),
+			Key: strconv.AppendInt(buf, int64(rng.Intn(*keySpace)), 10),
 		}, turing.Options{
 			StaleRead: staleRead,
 		})
