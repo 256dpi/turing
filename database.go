@@ -215,18 +215,18 @@ func (d *database) update(list []Instruction, index uint64) error {
 	defer recycleTransaction(txn)
 
 	// execute all instructions
-	for i, instruction := range list {
+	for i, ins := range list {
 		// skip instruction if already applied
 		if index != 0 && d.state.Batch == index && d.state.Last >= uint64(i) {
 			continue
 		}
 
-		// get description and effect
-		desc := instruction.Describe()
-		effect := instruction.Effect()
+		// get name and effect
+		name := ins.Describe().Name
+		effect := ins.Effect()
 
 		// begin observation
-		timer := observe(instructionMetrics, desc.Name)
+		timer := observe(instructionMetrics, name)
 
 		// check if new transaction is needed for bounded transaction
 		if effect > 0 && txn.effect+effect >= MaxEffect {
@@ -247,7 +247,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 		for {
 			// execute transaction
-			exhausted, err := txn.execute(instruction)
+			exhausted, err := txn.execute(ins)
 			if err != nil {
 				return err
 			}

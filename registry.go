@@ -17,18 +17,18 @@ func buildRegistry(config Config) (*registry, error) {
 	// add instructions
 	for _, ins := range config.Instructions {
 		// get description
-		dsc := ins.Describe()
+		desc := ins.Describe()
 
 		// check existence
-		if reg.instructions[dsc.Name] != nil {
-			return nil, fmt.Errorf("turing: duplicate instruction: %s", dsc.Name)
+		if reg.instructions[desc.Name] != nil {
+			return nil, fmt.Errorf("turing: duplicate instruction: %s", desc.Name)
 		}
 
 		// store instruction
-		reg.instructions[dsc.Name] = ins
+		reg.instructions[desc.Name] = ins
 
 		// add operators
-		for _, op := range dsc.Operators {
+		for _, op := range desc.Operators {
 			// get name
 			name := op.Name
 

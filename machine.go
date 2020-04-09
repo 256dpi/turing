@@ -84,10 +84,10 @@ func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	}
 
 	// get description
-	description := ins.Describe()
+	desc := ins.Describe()
 
 	// validate description
-	err := description.Validate()
+	err := desc.Validate()
 	if err != nil {
 		return err
 	}
@@ -101,8 +101,8 @@ func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	}
 
 	// check registry
-	if m.registry.instructions[description.Name] == nil {
-		return fmt.Errorf("turing: missing instruction: %s", description.Name)
+	if m.registry.instructions[desc.Name] == nil {
+		return fmt.Errorf("turing: missing instruction: %s", desc.Name)
 	}
 
 	// execute directly if standalone
