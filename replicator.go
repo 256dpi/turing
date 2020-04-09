@@ -1,7 +1,6 @@
 package turing
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/lni/dragonboat/v3/statemachine"
@@ -50,37 +49,34 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		}
 
 		// prepare instruction list
-		instructions := make([]Instruction, 0, len(cmd.Operations))
+		list := make([]Instruction, 0, len(cmd.Operations))
 
 		// decode operations
 		for _, op := range cmd.Operations {
-			// get factory instruction
-			factory, ok := r.registry.instructions[op.Name]
-			if !ok {
-				return nil, fmt.Errorf("turing: missing instruction: " + op.Name)
+			// build instruction
+			ins, err := r.registry.build(op.Name)
+			if err != nil {
+				return nil, err
 			}
 
-			// build instruction
-			instruction := buildInstruction(factory)
-
 			// decode instruction
-			err = instruction.Decode(op.Data)
+			err = ins.Decode(op.Data)
 			if err != nil {
 				return nil, err
 			}
 
 			// add instruction
-			instructions = append(instructions, instruction)
+			list = append(list, ins)
 		}
 
 		// execute instructions
-		err = r.database.update(instructions, entry.Index)
+		err = r.database.update(list, entry.Index)
 		if err != nil {
 			return nil, err
 		}
 
 		// encode operations
-		for j, ins := range instructions {
+		for j, ins := range list {
 			// encode instruction
 			bytes, ref, err := ins.Encode()
 			if err != nil {

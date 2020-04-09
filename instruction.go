@@ -2,7 +2,6 @@ package turing
 
 import (
 	"fmt"
-	"reflect"
 )
 
 // MaxEffect is maximum effect that can be reported by an instruction.
@@ -88,14 +87,4 @@ func (d Description) Validate() error {
 	}
 
 	return nil
-}
-
-func buildInstruction(i Instruction) Instruction {
-	// use builder if available
-	if i.Describe().Builder != nil {
-		return i.Describe().Builder()
-	}
-
-	// otherwise use reflect
-	return reflect.New(reflect.TypeOf(i).Elem()).Interface().(Instruction)
 }

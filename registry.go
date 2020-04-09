@@ -1,6 +1,9 @@
 package turing
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 type registry struct {
 	instructions map[string]Instruction
@@ -44,4 +47,20 @@ func buildRegistry(config Config) (*registry, error) {
 	}
 
 	return reg, nil
+}
+
+func (r *registry) build(name string) (Instruction, error) {
+	// get factory instruction
+	factory, ok := r.instructions[name]
+	if !ok {
+		return nil, fmt.Errorf("turing: missing instruction: " + name)
+	}
+
+	// use builder if available
+	if factory.Describe().Builder != nil {
+		return factory.Describe().Builder(), nil
+	}
+
+	// otherwise use reflect
+	return reflect.New(reflect.TypeOf(factory).Elem()).Interface().(Instruction), nil
 }
