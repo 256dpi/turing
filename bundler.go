@@ -8,7 +8,7 @@ import (
 
 type item struct {
 	ins Instruction
-	ack func(error)
+	ch  chan error
 }
 
 type bundler struct {
@@ -42,6 +42,12 @@ func newBundler(opts bundlerOptions) *bundler {
 	return c
 }
 
+var chanPool = sync.Pool{
+	New: func() interface{} {
+		return make(chan error, 1)
+	},
+}
+
 func (b *bundler) process(ins Instruction) error {
 	// acquire mutex
 	b.mutex.RLock()
@@ -52,18 +58,17 @@ func (b *bundler) process(ins Instruction) error {
 		return fmt.Errorf("turing: bundler closed")
 	}
 
-	// prepare result channel
-	result := make(chan error, 1)
+	// get result channel
+	ch := chanPool.Get().(chan error)
+	defer chanPool.Put(ch)
 
 	// queue instruction
 	b.queue <- item{
 		ins: ins,
-		ack: func(err error) {
-			result <- err
-		},
+		ch:  ch,
 	}
 
-	return <-result
+	return <-ch
 }
 
 func (b *bundler) processor() {
@@ -72,7 +77,7 @@ func (b *bundler) processor() {
 
 	// prepare list
 	list := make([]Instruction, 0, b.opts.batchSize)
-	acks := make([]func(error), 0, b.opts.batchSize)
+	chs := make([]chan error, 0, b.opts.batchSize)
 
 	for {
 		// wait 0.1ms if no full batch is available yet
@@ -88,26 +93,26 @@ func (b *bundler) processor() {
 
 		// add to list
 		list = append(list, item.ins)
-		acks = append(acks, item.ack)
+		chs = append(chs, item.ch)
 
 		// add buffered instructions if list has room
 		for len(b.queue) > 0 && len(list) < b.opts.batchSize {
 			item, ok := <-b.queue
 			if ok {
 				list = append(list, item.ins)
-				acks = append(acks, item.ack)
+				chs = append(chs, item.ch)
 			}
 		}
 
 		// call handler and forward result
 		err := b.opts.handler(list)
-		for _, ack := range acks {
-			ack(err)
+		for _, ch := range chs {
+			ch <- err
 		}
 
 		// reset lists
 		list = list[:0]
-		acks = acks[:0]
+		chs = chs[:0]
 	}
 }
 
