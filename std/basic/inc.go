@@ -3,6 +3,7 @@ package basic
 import (
 	"strconv"
 
+	"github.com/tidwall/cast"
 	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
@@ -13,7 +14,7 @@ var IncAdd = &turing.Operator{
 	Zero: []byte("0"),
 	Apply: func(value []byte, ops [][]byte) ([]byte, error) {
 		// parse value
-		count, err := strconv.ParseInt(string(value), 10, 64)
+		count, err := strconv.ParseInt(cast.ToString(value), 10, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -21,7 +22,7 @@ var IncAdd = &turing.Operator{
 		// apply operands
 		for _, op := range ops {
 			// parse operand
-			increment, err := strconv.ParseInt(string(op), 10, 64)
+			increment, err := strconv.ParseInt(cast.ToString(op), 10, 64)
 			if err != nil {
 				return nil, err
 			}
