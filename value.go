@@ -210,7 +210,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 		// operator changed, merge values
 
 		// lookup operator
-		operator, ok := registry.operators[name]
+		operator, ok := registry.ops[name]
 		if !ok {
 			return Value{}, fmt.Errorf("turing: merge values: unknown operator: %q", name)
 		}
@@ -227,7 +227,7 @@ func MergeValues(values []Value, registry *registry) (Value, error) {
 	}
 
 	// lookup operator
-	operator, ok := registry.operators[name]
+	operator, ok := registry.ops[name]
 	if !ok {
 		return Value{}, fmt.Errorf("turing: merge values: unknown operator: %q", name)
 	}
@@ -258,7 +258,7 @@ func ComputeValue(value Value, registry *registry) (Value, error) {
 	// value is a stack value
 
 	// get first operator
-	operator, ok := registry.operators[value.Stack[0].Name]
+	operator, ok := registry.ops[value.Stack[0].Name]
 	if !ok {
 		return Value{}, fmt.Errorf("turing: compute value: missing operator: %s", value.Stack[0].Name)
 	}

@@ -230,8 +230,7 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 	}
 
 	// check registry
-	if t.registry.operators[operator.Name] == nil {
-		// TODO: Make sure current instruction registered operator.
+	if t.registry.ops[operator.Name] == nil {
 		return fmt.Errorf("turing: unknown operator: %s", operator.Name)
 	}
 

@@ -163,7 +163,7 @@ func TestMergeValues(t *testing.T) {
 	}
 
 	registry := &registry{
-		operators: map[string]*Operator{
+		ops: map[string]*Operator{
 			"op": {
 				Name: "op",
 				Apply: func(value []byte, ops [][]byte) ([]byte, error) {
@@ -361,7 +361,7 @@ func BenchmarkMergeValues(b *testing.B) {
 	}
 
 	registry := &registry{
-		operators: map[string]*Operator{
+		ops: map[string]*Operator{
 			"op": {
 				Name: "op",
 				Apply: func(value []byte, ops [][]byte) ([]byte, error) {
