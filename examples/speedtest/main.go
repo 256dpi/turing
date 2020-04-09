@@ -131,7 +131,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 
 		// inc value
 		err := machine.Execute(&inc{
-			Key:   strconv.Itoa(rng.Intn(*keySpace)),
+			Key:   strconv.AppendInt(nil, int64(rng.Intn(*keySpace)), 10),
 			Value: 1,
 			Merge: merge,
 		})
@@ -168,7 +168,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 
 		// get value
 		err := machine.Execute(&get{
-			Key: strconv.Itoa(rng.Intn(*keySpace)),
+			Key: strconv.AppendInt(nil, int64(rng.Intn(*keySpace)), 10),
 		}, turing.Options{
 			StaleRead: staleRead,
 		})

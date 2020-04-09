@@ -14,9 +14,9 @@ import (
 var incAdd = basic.IncAdd
 
 type inc struct {
-	Key   string `msgpack:"k,omitempty"`
-	Value int64  `msgpack:"v,omitempty"`
-	Merge bool   `msgpack:"m,omitempty"`
+	Key   []byte
+	Value int64
+	Merge bool
 }
 
 func (i *inc) Describe() turing.Description {
@@ -32,18 +32,15 @@ var incCounter = god.NewCounter("inc", nil)
 func (i *inc) Execute(txn *turing.Transaction) error {
 	incCounter.Add(1)
 
-	// make key
-	key := []byte(i.Key)
-
 	// use merge if requested
 	if i.Merge {
-		return txn.Merge(key, strconv.AppendInt(nil, i.Value, 10), incAdd)
+		return txn.Merge(i.Key, strconv.AppendInt(nil, i.Value, 10), incAdd)
 	}
 
 	// get count
 	var count int64
 	var err error
-	err = txn.Use(key, func(value []byte) error {
+	err = txn.Use(i.Key, func(value []byte) error {
 		count, err = strconv.ParseInt(string(value), 10, 64)
 		return err
 	})
@@ -55,7 +52,7 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 	count += i.Value
 
 	// set value
-	err = txn.Set(key, strconv.AppendInt(nil, count, 10))
+	err = txn.Set(i.Key, strconv.AppendInt(nil, count, 10))
 	if err != nil {
 		return err
 	}
@@ -72,7 +69,7 @@ func (i *inc) Encode() ([]byte, error) {
 		enc.Uint(1)
 
 		// encode body
-		enc.String(i.Key)
+		enc.Bytes(i.Key)
 		enc.Int(i.Value)
 		enc.Bool(i.Merge)
 
@@ -90,7 +87,7 @@ func (i *inc) Decode(bytes []byte) error {
 		}
 
 		// decode body
-		dec.String(&i.Key, false)
+		dec.Bytes(&i.Key, false)
 		dec.Int(&i.Value)
 		dec.Bool(&i.Merge)
 

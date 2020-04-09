@@ -11,8 +11,8 @@ import (
 )
 
 type get struct {
-	Key   string `msgpack:"k,omitempty"`
-	Value int64  `msgpack:"v,omitempty"`
+	Key   []byte
+	Value int64
 }
 
 func (g *get) Describe() turing.Description {
@@ -28,7 +28,7 @@ func (g *get) Execute(txn *turing.Transaction) error {
 
 	// get count
 	var err error
-	err = txn.Use([]byte(g.Key), func(value []byte) error {
+	err = txn.Use(g.Key, func(value []byte) error {
 		g.Value, err = strconv.ParseInt(string(value), 10, 64)
 		return err
 	})
@@ -45,7 +45,7 @@ func (g *get) Encode() ([]byte, error) {
 		enc.Uint(1)
 
 		// encode body
-		enc.String(g.Key)
+		enc.Bytes(g.Key)
 		enc.Int(g.Value)
 
 		return nil
@@ -62,7 +62,7 @@ func (g *get) Decode(bytes []byte) error {
 		}
 
 		// decode body
-		dec.String(&g.Key, false)
+		dec.Bytes(&g.Key, false)
 		dec.Int(&g.Value)
 
 		return nil
