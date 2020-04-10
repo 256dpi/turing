@@ -36,6 +36,7 @@ var ErrMaxEffect = errors.New("turing: max effect")
 // Transaction is used by an instruction to perform changes to the database.
 type Transaction struct {
 	registry  *registry
+	current   Instruction
 	reader    pebble.Reader
 	writer    pebble.Writer
 	closers   int
@@ -48,6 +49,9 @@ type Transaction struct {
 // the calling instruction should return ErrMaxEffect and call the instruction
 // again in the following execution.
 func (t *Transaction) Execute(ins Instruction) (bool, error) {
+	// set instruction
+	t.current = ins
+
 	// execute transaction
 	var effectMaxed bool
 	err := ins.Execute(t)
@@ -282,7 +286,16 @@ func (t *Transaction) Merge(key, value []byte, operator *Operator) error {
 		return fmt.Errorf("turing: unknown operator: %s", operator.Name)
 	}
 
-	// TODO: Check if instruction registered operator?
+	// check registration
+	var registered bool
+	for _, op := range t.current.Describe().Operators {
+		if op == operator {
+			registered = true
+		}
+	}
+	if !registered {
+		return fmt.Errorf("turing: unregistered operator: %s", operator.Name)
+	}
 
 	// prepare value
 	val := Value{

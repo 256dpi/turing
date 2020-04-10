@@ -68,6 +68,7 @@ func obtainTransaction() *Transaction {
 
 func recycleTransaction(txn *Transaction) {
 	txn.registry = nil
+	txn.current = nil
 	txn.reader = nil
 	txn.writer = nil
 	txn.closers = 0
