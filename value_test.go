@@ -167,9 +167,7 @@ func TestMergeValues(t *testing.T) {
 			"op": {
 				Name: "op",
 				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
-					// TODO: Borrow slice.
-
-					// concat
+					// concat operands
 					for _, op := range ops {
 						value = append(value, op...)
 					}
