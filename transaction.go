@@ -20,6 +20,10 @@ func (f closerFunc) Close() error {
 	return f()
 }
 
+var noopCloser = closerFunc(func() error {
+	return nil
+})
+
 // ErrReadOnly is returned by by a transaction on write operations if the
 // instruction has been flagged as read only.
 var ErrReadOnly = errors.New("turing: read only")
@@ -66,12 +70,33 @@ func (t *Transaction) execute(ins Instruction) (bool, error) {
 // the caller. A closer is returned that must be closed once the value is not
 // used anymore. Consider Use or Copy for safer alternatives.
 func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
+	// prefix key
+	pk, pkr := prefixUserKey(key)
+	defer pkr.Release()
+
 	// get value
-	value, found, closer, err := t.get(key)
-	if err != nil {
+	bytes, closer, err := t.reader.Get(pk)
+	if err == pebble.ErrNotFound {
+		return nil, false, noopCloser, nil
+	} else if err != nil {
 		return nil, false, nil, err
-	} else if !found {
-		return nil, false, nil, nil
+	}
+
+	// decode value (no need to clone as available until closed)
+	var value Value
+	err = value.Decode(bytes, false)
+	if err != nil {
+		_ = closer.Close()
+		return nil, false, nil, err
+	}
+
+	// TODO: Release.
+
+	// compute value
+	value, _, err = ComputeValue(value, t.registry)
+	if err != nil {
+		_ = closer.Close()
+		return nil, false, nil, err
 	}
 
 	// increment closers
@@ -83,14 +108,14 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 		return closer.Close()
 	})
 
-	return value, true, wrappedCloser, nil
+	return value.Value, true, wrappedCloser, nil
 }
 
 // Use will lookup the specified key and yield it to the provided function if it
 // exists.
 func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
 	// get value
-	value, found, closer, err := t.get(key)
+	value, found, closer, err := t.Get(key)
 	if err != nil {
 		return err
 	} else if !found {
@@ -115,24 +140,19 @@ func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
 
 // Copy will lookup the specified key and return a copy if it exists.
 func (t *Transaction) Copy(key []byte) ([]byte, bool, error) {
-	// get value
-	value, found, closer, err := t.get(key)
-	if err != nil {
-		return nil, false, err
-	} else if !found {
-		return nil, false, nil
-	}
-
 	// copy value
-	value = Copy(nil, value)
-
-	// close value
-	err = closer.Close()
+	var found bool
+	var val []byte
+	err := t.Use(key, func(value []byte) error {
+		found = true
+		val = Copy(nil, value)
+		return nil
+	})
 	if err != nil {
 		return nil, false, err
 	}
 
-	return value, true, nil
+	return val, found, nil
 }
 
 // Set will set the specified key to the new value. This operation will count as
@@ -316,39 +336,6 @@ func (t *Transaction) Iterator(prefix []byte) *Iterator {
 	}
 }
 
-func (t *Transaction) get(key []byte) ([]byte, bool, io.Closer, error) {
-	// prepare prefix
-	pKey, pKeyRef := prefixUserKey(key)
-	defer pKeyRef.Release()
-
-	// get value
-	bytes, closer, err := t.reader.Get(pKey)
-	if err == pebble.ErrNotFound {
-		return nil, false, nil, nil
-	} else if err != nil {
-		return nil, false, nil, err
-	}
-
-	// decode value (no need to clone as available until closed)
-	var value Value
-	err = value.Decode(bytes, false)
-	if err != nil {
-		_ = closer.Close()
-		return nil, false, nil, err
-	}
-
-	// TODO: Release.
-
-	// resolve value
-	value, _, err = ComputeValue(value, t.registry)
-	if err != nil {
-		_ = closer.Close()
-		return nil, false, nil, err
-	}
-
-	return value.Value, true, closer, nil
-}
-
 // Iterator is used to iterate over the key space of the database.
 type Iterator struct {
 	txn  *Transaction
@@ -434,7 +421,7 @@ func (i *Iterator) Value(copy bool) ([]byte, error) {
 
 	// TODO: Release.
 
-	// resolve value
+	// compute value
 	value, _, err = ComputeValue(value, i.txn.registry)
 	if err != nil {
 		return nil, err
