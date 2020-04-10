@@ -1,28 +1,33 @@
 package std
 
 import (
-	"github.com/vmihailenco/msgpack/v4"
+	"fmt"
 
 	"github.com/256dpi/turing"
+	"github.com/256dpi/turing/pkg/coding"
 )
 
+// Map will map all key value pairs.
 type Map struct {
-	Prefix []byte            `msgpack:"p,omitempty"`
-	Pairs  map[string][]byte `msgpack:"m,omitempty"`
+	Prefix []byte
+	Pairs  map[string][]byte
 }
 
 var mapDesc = &turing.Description{
 	Name: "turing/Map",
 }
 
+// Describe implements the turing.Instruction interface.
 func (m *Map) Describe() *turing.Description {
 	return mapDesc
 }
 
+// Effect implements the turing.Instruction interface.
 func (m *Map) Effect() int {
 	return 0
 }
 
+// Execute implements the turing.Instruction interface.
 func (m *Map) Execute(txn *turing.Transaction) error {
 	// create map
 	m.Pairs = make(map[string][]byte)
@@ -49,11 +54,60 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
+// Encode implements the turing.Instruction interface.
 func (m *Map) Encode() ([]byte, turing.Ref, error) {
-	buf, err := msgpack.Marshal(m)
-	return buf, turing.NoopRef, err
+	return coding.Encode(true, func(enc *coding.Encoder) error {
+		// encode version
+		enc.Uint(1)
+
+		// encode prefix
+		enc.Bytes(m.Prefix)
+
+		// encode length
+		enc.Uint(uint64(len(m.Pairs)))
+
+		// encode pairs
+		for key, value := range m.Pairs {
+			enc.String(key)
+			enc.Bytes(value)
+		}
+
+		return nil
+	})
 }
 
+// Decode implements the turing.Instruction interface.
 func (m *Map) Decode(bytes []byte) error {
-	return msgpack.Unmarshal(bytes, m)
+	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+		// decode version
+		var version uint64
+		dec.Uint(&version)
+		if version != 1 {
+			return fmt.Errorf("std: decode list: invalid version")
+		}
+
+		// decode prefix
+		dec.Bytes(&m.Prefix, true)
+
+		// decode length
+		var length uint64
+		dec.Uint(&length)
+
+		// decode pairs
+		m.Pairs = map[string][]byte{}
+		for i := 0; i < int(length); i++ {
+			// decode key
+			var key string
+			dec.String(&key, true)
+
+			// decode value
+			var value []byte
+			dec.Bytes(&value, true)
+
+			// set pair
+			m.Pairs[key] = value
+		}
+
+		return nil
+	})
 }

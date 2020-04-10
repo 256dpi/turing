@@ -47,14 +47,16 @@ func BenchmarkInc(b *testing.B) {
 	machine := turing.Test(&Inc{}, &Get{})
 	defer machine.Stop()
 
+	inc := &Inc{
+		Key:   []byte("foo"),
+		Value: 1,
+	}
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := machine.Execute(&Inc{
-			Key:   []byte("foo"),
-			Value: 1,
-		})
+		err := machine.Execute(inc)
 		if err != nil {
 			panic(err)
 		}

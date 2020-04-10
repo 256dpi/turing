@@ -1,39 +1,36 @@
 package std
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/tidwall/cast"
-	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
 	"github.com/256dpi/turing/pkg/coding"
 )
 
+const int64Len = 24
+
+// Add is an operator used by Inc to add together numerical values.
 var Add = &turing.Operator{
 	Name: "turing/Add",
 	Zero: []byte("0"),
 	Apply: func(value []byte, ops [][]byte) ([]byte, turing.Ref, error) {
-		// parse value
-		count, err := strconv.ParseInt(cast.ToString(value), 10, 64)
-		if err != nil {
-			return nil, nil, err
-		}
+		// parse value (fallback to zero)
+		count, _ := strconv.ParseInt(cast.ToString(value), 10, 64)
 
 		// apply operands
 		for _, op := range ops {
-			// parse operand
-			increment, err := strconv.ParseInt(cast.ToString(op), 10, 64)
-			if err != nil {
-				return nil, nil, err
-			}
+			// parse operand (fallback to zero)
+			increment, _ := strconv.ParseInt(cast.ToString(op), 10, 64)
 
 			// add increment
 			count += increment
 		}
 
 		// borrow slice
-		buf, ref := coding.Borrow(24)
+		buf, ref := coding.Borrow(int64Len)
 
 		// encode count
 		buf = buf[:0]
@@ -43,9 +40,10 @@ var Add = &turing.Operator{
 	},
 }
 
+// Inc will increment an numerical value.
 type Inc struct {
-	Key   []byte `msgpack:"k,omitempty"`
-	Value int64  `msgpack:"v,omitempty"`
+	Key   []byte
+	Value int64
 }
 
 var incDesc = &turing.Description{
@@ -53,17 +51,28 @@ var incDesc = &turing.Description{
 	Operators: []*turing.Operator{Add},
 }
 
+// Describe implements the turing.Instruction interface.
 func (i *Inc) Describe() *turing.Description {
 	return incDesc
 }
 
+// Effect implements the turing.Instruction interface.
 func (i *Inc) Effect() int {
 	return 1
 }
 
+// Execute implements the turing.Instruction interface.
 func (i *Inc) Execute(txn *turing.Transaction) error {
-	// merge with value
-	err := txn.Merge(i.Key, strconv.AppendInt(nil, i.Value, 10), Add)
+	// borrow slice
+	buf, ref := coding.Borrow(int64Len)
+	defer ref.Release()
+
+	// encode count
+	buf = buf[:0]
+	buf = strconv.AppendInt(buf, i.Value, 10)
+
+	// add value
+	err := txn.Merge(i.Key, buf, Add)
 	if err != nil {
 		return err
 	}
@@ -71,11 +80,34 @@ func (i *Inc) Execute(txn *turing.Transaction) error {
 	return nil
 }
 
+// Encode implements the turing.Instruction interface.
 func (i *Inc) Encode() ([]byte, turing.Ref, error) {
-	buf, err := msgpack.Marshal(i)
-	return buf, turing.NoopRef, err
+	return coding.Encode(true, func(enc *coding.Encoder) error {
+		// encode version
+		enc.Uint(1)
+
+		// encode body
+		enc.Int(i.Value)
+		enc.Tail(i.Key)
+
+		return nil
+	})
 }
 
+// Decode implements the turing.Instruction interface.
 func (i *Inc) Decode(bytes []byte) error {
-	return msgpack.Unmarshal(bytes, i)
+	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+		// decode version
+		var version uint64
+		dec.Uint(&version)
+		if version != 1 {
+			return fmt.Errorf("std: decode inc: invalid version")
+		}
+
+		// decode body
+		dec.Int(&i.Value)
+		dec.Tail(&i.Key, true)
+
+		return nil
+	})
 }
