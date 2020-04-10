@@ -25,7 +25,7 @@ var standalone = flag.Bool("standalone", false, "enable standalone mode")
 var memory = flag.Bool("memory", false, "enable in-memory mode")
 var readers = flag.Int("readers", 1000, "the number of parallel readers")
 var writers = flag.Int("writers", 1000, "the number of parallel writers")
-var keySpace = flag.Int("keySpace", 1000, "the size of the key space")
+var keySpace = flag.Int("keySpace", 100_000, "the size of the key space")
 
 var wg sync.WaitGroup
 
