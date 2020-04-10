@@ -6,10 +6,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var operationMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var systemMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Namespace: "turing",
 	Subsystem: "",
-	Name:      "operations",
+	Name:      "system",
 	Help:      "Internal operation timings in milliseconds.",
 }, []string{"name"})
 
@@ -29,7 +29,7 @@ var operatorMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 
 func init() {
 	// register metrics
-	prometheus.MustRegister(operationMetrics)
+	prometheus.MustRegister(systemMetrics)
 	prometheus.MustRegister(instructionMetrics)
 	prometheus.MustRegister(operatorMetrics)
 }

@@ -34,7 +34,7 @@ func (r *replicator) Open(stop <-chan struct{}) (uint64, error) {
 	return index, nil
 }
 
-var replicatorUpdate = operationMetrics.WithLabelValues("replicator.Update")
+var replicatorUpdate = systemMetrics.WithLabelValues("replicator.Update")
 
 func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry, error) {
 	// observe
@@ -111,7 +111,7 @@ func (r *replicator) Sync() error {
 	return r.database.sync()
 }
 
-var replicatorLookup = operationMetrics.WithLabelValues("replicator.Lookup")
+var replicatorLookup = systemMetrics.WithLabelValues("replicator.Lookup")
 
 func (r *replicator) Lookup(data interface{}) (interface{}, error) {
 	// observe

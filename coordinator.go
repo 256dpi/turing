@@ -94,7 +94,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	return coordinator, nil
 }
 
-var coordinatorUpdate = operationMetrics.WithLabelValues("coordinator.update")
+var coordinatorUpdate = systemMetrics.WithLabelValues("coordinator.update")
 
 func (c *coordinator) update(ins Instruction) error {
 	// observe
@@ -110,7 +110,7 @@ func (c *coordinator) update(ins Instruction) error {
 	return nil
 }
 
-var coordinatorPerformUpdates = operationMetrics.WithLabelValues("coordinator.performUpdates")
+var coordinatorPerformUpdates = systemMetrics.WithLabelValues("coordinator.performUpdates")
 
 func (c *coordinator) performUpdates(list []Instruction) error {
 	// observe
@@ -184,7 +184,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	return nil
 }
 
-var coordinatorLookup = operationMetrics.WithLabelValues("coordinator.lookup")
+var coordinatorLookup = systemMetrics.WithLabelValues("coordinator.lookup")
 
 func (c *coordinator) lookup(ins Instruction, options Options) error {
 	// observe
@@ -222,7 +222,7 @@ func (c *coordinator) lookup(ins Instruction, options Options) error {
 	return nil
 }
 
-var coordinatorPerformLookup = operationMetrics.WithLabelValues("coordinator.performLookup")
+var coordinatorPerformLookup = systemMetrics.WithLabelValues("coordinator.performLookup")
 
 func (c *coordinator) performLookup(list []Instruction) error {
 	// observe
@@ -239,7 +239,7 @@ func (c *coordinator) performLookup(list []Instruction) error {
 	return nil
 }
 
-var coordinatorStatus = operationMetrics.WithLabelValues("coordinator.status")
+var coordinatorStatus = systemMetrics.WithLabelValues("coordinator.status")
 
 func (c *coordinator) status() Status {
 	// observe

@@ -3,7 +3,7 @@ package turing
 import "testing"
 
 func BenchmarkObserve(b *testing.B) {
-	obs := operationMetrics.WithLabelValues("foo")
+	obs := systemMetrics.WithLabelValues("foo")
 
 	b.ReportAllocs()
 	b.ResetTimer()

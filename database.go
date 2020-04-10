@@ -184,7 +184,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	return db, state.Index, nil
 }
 
-var databaseUpdate = operationMetrics.WithLabelValues("database.update")
+var databaseUpdate = systemMetrics.WithLabelValues("database.update")
 
 func (d *database) update(list []Instruction, index uint64) error {
 	// acquire write mutex
@@ -332,7 +332,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 	return nil
 }
 
-var databaseLookup = operationMetrics.WithLabelValues("database.lookup")
+var databaseLookup = systemMetrics.WithLabelValues("database.lookup")
 
 func (d *database) lookup(list []Instruction) error {
 	// get reader token
@@ -388,7 +388,7 @@ func (d *database) sync() error {
 	return nil
 }
 
-var databaseBackup = operationMetrics.WithLabelValues("database.backup")
+var databaseBackup = systemMetrics.WithLabelValues("database.backup")
 
 func (d *database) backup(sink io.Writer) error {
 	// acquire read mutex
@@ -409,7 +409,7 @@ func (d *database) backup(sink io.Writer) error {
 	return nil
 }
 
-var databaseRestore = operationMetrics.WithLabelValues("database.restore")
+var databaseRestore = systemMetrics.WithLabelValues("database.restore")
 
 func (d *database) restore(source io.Reader) error {
 	// acquire write mutex

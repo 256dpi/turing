@@ -69,7 +69,7 @@ func Start(config Config) (*Machine, error) {
 	return m, nil
 }
 
-var machineExecute = operationMetrics.WithLabelValues("Machine.Execute")
+var machineExecute = systemMetrics.WithLabelValues("Machine.Execute")
 
 // Execute will execute the specified instruction. NonLinear may be set to true
 // to allow read only instructions to query data without linearizability
