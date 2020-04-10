@@ -145,7 +145,7 @@ func (c Config) DatabaseDir() string {
 // DatabaseFS returns the filesystem used for the database files.
 func (c Config) DatabaseFS() pfs.FS {
 	// use in-memory if empty
-	if c.Directory != "" {
+	if c.Directory == "" {
 		return pfs.NewMem()
 	}
 
