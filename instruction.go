@@ -2,6 +2,8 @@ package turing
 
 import (
 	"fmt"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // MaxEffect is maximum effect that can be reported by an instruction.
@@ -79,6 +81,8 @@ type Description struct {
 	// The operators used by this instruction. Deprecated operators must be
 	// retained to ensure they can be used to compact older database levels.
 	Operators []*Operator
+
+	observer prometheus.Observer
 }
 
 // Validate will validate the instruction description.

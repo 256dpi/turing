@@ -44,6 +44,9 @@ func buildRegistry(config Config) (*registry, error) {
 			// store operator
 			reg.ops[name] = op
 		}
+
+		// set observer
+		desc.observer = instructionMetrics.WithLabelValues(desc.Name)
 	}
 
 	return reg, nil

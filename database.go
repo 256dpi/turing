@@ -225,7 +225,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 		}
 
 		// begin observation
-		timer := observe(instructionObserverCache.get(ins.Describe().Name))
+		timer := observe(ins.Describe().observer)
 
 		// check if new transaction is needed for bounded transaction
 		effect := ins.Effect()
@@ -367,7 +367,7 @@ func (d *database) lookup(list []Instruction) error {
 	// execute instruction
 	for _, ins := range list {
 		// begin observation
-		timer := observe(instructionObserverCache.get(ins.Describe().Name))
+		timer := observe(ins.Describe().observer)
 
 		// execute transaction
 		_, err := txn.Execute(ins)

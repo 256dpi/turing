@@ -1,7 +1,6 @@
 package turing
 
 import (
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,31 +24,6 @@ func init() {
 	// register metrics
 	prometheus.MustRegister(operationMetrics)
 	prometheus.MustRegister(instructionMetrics)
-}
-
-type observerCache struct {
-	vec   prometheus.ObserverVec
-	cache sync.Map
-}
-
-func (c *observerCache) get(label string) prometheus.Observer {
-	// get observer
-	value, ok := c.cache.Load(label)
-	if ok {
-		return value.(prometheus.Observer)
-	}
-
-	// create observer
-	observer := c.vec.WithLabelValues(label)
-
-	// store observer
-	c.cache.Store(label, observer)
-
-	return observer
-}
-
-var instructionObserverCache = &observerCache{
-	vec: instructionMetrics,
 }
 
 type timer struct {
