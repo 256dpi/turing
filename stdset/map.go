@@ -1,4 +1,4 @@
-package std
+package stdset
 
 import (
 	"fmt"
@@ -83,7 +83,7 @@ func (m *Map) Decode(bytes []byte) error {
 		var version uint64
 		dec.Uint(&version)
 		if version != 1 {
-			return fmt.Errorf("std: decode list: invalid version")
+			return fmt.Errorf("stdset: decode map: invalid version")
 		}
 
 		// decode prefix

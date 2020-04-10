@@ -1,4 +1,4 @@
-package std
+package stdset
 
 import (
 	"testing"
@@ -8,8 +8,8 @@ import (
 	"github.com/256dpi/turing"
 )
 
-func TestSet(t *testing.T) {
-	machine := turing.Test(&Set{}, &Get{})
+func TestGet(t *testing.T) {
+	machine := turing.Test(&Get{}, &Set{})
 	defer machine.Stop()
 
 	get := &Get{
@@ -33,22 +33,32 @@ func TestSet(t *testing.T) {
 	assert.Equal(t, []byte("bar"), get.Value)
 }
 
-func BenchmarkSet(b *testing.B) {
-	machine := turing.Test(&Set{})
+func BenchmarkGet(b *testing.B) {
+	machine := turing.Test(&Get{}, &Set{})
 	defer machine.Stop()
 
-	set := &Set{
+	err := machine.Execute(&Set{
 		Key:   []byte("foo"),
 		Value: []byte("bar"),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	get := &Get{
+		Key: []byte("foo"),
 	}
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := machine.Execute(set)
+		err := machine.Execute(get)
 		if err != nil {
 			panic(err)
 		}
+
+		get.Value = nil
+		get.Exists = false
 	}
 }

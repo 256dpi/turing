@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/std"
+	"github.com/256dpi/turing/stdset"
 )
 
 var id = flag.Uint64("id", 0, "the server id")
@@ -55,7 +55,7 @@ func main() {
 		Members:   memberList,
 		Directory: directory,
 		Instructions: []turing.Instruction{
-			&std.Inc{}, &std.Map{},
+			&stdset.Inc{}, &stdset.Map{},
 		},
 	})
 	if err != nil {
@@ -84,7 +84,7 @@ func main() {
 		}
 
 		// increment value
-		err = machine.Execute(&std.Inc{
+		err = machine.Execute(&stdset.Inc{
 			Key:   strconv.AppendUint(nil, *id, 10),
 			Value: 1,
 		})
@@ -95,7 +95,7 @@ func main() {
 		}
 
 		// list values
-		mp := &std.Map{}
+		mp := &stdset.Map{}
 		err = machine.Execute(mp)
 		if err != nil {
 			println(err.Error())

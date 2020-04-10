@@ -1,4 +1,4 @@
-package std
+package stdset
 
 import (
 	"fmt"
@@ -101,7 +101,7 @@ func (i *Inc) Decode(bytes []byte) error {
 		var version uint64
 		dec.Uint(&version)
 		if version != 1 {
-			return fmt.Errorf("std: decode inc: invalid version")
+			return fmt.Errorf("stdset: decode inc: invalid version")
 		}
 
 		// decode body
