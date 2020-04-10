@@ -24,8 +24,8 @@ type Machine struct {
 
 // Start will create a new machine using the specified configuration.
 func Start(config Config) (*Machine, error) {
-	// check config
-	err := config.check()
+	// validate config
+	err := config.Validate()
 	if err != nil {
 		return nil, err
 	}

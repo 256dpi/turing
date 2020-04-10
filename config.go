@@ -70,7 +70,8 @@ func (c *Config) Local() *Member {
 	return nil
 }
 
-func (c *Config) check() error {
+// Validate will validate the configuration and ensure defaults.
+func (c *Config) Validate() error {
 	// check id
 	if c.ID == 0 && !c.Standalone {
 		return fmt.Errorf("turing: missing id")
@@ -121,28 +122,34 @@ func (c *Config) check() error {
 	return nil
 }
 
-func (c Config) raftDir() string {
+// RaftDir returns the directory used for the raft files.
+func (c Config) RaftDir() string {
 	return filepath.Join(c.Directory, "raft")
 }
 
-func (c Config) raftFS() dfs.FS {
-	if c.Directory != "" {
-		return dfs.Default
+// RaftFS returns the filesystem used for the raft files.
+func (c Config) RaftFS() dfs.FS {
+	// use in-memory if empty
+	if c.Directory == "" {
+		return dfs.NewMem()
 	}
 
-	return dfs.NewMem()
+	return dfs.Default
 }
 
-func (c Config) dbDir() string {
+// DatabaseDir returns the directory used for the database files.
+func (c Config) DatabaseDir() string {
 	return filepath.Join(c.Directory, "db")
 }
 
-func (c Config) dbFS() pfs.FS {
+// DatabaseFS returns the filesystem used for the database files.
+func (c Config) DatabaseFS() pfs.FS {
+	// use in-memory if empty
 	if c.Directory != "" {
-		return pfs.Default
+		return pfs.NewMem()
 	}
 
-	return pfs.NewMem()
+	return pfs.Default
 }
 
 // Member specifies a cluster member.

@@ -90,10 +90,10 @@ type database struct {
 
 func openDatabase(config Config, registry *registry, manager *manager) (*database, uint64, error) {
 	// get fs
-	fs := config.dbFS()
+	fs := config.DatabaseFS()
 
 	// ensure directory
-	err := fs.MkdirAll(config.dbDir(), 0700)
+	err := fs.MkdirAll(config.DatabaseDir(), 0700)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -115,7 +115,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	// TODO: Allow database tuning.
 
 	// open db
-	pdb, err := pebble.Open(config.dbDir(), &pebble.Options{
+	pdb, err := pebble.Open(config.DatabaseDir(), &pebble.Options{
 		FS:                          fs,
 		Cache:                       cache,
 		Merger:                      merger,

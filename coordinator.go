@@ -45,9 +45,9 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// prepare node host config
 	hostConfig := config.NodeHostConfig{
 		DeploymentID:   clusterID,
-		FS:             cfg.raftFS(),
-		WALDir:         cfg.raftDir(),
-		NodeHostDir:    cfg.raftDir(),
+		FS:             cfg.RaftFS(),
+		WALDir:         cfg.RaftDir(),
+		NodeHostDir:    cfg.RaftDir(),
 		LogDBFactory:   pebble.NewBatchedLogDB,
 		RTTMillisecond: rttMS,
 		RaftAddress:    cfg.Local().Address(),
