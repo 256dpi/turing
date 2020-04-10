@@ -27,6 +27,9 @@ func buildRegistry(config Config) (*registry, error) {
 			return nil, fmt.Errorf("turing: duplicate instruction: %s", desc.Name)
 		}
 
+		// set observer
+		desc.observer = instructionMetrics.WithLabelValues(desc.Name)
+
 		// store instruction
 		reg.ins[desc.Name] = ins
 
@@ -36,20 +39,22 @@ func buildRegistry(config Config) (*registry, error) {
 			name := op.Name
 
 			// check existing operator
-			eop := reg.ops[name]
-			if eop != nil && eop != op {
-				return nil, fmt.Errorf("turing: different operator for same name: %s", name)
-			}
+			eop, ok := reg.ops[name]
+			if ok {
+				// check equality
+				if eop != op {
+					return nil, fmt.Errorf("turing: different operator for same name: %s", name)
+				}
 
-			// store operator
-			reg.ops[name] = op
+				continue
+			}
 
 			// set observer
 			op.observer = operatorMetrics.WithLabelValues(op.Name)
-		}
 
-		// set observer
-		desc.observer = instructionMetrics.WithLabelValues(desc.Name)
+			// store operator
+			reg.ops[name] = op
+		}
 	}
 
 	return reg, nil
