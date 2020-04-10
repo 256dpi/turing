@@ -7,10 +7,14 @@ import (
 	"github.com/256dpi/turing/pkg/coding"
 )
 
+var addCounter = god.NewCounter("add", nil)
+
 var incAdd = &turing.Operator{
 	Name: "add",
 	Zero: []byte("\x00"),
 	Apply: func(value []byte, ops [][]byte) ([]byte, error) {
+		addCounter.Add(1)
+
 		// parse value
 		count := decodeInt(value)
 
@@ -50,10 +54,9 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 	// encode key
 	key := encodeInt(i.Key)
 
-	// use merge if requested
+	// use merge operator if requested
 	if i.Merge {
-		val := encodeInt(i.Value)
-		return txn.Merge(key, val, incAdd)
+		return txn.Merge(key, encodeInt(i.Value), incAdd)
 	}
 
 	// get count
@@ -66,14 +69,11 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 		return err
 	}
 
-	// inc
+	// increment
 	count += i.Value
 
-	// encode value
-	val := encodeInt(count)
-
 	// set value
-	err = txn.Set(key, val)
+	err = txn.Set(key, encodeInt(count))
 	if err != nil {
 		return err
 	}
