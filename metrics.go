@@ -20,10 +20,18 @@ var instructionMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Help:      "Instruction execution timings in milliseconds.",
 }, []string{"name"})
 
+var operatorMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	Namespace: "turing",
+	Subsystem: "",
+	Name:      "operators",
+	Help:      "Operator execution timings in milliseconds.",
+}, []string{"name"})
+
 func init() {
 	// register metrics
 	prometheus.MustRegister(operationMetrics)
 	prometheus.MustRegister(instructionMetrics)
+	prometheus.MustRegister(operatorMetrics)
 }
 
 type timer struct {

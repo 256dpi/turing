@@ -28,6 +28,8 @@ type Operator struct {
 
 	// An optional function called to combine operands.
 	// Combine func(ops [][]byte) ([]byte, error)
+
+	observer prometheus.Observer
 }
 
 // Ref manages the reference to buffer that can be released.
