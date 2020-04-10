@@ -42,9 +42,6 @@ func main() {
 	// disable logging
 	turing.SetLogger(nil)
 
-	// register metrics
-	turing.EnableMetrics()
-
 	// parse members
 	var memberList []turing.Member
 	var err error

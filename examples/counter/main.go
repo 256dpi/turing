@@ -31,9 +31,6 @@ func main() {
 		MetricsHandler: promhttp.Handler().ServeHTTP,
 	})
 
-	// register metrics
-	turing.EnableMetrics()
-
 	// parse members
 	memberList, err := turing.ParseMembers(*members)
 	if err != nil {

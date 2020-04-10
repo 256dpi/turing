@@ -21,47 +21,35 @@ var instructionMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Help:      "Instruction execution timings in milliseconds.",
 }, []string{"name"})
 
-var observerCacheCache sync.Map
-
-var metricsEnabled bool
-
-// EnableMetrics will register and enable prometheus metrics.
-func EnableMetrics() {
-	// set flag
-	metricsEnabled = true
-
+func init() {
 	// register metrics
 	prometheus.MustRegister(operationMetrics)
 	prometheus.MustRegister(instructionMetrics)
 }
 
-func getObserver(summary prometheus.ObserverVec, label string) prometheus.Observer {
-	// check if enabled
-	if !metricsEnabled {
-		return nil
-	}
+type observerCache struct {
+	vec   prometheus.ObserverVec
+	cache sync.Map
+}
 
-	// get cache from cache
-	var cache *sync.Map
-	value, ok := observerCacheCache.Load(summary)
-	if !ok {
-		cache = &sync.Map{}
-		observerCacheCache.Store(summary, cache)
-	} else {
-		cache = value.(*sync.Map)
-	}
-
+func (c *observerCache) get(label string) prometheus.Observer {
 	// get observer
-	var observer prometheus.Observer
-	value, ok = cache.Load(label)
-	if !ok {
-		observer = summary.WithLabelValues(label)
-		cache.Store(label, observer)
-	} else {
-		observer = value.(prometheus.Observer)
+	value, ok := c.cache.Load(label)
+	if ok {
+		return value.(prometheus.Observer)
 	}
+
+	// create observer
+	observer := c.vec.WithLabelValues(label)
+
+	// store observer
+	c.cache.Store(label, observer)
 
 	return observer
+}
+
+var instructionObserverCache = &observerCache{
+	vec: instructionMetrics,
 }
 
 type timer struct {
