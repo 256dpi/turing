@@ -7,7 +7,7 @@ import (
 
 // Encoder manages data encoding.
 type Encoder struct {
-	b10 []byte
+	b10 [10]byte
 	len int
 	buf []byte
 }
@@ -25,7 +25,7 @@ func (e *Encoder) Bool(truthy bool) {
 func (e *Encoder) Uint(num uint64) {
 	// handle length
 	if e.buf == nil {
-		e.len += binary.PutUvarint(e.b10, num)
+		e.len += binary.PutUvarint(e.b10[:], num)
 		return
 	}
 
@@ -38,7 +38,7 @@ func (e *Encoder) Uint(num uint64) {
 func (e *Encoder) Int(num int64) {
 	// handle length
 	if e.buf == nil {
-		e.len += binary.PutVarint(e.b10, num)
+		e.len += binary.PutVarint(e.b10[:], num)
 		return
 	}
 
@@ -51,7 +51,7 @@ func (e *Encoder) Int(num int64) {
 func (e *Encoder) String(str string) {
 	// handle length
 	if e.buf == nil {
-		e.len += binary.PutUvarint(e.b10, uint64(len(str)))
+		e.len += binary.PutUvarint(e.b10[:], uint64(len(str)))
 		e.len += len(str)
 		return
 	}
@@ -69,7 +69,7 @@ func (e *Encoder) String(str string) {
 func (e *Encoder) Bytes(buf []byte) {
 	// handle length
 	if e.buf == nil {
-		e.len += binary.PutUvarint(e.b10, uint64(len(buf)))
+		e.len += binary.PutUvarint(e.b10[:], uint64(len(buf)))
 		e.len += len(buf)
 		return
 	}
@@ -98,9 +98,7 @@ func (e *Encoder) Tail(buf []byte) {
 
 var encoderPool = sync.Pool{
 	New: func() interface{} {
-		return &Encoder{
-			b10: make([]byte, 10),
-		}
+		return &Encoder{}
 	},
 }
 
@@ -137,7 +135,10 @@ func Encode(borrow bool, fn func(enc *Encoder) error) ([]byte, *Ref, error) {
 	// encode
 	err = fn(enc)
 	if err != nil {
-		ref.Release()
+		if ref != nil {
+			ref.Release()
+		}
+
 		return nil, nil, err
 	}
 
