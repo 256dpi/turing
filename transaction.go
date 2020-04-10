@@ -6,9 +6,13 @@ import (
 	"io"
 
 	"github.com/cockroachdb/pebble"
+
+	"github.com/256dpi/turing/pkg/coding"
 )
 
 // TODO: Can a transaction be used concurrently?
+
+var userPrefix = []byte("#")
 
 type closerFunc func() error
 
@@ -47,7 +51,7 @@ func (t *Transaction) execute(ins Instruction) (bool, error) {
 
 	// check closers
 	if t.closers != 0 {
-		return false, fmt.Errorf("turing: unclosed values after instruction execution")
+		return false, fmt.Errorf("turing: unclosed closers after instruction execution")
 	}
 
 	// check iterators
@@ -60,7 +64,7 @@ func (t *Transaction) execute(ins Instruction) (bool, error) {
 
 // Get will lookup the specified key. The returned slice must not be modified by
 // the caller. A closer is returned that must be closed once the value is not
-// used anymore. Consider Use or Copy for better safety.
+// used anymore. Consider Use or Copy for safer alternatives.
 func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	// get value
 	value, found, closer, err := t.get(key)
@@ -70,7 +74,7 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 		return nil, false, nil, nil
 	}
 
-	// increment
+	// increment closers
 	t.closers++
 
 	// wrap closer
@@ -151,16 +155,20 @@ func (t *Transaction) Set(key, val []byte) error {
 	}
 
 	// encode value
-	bytes, ref, err := value.Encode(true)
+	ev, evr, err := value.Encode(true)
 	if err != nil {
 		return err
 	}
 
 	// ensure release
-	defer ref.Release()
+	defer evr.Release()
 
-	// set key to value
-	err = t.writer.Set(prefixUserKey(key), bytes, nil)
+	// prefix key
+	pk, pkr := prefixUserKey(key)
+	defer pkr.Release()
+
+	// set value
+	err = t.writer.Set(pk, ev, nil)
 	if err != nil {
 		return err
 	}
@@ -184,8 +192,12 @@ func (t *Transaction) Unset(key []byte) error {
 		return ErrMaxEffect
 	}
 
+	// prefix key
+	pk, pkr := prefixUserKey(key)
+	defer pkr.Release()
+
 	// delete key
-	err := t.writer.Delete(prefixUserKey(key), nil)
+	err := t.writer.Delete(pk, nil)
 	if err != nil {
 		return err
 	}
@@ -210,8 +222,14 @@ func (t *Transaction) Delete(start, end []byte) error {
 		return ErrMaxEffect
 	}
 
+	// prefix keys
+	sk, skr := prefixUserKey(start)
+	ek, ekr := prefixUserKey(end)
+	defer skr.Release()
+	defer ekr.Release()
+
 	// delete range
-	err := t.writer.DeleteRange(prefixUserKey(start), prefixUserKey(end), nil)
+	err := t.writer.DeleteRange(sk, ek, nil)
 	if err != nil {
 		return err
 	}
@@ -240,6 +258,8 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 		return fmt.Errorf("turing: unknown operator: %s", operator.Name)
 	}
 
+	// TODO: Check if instruction registered operator?
+
 	// prepare value
 	value := Value{
 		Kind: StackValue,
@@ -250,16 +270,20 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 	}
 
 	// encode value
-	bytes, ref, err := value.Encode(true)
+	ev, evr, err := value.Encode(true)
 	if err != nil {
 		return err
 	}
 
 	// ensure release
-	defer ref.Release()
+	defer evr.Release()
 
-	// set key to value
-	err = t.writer.Merge(prefixUserKey(key), bytes, nil)
+	// prefix key
+	pk, pkr := prefixUserKey(key)
+	defer pkr.Release()
+
+	// merge value
+	err = t.writer.Merge(pk, ev, nil)
 	if err != nil {
 		return err
 	}
@@ -279,18 +303,28 @@ func (t *Transaction) Effect() int {
 // closed as soon as it is not used anymore. There can be only one iterator
 // created at a time.
 func (t *Transaction) Iterator(prefix []byte) *Iterator {
-	// increment
+	// increment iterators
 	t.iterators++
+
+	// TODO: Release.
+
+	// prefix prefix
+	pk, pkr := prefixUserKey(prefix)
 
 	return &Iterator{
 		txn:  t,
-		iter: t.reader.NewIter(prefixIterator(prefixUserKey(prefix))),
+		pkr:  pkr,
+		iter: t.reader.NewIter(prefixIterator(pk)),
 	}
 }
 
 func (t *Transaction) get(key []byte) ([]byte, bool, io.Closer, error) {
+	// prepare prefix
+	pKey, pKeyRef := prefixUserKey(key)
+	defer pKeyRef.Release()
+
 	// get value
-	bytes, closer, err := t.reader.Get(prefixUserKey(key))
+	bytes, closer, err := t.reader.Get(pKey)
 	if err == pebble.ErrNotFound {
 		return nil, false, nil, nil
 	} else if err != nil {
@@ -318,17 +352,26 @@ func (t *Transaction) get(key []byte) ([]byte, bool, io.Closer, error) {
 // Iterator is used to iterate over the key space of the database.
 type Iterator struct {
 	txn  *Transaction
+	pkr  Ref
 	iter *pebble.Iterator
 }
 
 // SeekGE will seek to the exact key or the next greater key.
 func (i *Iterator) SeekGE(key []byte) bool {
-	return i.iter.SeekGE(prefixUserKey(key))
+	// prepare prefix
+	pKey, pKeyRef := prefixUserKey(key)
+	defer pKeyRef.Release()
+
+	return i.iter.SeekGE(pKey)
 }
 
 // SeekLT will seek to the exact key or the next smaller key.
 func (i *Iterator) SeekLT(key []byte) bool {
-	return i.iter.SeekLT(prefixUserKey(key))
+	// prepare prefix
+	pKey, pKeyRef := prefixUserKey(key)
+	defer pKeyRef.Release()
+
+	return i.iter.SeekLT(pKey)
 }
 
 // First will seek to the first key in the range.
@@ -356,7 +399,8 @@ func (i *Iterator) Prev() bool {
 	return i.iter.Prev()
 }
 
-// Key will return the current key.
+// Key will return the current key. Unless copy is true, the key is only valid
+// until the next call of Next().
 func (i *Iterator) Key(copy bool) []byte {
 	// get key
 	key := trimUserKey(i.iter.Key())
@@ -372,7 +416,8 @@ func (i *Iterator) Key(copy bool) []byte {
 	return key
 }
 
-// Value will return the current value.
+// Value will return the current value. Unless copy is true, the value is only
+// valid until the next call of Next().
 func (i *Iterator) Value(copy bool) ([]byte, error) {
 	// get value
 	bytes := i.iter.Value()
@@ -411,20 +456,31 @@ func (i *Iterator) Error() error {
 
 // Close will close the iterator.
 func (i *Iterator) Close() error {
-	// decrement
+	// decrement iterators
 	i.txn.iterators--
 
-	return i.iter.Close()
+	// release prefix
+	defer i.pkr.Release()
+
+	// close iterator
+	err := i.iter.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func prefixUserKey(key []byte) []byte {
-	return append([]byte{'#'}, key...)
+func prefixUserKey(key []byte) ([]byte, Ref) {
+	return coding.Concat(userPrefix, key)
 }
 
 func trimUserKey(key []byte) []byte {
+	// trim if not empty
 	if len(key) > 0 {
 		return key[1:]
 	}
+
 	return key
 }
 

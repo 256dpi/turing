@@ -25,6 +25,7 @@ func PrefixRange(prefix []byte) ([]byte, []byte) {
 			break
 		}
 	}
+
 	return prefix, limit
 }
 

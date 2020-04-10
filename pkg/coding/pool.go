@@ -54,3 +54,26 @@ func Borrow(len int) ([]byte, *Ref) {
 
 	return ref.array[0:len], ref
 }
+
+// Copy will copy the provided slice into borrowed slice.
+func Copy(a []byte) ([]byte, *Ref) {
+	// borrow buffer
+	buf, ref := Borrow(len(a))
+
+	// copy bytes
+	copy(buf, a)
+
+	return buf, ref
+}
+
+// Concat will concatenate the two byte slices using a borrowed slice.
+func Concat(a, b []byte) ([]byte, *Ref) {
+	// borrow buffer
+	buf, ref := Borrow(len(a) + len(b))
+
+	// copy bytes
+	n := copy(buf, a)
+	copy(buf[n:], b)
+
+	return buf, ref
+}

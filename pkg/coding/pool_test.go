@@ -22,6 +22,18 @@ func TestBorrow(t *testing.T) {
 	assert.True(t, ref.done)
 }
 
+func TestCopy(t *testing.T) {
+	buf, ref := Copy([]byte("foo"))
+	assert.Equal(t, []byte("foo"), buf)
+	ref.Release()
+}
+
+func TestConcat(t *testing.T) {
+	buf, ref := Concat([]byte("foo"), []byte("123"))
+	assert.Equal(t, []byte("foo123"), buf)
+	ref.Release()
+}
+
 func BenchmarkPool(b *testing.B) {
 	for _, class := range classes {
 		b.Run(strconv.Itoa(class), func(b *testing.B) {
