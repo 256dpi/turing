@@ -184,6 +184,8 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	return db, state.Index, nil
 }
 
+var databaseUpdate = operationMetrics.WithLabelValues("database.update")
+
 func (d *database) update(list []Instruction, index uint64) error {
 	// acquire write mutex
 	d.write.Lock()
@@ -200,7 +202,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 	}
 
 	// observe
-	timer := observe(operationMetrics, "database.update")
+	timer := observe(databaseUpdate)
 	defer timer.finish()
 
 	// create initial batch
@@ -223,7 +225,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 		}
 
 		// begin observation
-		timer := observe(instructionMetrics, ins.Describe().Name)
+		timer := observe(getObserver(instructionMetrics, ins.Describe().Name))
 
 		// check if new transaction is needed for bounded transaction
 		effect := ins.Effect()
@@ -330,6 +332,8 @@ func (d *database) update(list []Instruction, index uint64) error {
 	return nil
 }
 
+var databaseLookup = operationMetrics.WithLabelValues("database.lookup")
+
 func (d *database) lookup(list []Instruction) error {
 	// get reader token
 	d.readers.Acquire(nil, 0)
@@ -345,7 +349,7 @@ func (d *database) lookup(list []Instruction) error {
 	}
 
 	// observe
-	timer1 := observe(operationMetrics, "database.lookup")
+	timer1 := observe(databaseLookup)
 	defer timer1.finish()
 
 	// get snapshot
@@ -363,7 +367,7 @@ func (d *database) lookup(list []Instruction) error {
 	// execute instruction
 	for _, instruction := range list {
 		// begin observation
-		timer := observe(instructionMetrics, instruction.Describe().Name)
+		timer := observe(getObserver(instructionMetrics, instruction.Describe().Name))
 
 		// execute transaction
 		_, err := txn.Execute(instruction)
@@ -384,6 +388,8 @@ func (d *database) sync() error {
 	return nil
 }
 
+var databaseBackup = operationMetrics.WithLabelValues("database.backup")
+
 func (d *database) backup(sink io.Writer) error {
 	// acquire read mutex
 	d.read.RLock()
@@ -395,13 +401,15 @@ func (d *database) backup(sink io.Writer) error {
 	}
 
 	// observe
-	timer := observe(operationMetrics, "database.backup")
+	timer := observe(databaseBackup)
 	defer timer.finish()
 
 	// TODO: Implement.
 
 	return nil
 }
+
+var databaseRestore = operationMetrics.WithLabelValues("database.restore")
 
 func (d *database) restore(source io.Reader) error {
 	// acquire write mutex
@@ -414,7 +422,7 @@ func (d *database) restore(source io.Reader) error {
 	}
 
 	// observe
-	timer := observe(operationMetrics, "database.restore")
+	timer := observe(databaseRestore)
 	defer timer.finish()
 
 	// TODO: Implement.

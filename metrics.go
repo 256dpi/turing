@@ -69,10 +69,10 @@ type timer struct {
 	observer prometheus.Observer
 }
 
-func observe(summary prometheus.ObserverVec, label string) timer {
+func observe(observer prometheus.Observer) timer {
 	return timer{
 		begin:    time.Now(),
-		observer: getObserver(summary, label),
+		observer: observer,
 	}
 }
 

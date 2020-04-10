@@ -69,12 +69,14 @@ func Start(config Config) (*Machine, error) {
 	return m, nil
 }
 
+var machineExecute = operationMetrics.WithLabelValues("Machine.Execute")
+
 // Execute will execute the specified instruction. NonLinear may be set to true
 // to allow read only instructions to query data without linearizability
 // guarantees. This may be substantially faster but return stale data.
 func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	// observe
-	timer := observe(operationMetrics, "Machine.Execute")
+	timer := observe(machineExecute)
 	defer timer.finish()
 
 	// get options

@@ -94,9 +94,11 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	return coordinator, nil
 }
 
+var coordinatorUpdate = operationMetrics.WithLabelValues("coordinator.update")
+
 func (c *coordinator) update(ins Instruction) error {
 	// observe
-	timer := observe(operationMetrics, "coordinator.update")
+	timer := observe(coordinatorUpdate)
 	defer timer.finish()
 
 	// queue update
@@ -108,9 +110,11 @@ func (c *coordinator) update(ins Instruction) error {
 	return nil
 }
 
+var coordinatorPerformUpdates = operationMetrics.WithLabelValues("coordinator.performUpdates")
+
 func (c *coordinator) performUpdates(list []Instruction) error {
 	// observe
-	timer := observe(operationMetrics, "coordinator.performUpdates")
+	timer := observe(coordinatorPerformUpdates)
 	defer timer.finish()
 
 	// get session
@@ -180,9 +184,11 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	return nil
 }
 
+var coordinatorLookup = operationMetrics.WithLabelValues("coordinator.lookup")
+
 func (c *coordinator) lookup(ins Instruction, options Options) error {
 	// observe
-	timer := observe(operationMetrics, "coordinator.lookup")
+	timer := observe(coordinatorLookup)
 	defer timer.finish()
 
 	// immediately queue stale reads
@@ -216,9 +222,11 @@ func (c *coordinator) lookup(ins Instruction, options Options) error {
 	return nil
 }
 
+var coordinatorPerformLookup = operationMetrics.WithLabelValues("coordinator.performLookup")
+
 func (c *coordinator) performLookup(list []Instruction) error {
 	// observe
-	timer := observe(operationMetrics, "coordinator.performLookup")
+	timer := observe(coordinatorPerformLookup)
 	defer timer.finish()
 
 	// perform read as all instructions ar queued after their respective read
@@ -231,9 +239,11 @@ func (c *coordinator) performLookup(list []Instruction) error {
 	return nil
 }
 
+var coordinatorStatus = operationMetrics.WithLabelValues("coordinator.status")
+
 func (c *coordinator) status() Status {
 	// observe
-	timer := observe(operationMetrics, "coordinator.status")
+	timer := observe(coordinatorStatus)
 	defer timer.finish()
 
 	// get info
