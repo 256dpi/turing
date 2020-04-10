@@ -8,8 +8,10 @@ func BenchmarkObserve(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
-		timer := observe(obs)
-		timer.finish()
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			timer := observe(obs)
+			timer.finish()
+		}
+	})
 }
