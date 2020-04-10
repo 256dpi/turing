@@ -1,4 +1,4 @@
-package basic
+package std
 
 import (
 	"github.com/vmihailenco/msgpack/v4"
@@ -13,7 +13,7 @@ type List struct {
 }
 
 var listDesc = &turing.Description{
-	Name: "std/basic/List",
+	Name: "turing/List",
 }
 
 func (l *List) Describe() *turing.Description {

@@ -1,4 +1,4 @@
-package basic
+package std
 
 import (
 	"github.com/vmihailenco/msgpack/v4"
@@ -13,7 +13,7 @@ type Get struct {
 }
 
 var getDesc = &turing.Description{
-	Name: "std/basic/Get",
+	Name: "turing/Get",
 }
 
 func (g *Get) Describe() *turing.Description {

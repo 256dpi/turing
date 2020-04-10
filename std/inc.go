@@ -1,4 +1,4 @@
-package basic
+package std
 
 import (
 	"strconv"
@@ -10,8 +10,8 @@ import (
 	"github.com/256dpi/turing/pkg/coding"
 )
 
-var IncAdd = &turing.Operator{
-	Name: "std/counter/IncAdd",
+var Add = &turing.Operator{
+	Name: "turing/Add",
 	Zero: []byte("0"),
 	Apply: func(value []byte, ops [][]byte) ([]byte, turing.Ref, error) {
 		// parse value
@@ -49,8 +49,8 @@ type Inc struct {
 }
 
 var incDesc = &turing.Description{
-	Name:      "std/basic/Inc",
-	Operators: []*turing.Operator{IncAdd},
+	Name:      "turing/Inc",
+	Operators: []*turing.Operator{Add},
 }
 
 func (i *Inc) Describe() *turing.Description {
@@ -63,7 +63,7 @@ func (i *Inc) Effect() int {
 
 func (i *Inc) Execute(txn *turing.Transaction) error {
 	// merge with value
-	err := txn.Merge(i.Key, strconv.AppendInt(nil, i.Value, 10), IncAdd)
+	err := txn.Merge(i.Key, strconv.AppendInt(nil, i.Value, 10), Add)
 	if err != nil {
 		return err
 	}

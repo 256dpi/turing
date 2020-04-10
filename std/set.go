@@ -1,4 +1,4 @@
-package basic
+package std
 
 import (
 	"github.com/vmihailenco/msgpack/v4"
@@ -12,7 +12,7 @@ type Set struct {
 }
 
 var setDesc = &turing.Description{
-	Name: "std/basic/Set",
+	Name: "turing/Set",
 }
 
 func (s *Set) Describe() *turing.Description {

@@ -1,4 +1,4 @@
-package basic
+package std
 
 import (
 	"github.com/vmihailenco/msgpack/v4"
@@ -12,7 +12,7 @@ type Map struct {
 }
 
 var mapDesc = &turing.Description{
-	Name: "std/basic/Map",
+	Name: "turing/Map",
 }
 
 func (m *Map) Describe() *turing.Description {

@@ -1,4 +1,4 @@
-package basic
+package std
 
 import (
 	"testing"
