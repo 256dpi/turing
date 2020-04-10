@@ -39,11 +39,8 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 			return err
 		}
 
-		// copy value
-		value = turing.Copy(nil, value)
-
-		// set key value
-		m.Pairs[string(iter.Key())] = value
+		// add pair
+		m.Pairs[string(iter.Key())] = turing.Copy(value)
 	}
 
 	return nil

@@ -138,23 +138,6 @@ func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
 	return err
 }
 
-// Copy will lookup the specified key and return a copy if it exists.
-func (t *Transaction) Copy(key []byte) ([]byte, bool, error) {
-	// copy value
-	var found bool
-	var val []byte
-	err := t.Use(key, func(value []byte) error {
-		found = true
-		val = Copy(nil, value)
-		return nil
-	})
-	if err != nil {
-		return nil, false, err
-	}
-
-	return val, found, nil
-}
-
 // Set will set the specified key to the new value. This operation will count as
 // one towards the effect of the transaction.
 func (t *Transaction) Set(key, val []byte) error {

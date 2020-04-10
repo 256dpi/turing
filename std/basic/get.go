@@ -26,8 +26,11 @@ func (g *Get) Effect() int {
 
 func (g *Get) Execute(txn *turing.Transaction) error {
 	// get value
-	var err error
-	g.Value, g.Exists, err = txn.Copy(g.Key)
+	err := txn.Use(g.Key, func(value []byte) error {
+		g.Value = turing.Copy(value)
+		g.Exists = true
+		return nil
+	})
 	if err != nil {
 		return err
 	}

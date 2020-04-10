@@ -34,8 +34,7 @@ func (l *List) Execute(txn *turing.Transaction) error {
 
 	// add all keys
 	for iter.First(); iter.Valid(); iter.Next() {
-		key := turing.Copy(nil, iter.Key())
-		l.Keys = append(l.Keys, key)
+		l.Keys = append(l.Keys, turing.Copy(iter.Key()))
 	}
 
 	return nil
