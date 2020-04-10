@@ -12,10 +12,12 @@ type Get struct {
 	Exists bool   `msgpack:"e,omitempty"`
 }
 
-func (g *Get) Describe() turing.Description {
-	return turing.Description{
-		Name: "std/basic/Get",
-	}
+var getDesc = &turing.Description{
+	Name: "std/basic/Get",
+}
+
+func (g *Get) Describe() *turing.Description {
+	return getDesc
 }
 
 func (g *Get) Effect() int {

@@ -21,10 +21,12 @@ type Acquire struct {
 	Locked  bool      `msgpack:"l,omitempty"`
 }
 
-func (a *Acquire) Describe() turing.Description {
-	return turing.Description{
-		Name: "std/lock/Acquire",
-	}
+var acquireDesc = &turing.Description{
+	Name: "std/lock/Acquire",
+}
+
+func (a *Acquire) Describe() *turing.Description {
+	return acquireDesc
 }
 
 func (a *Acquire) Effect() int {

@@ -12,10 +12,12 @@ type List struct {
 	Keys    [][]byte `msgpack:"k,omitempty"`
 }
 
-func (l *List) Describe() turing.Description {
-	return turing.Description{
-		Name: "std/basic/List",
-	}
+var listDesc = &turing.Description{
+	Name: "std/basic/List",
+}
+
+func (l *List) Describe() *turing.Description {
+	return listDesc
 }
 
 func (l *List) Effect() int {

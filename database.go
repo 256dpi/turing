@@ -222,14 +222,11 @@ func (d *database) update(list []Instruction, index uint64) error {
 			continue
 		}
 
-		// get name and effect
-		name := ins.Describe().Name
-		effect := ins.Effect()
-
 		// begin observation
-		timer := observe(instructionMetrics, name)
+		timer := observe(instructionMetrics, ins.Describe().Name)
 
 		// check if new transaction is needed for bounded transaction
+		effect := ins.Effect()
 		if effect > 0 && txn.effect+effect >= MaxEffect {
 			// commit current batch
 			err := batch.Commit(d.options)

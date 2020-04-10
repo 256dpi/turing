@@ -15,10 +15,12 @@ type Release struct {
 	Unlocked bool      `msgpack:"u,omitempty"`
 }
 
-func (r *Release) Describe() turing.Description {
-	return turing.Description{
-		Name: "std/lock/Release",
-	}
+var releaseDesc = &turing.Description{
+	Name: "std/lock/Release",
+}
+
+func (r *Release) Describe() *turing.Description {
+	return releaseDesc
 }
 
 func (r *Release) Effect() int {

@@ -43,8 +43,10 @@ var NoopRef = &noopRef{}
 // Instruction is the interface that is implemented by instructions that are
 // executed by the machine.
 type Instruction interface {
-	// Describe should return a description of the instruction.
-	Describe() Description
+	// Describe should return a description of the instruction. This method is
+	// called often, therefore it should just return a pointer to a statically
+	// allocated object and never build object on request.
+	Describe() *Description
 
 	// Effect should return the amount of modifications this instruction will
 	// make. A positive number is interpreted as the maximum amount of set,
@@ -76,7 +78,7 @@ type Description struct {
 
 	// The operators used by this instruction. Deprecated operators must be
 	// retained to ensure they can be used to compact older database levels.
-	Operators func() []*Operator
+	Operators []*Operator
 }
 
 // Validate will validate the instruction description.

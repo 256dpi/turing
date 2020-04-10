@@ -12,10 +12,12 @@ type get struct {
 	Value int64
 }
 
-func (g *get) Describe() turing.Description {
-	return turing.Description{
-		Name: "get",
-	}
+var getDesc = &turing.Description{
+	Name: "get",
+}
+
+func (g *get) Describe() *turing.Description {
+	return getDesc
 }
 
 func (g *get) Effect() int {

@@ -33,13 +33,13 @@ type inc struct {
 	Merge bool
 }
 
-func (i *inc) Describe() turing.Description {
-	return turing.Description{
-		Name: "inc",
-		Operators: func() []*turing.Operator {
-			return []*turing.Operator{incAdd}
-		},
-	}
+var incDesc = &turing.Description{
+	Name:      "inc",
+	Operators: []*turing.Operator{incAdd},
+}
+
+func (i *inc) Describe() *turing.Description {
+	return incDesc
 }
 
 func (i *inc) Effect() int {

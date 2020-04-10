@@ -43,13 +43,13 @@ type Inc struct {
 	Value int64  `msgpack:"v,omitempty"`
 }
 
-func (i *Inc) Describe() turing.Description {
-	return turing.Description{
-		Name: "std/basic/Inc",
-		Operators: func() []*turing.Operator {
-			return []*turing.Operator{IncAdd}
-		},
-	}
+var incDesc = &turing.Description{
+	Name:      "std/basic/Inc",
+	Operators: []*turing.Operator{IncAdd},
+}
+
+func (i *Inc) Describe() *turing.Description {
+	return incDesc
 }
 
 func (i *Inc) Effect() int {

@@ -11,10 +11,12 @@ type Set struct {
 	Value []byte `msgpack:"v,omitempty"`
 }
 
-func (s *Set) Describe() turing.Description {
-	return turing.Description{
-		Name: "std/basic/Set",
-	}
+var setDesc = &turing.Description{
+	Name: "std/basic/Set",
+}
+
+func (s *Set) Describe() *turing.Description {
+	return setDesc
 }
 
 func (s *Set) Effect() int {

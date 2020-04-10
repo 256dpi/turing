@@ -11,10 +11,12 @@ type Map struct {
 	Pairs  map[string][]byte `msgpack:"m,omitempty"`
 }
 
-func (m *Map) Describe() turing.Description {
-	return turing.Description{
-		Name: "std/basic/Map",
-	}
+var mapDesc = &turing.Description{
+	Name: "std/basic/Map",
+}
+
+func (m *Map) Describe() *turing.Description {
+	return mapDesc
 }
 
 func (m *Map) Effect() int {
