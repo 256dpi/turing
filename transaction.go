@@ -68,7 +68,7 @@ func (t *Transaction) execute(ins Instruction) (bool, error) {
 
 // Get will lookup the specified key. The returned slice must not be modified by
 // the caller. A closer is returned that must be closed once the value is not
-// used anymore. Consider Use or Copy for safer alternatives.
+// used anymore. Consider using Use() if the value is only used temporarily.
 func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	// prefix key
 	pk, pkr := prefixUserKey(key)
@@ -157,7 +157,7 @@ func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
 
 // Set will set the specified key to the new value. This operation will count as
 // one towards the effect of the transaction.
-func (t *Transaction) Set(key, val []byte) error {
+func (t *Transaction) Set(key, value []byte) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
@@ -169,13 +169,13 @@ func (t *Transaction) Set(key, val []byte) error {
 	}
 
 	// prepare value
-	value := Value{
+	val := Value{
 		Kind:  FullValue,
-		Value: val,
+		Value: value,
 	}
 
 	// encode value
-	ev, evr, err := value.Encode(true)
+	ev, evr, err := val.Encode(true)
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func (t *Transaction) Delete(start, end []byte) error {
 
 // Merge merges existing values with the provided value using the specified
 // operator.
-func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
+func (t *Transaction) Merge(key, value []byte, operator *Operator) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
@@ -281,16 +281,16 @@ func (t *Transaction) Merge(key, val []byte, operator *Operator) error {
 	// TODO: Check if instruction registered operator?
 
 	// prepare value
-	value := Value{
+	val := Value{
 		Kind: StackValue,
 		Stack: []Operand{{
 			Name:  operator.Name,
-			Value: val,
+			Value: value,
 		}},
 	}
 
 	// encode value
-	ev, evr, err := value.Encode(true)
+	ev, evr, err := val.Encode(true)
 	if err != nil {
 		return err
 	}
