@@ -47,5 +47,6 @@ func observe(observer prometheus.Observer) timer {
 }
 
 func (t *timer) finish() {
-	t.observer.Observe(time.Since(t.begin).Seconds() * 1000.0)
+	since := float64(time.Since(t.begin) / time.Microsecond) / 1000.0
+	t.observer.Observe(since)
 }
