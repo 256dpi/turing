@@ -4,7 +4,8 @@ import (
 	"sync"
 )
 
-const size = 1 << 13 // 8KB
+const minSize = 9
+const maxSize = 1 << 13 // 8KB
 
 var pool = sync.Pool{
 	New: func() interface{} {
@@ -14,7 +15,7 @@ var pool = sync.Pool{
 
 // Ref is reference to a borrowed slice.
 type Ref struct {
-	array [size]byte
+	array [maxSize]byte
 	done  bool
 }
 
@@ -35,11 +36,15 @@ var noop = &Ref{done: true}
 // Borrow will return a slice that has at least the specified length. If the
 // requested length is unavailable a slice will be allocated. To recycle the
 // slice, it must be released by calling Release() on the returned ref value.
-// Always release any returned value, event if the slice grows it is possible
+// Always release any returned value, even if the slice grows it is possible
 // to return the originally requested slice.
+//
+// Note: For values up to 8 bytes (64 bits) the internal Go arena allocator is
+// used by calling make(). From benchmarks this seems to be faster than calling
+// the pool to borrow and return a value.
 func Borrow(len int) ([]byte, *Ref) {
-	// allocate if too long
-	if len > size {
+	// allocate if too small or too long
+	if len < minSize || len > maxSize {
 		return make([]byte, len), noop
 	}
 
@@ -47,5 +52,5 @@ func Borrow(len int) ([]byte, *Ref) {
 	ref := pool.Get().(*Ref)
 	ref.done = false
 
-	return ref.array[0:size], ref
+	return ref.array[0:maxSize], ref
 }

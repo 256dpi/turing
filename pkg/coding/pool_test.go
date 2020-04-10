@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var classes = []int{8, 16, 32, 64, 128, 256, 512, 1024, 2048}
+var classes = []int{2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048}
 
 func BenchmarkPool(b *testing.B) {
 	for _, class := range classes {
