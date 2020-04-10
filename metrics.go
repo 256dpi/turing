@@ -20,11 +20,11 @@ var instructionMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 	Help:      "Instruction execution timings in milliseconds.",
 }, []string{"name"})
 
-var operatorMetrics = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+var operatorMetrics = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "turing",
 	Subsystem: "",
 	Name:      "operators",
-	Help:      "Operator execution timings in milliseconds.",
+	Help:      "Operator execution counter.",
 }, []string{"name"})
 
 func init() {
@@ -47,6 +47,6 @@ func observe(observer prometheus.Observer) timer {
 }
 
 func (t *timer) finish() {
-	since := float64(time.Since(t.begin) / time.Microsecond) / 1000.0
+	since := float64(time.Since(t.begin)/time.Microsecond) / 1000.0
 	t.observer.Observe(since)
 }

@@ -216,8 +216,8 @@ func MergeValues(values []Value, registry *registry) (Value, Ref, error) {
 			return Value{}, nil, fmt.Errorf("turing: merge values: unknown operator: %q", name)
 		}
 
-		// begin observation
-		timer := observe(operator.observer)
+		// count execution
+		operator.counter.Inc()
 
 		// merge value with operands
 		var newRef Ref
@@ -225,9 +225,6 @@ func MergeValues(values []Value, registry *registry) (Value, Ref, error) {
 		if err != nil {
 			return Value{}, nil, err
 		}
-
-		// finish observation
-		timer.finish()
 
 		// release old ref
 		if ref != nil {
@@ -248,8 +245,8 @@ func MergeValues(values []Value, registry *registry) (Value, Ref, error) {
 		return Value{}, nil, fmt.Errorf("turing: merge values: unknown operator: %q", name)
 	}
 
-	// begin observation
-	timer := observe(operator.observer)
+	// count execution
+	operator.counter.Inc()
 
 	// merge value with operands
 	var newRef Ref
@@ -257,9 +254,6 @@ func MergeValues(values []Value, registry *registry) (Value, Ref, error) {
 	if err != nil {
 		return Value{}, nil, err
 	}
-
-	// finish observation
-	timer.finish()
 
 	// release old ref
 	if ref != nil {

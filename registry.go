@@ -49,8 +49,8 @@ func buildRegistry(config Config) (*registry, error) {
 				continue
 			}
 
-			// set observer
-			op.observer = operatorMetrics.WithLabelValues(op.Name)
+			// set counter
+			op.counter = operatorMetrics.WithLabelValues(op.Name)
 
 			// store operator
 			reg.ops[name] = op
