@@ -25,7 +25,7 @@ var standalone = flag.Bool("standalone", false, "enable standalone mode")
 var memory = flag.Bool("memory", false, "enable in-memory mode")
 var readers = flag.Int("readers", 1000, "the number of parallel readers")
 var writers = flag.Int("writers", 1000, "the number of parallel writers")
-var keySpace = flag.Int("keySpace", 100_000, "the size of the key space")
+var keySpace = flag.Int64("keySpace", 100000, "the size of the key space")
 
 var wg sync.WaitGroup
 
@@ -123,9 +123,6 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
-	// prepare buffer
-	buf := make([]byte, 0, 10)
-
 	// prepare instruction
 	ins := &inc{}
 
@@ -139,9 +136,8 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// prepare instruction
-		buf = buf[:0]
-		ins.Key = strconv.AppendInt(buf, int64(rng.Intn(*keySpace)), 10)
-		ins.Value = int64(rng.Intn(*keySpace))
+		ins.Key = rng.Int63n(*keySpace)
+		ins.Value = rng.Int63n(*keySpace)
 		ins.Merge = rng.Intn(4) > 0 // 75%
 
 		// inc value
@@ -164,9 +160,6 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
-	// prepare buffer
-	buf := make([]byte, 0, 10)
-
 	// prepare instruction
 	ins := &get{}
 
@@ -183,8 +176,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// prepare instruction
-		buf = buf[:0]
-		ins.Key = strconv.AppendInt(buf, int64(rng.Intn(*keySpace)), 10)
+		ins.Key = rng.Int63n(*keySpace)
 
 		// prepare options
 		opts.StaleRead = rng.Intn(4) > 0 // 75%
