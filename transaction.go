@@ -43,12 +43,16 @@ type Transaction struct {
 	effect    int
 }
 
-func (t *Transaction) execute(ins Instruction) (bool, error) {
+// Execute will execute the specified instruction as part of this transaction.
+// It will return whether the instruction maxed the transaction effect. If so,
+// the calling instruction should return ErrMaxEffect and call the instruction
+// again in the following execution.
+func (t *Transaction) Execute(ins Instruction) (bool, error) {
 	// execute transaction
-	var exhausted bool
+	var effectMaxed bool
 	err := ins.Execute(t)
 	if err == ErrMaxEffect {
-		exhausted = true
+		effectMaxed = true
 	} else if err != nil {
 		return false, err
 	}
@@ -63,7 +67,7 @@ func (t *Transaction) execute(ins Instruction) (bool, error) {
 		return false, fmt.Errorf("turing: unclosed iterators after instruction execution")
 	}
 
-	return exhausted, nil
+	return effectMaxed, nil
 }
 
 // Get will lookup the specified key. The returned slice must not be modified by

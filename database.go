@@ -245,13 +245,13 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 		for {
 			// execute transaction
-			exhausted, err := txn.execute(ins)
+			effectMaxed, err := txn.Execute(ins)
 			if err != nil {
 				return err
 			}
 
-			// commit batch if exhausted and start over
-			if exhausted {
+			// commit batch if effect is maxed and start over
+			if effectMaxed {
 				// commit current batch
 				err := batch.Commit(d.options)
 				if err != nil {
@@ -366,7 +366,7 @@ func (d *database) lookup(list []Instruction) error {
 		timer := observe(instructionMetrics, instruction.Describe().Name)
 
 		// execute transaction
-		_, err := txn.execute(instruction)
+		_, err := txn.Execute(instruction)
 		if err != nil {
 			return err
 		}
