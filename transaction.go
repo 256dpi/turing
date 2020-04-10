@@ -306,8 +306,6 @@ func (t *Transaction) Iterator(prefix []byte) *Iterator {
 	// increment iterators
 	t.iterators++
 
-	// TODO: Release.
-
 	// prefix prefix
 	pk, pkr := prefixUserKey(prefix)
 
@@ -339,8 +337,10 @@ func (t *Transaction) get(key []byte) ([]byte, bool, io.Closer, error) {
 		return nil, false, nil, err
 	}
 
+	// TODO: Release.
+
 	// resolve value
-	value, err = ComputeValue(value, t.registry)
+	value, _, err = ComputeValue(value, t.registry)
 	if err != nil {
 		_ = closer.Close()
 		return nil, false, nil, err
@@ -432,8 +432,10 @@ func (i *Iterator) Value(copy bool) ([]byte, error) {
 		return nil, err
 	}
 
+	// TODO: Release.
+
 	// resolve value
-	value, err = ComputeValue(value, i.txn.registry)
+	value, _, err = ComputeValue(value, i.txn.registry)
 	if err != nil {
 		return nil, err
 	}

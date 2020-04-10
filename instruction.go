@@ -22,7 +22,7 @@ type Operator struct {
 	Zero []byte
 
 	// The function called to apply operands to a value.
-	Apply func(value []byte, ops [][]byte) ([]byte, error)
+	Apply func(value []byte, ops [][]byte) ([]byte, Ref, error)
 
 	// An optional function called to combine operands.
 	// Combine func(ops [][]byte) ([]byte, error)

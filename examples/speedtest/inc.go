@@ -12,7 +12,7 @@ var addCounter = god.NewCounter("add", nil)
 var incAdd = &turing.Operator{
 	Name: "add",
 	Zero: []byte("\x00"),
-	Apply: func(value []byte, ops [][]byte) ([]byte, error) {
+	Apply: func(value []byte, ops [][]byte) ([]byte, turing.Ref, error) {
 		addCounter.Add(1)
 
 		// parse value
@@ -23,7 +23,10 @@ var incAdd = &turing.Operator{
 			count += decodeInt(op)
 		}
 
-		return encodeInt(count), nil
+		// encode value
+		value = encodeInt(count)
+
+		return value, turing.NoopRef, nil
 	},
 }
 

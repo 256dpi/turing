@@ -91,10 +91,13 @@ func (m *merger) Finish() ([]byte, error) {
 	switch m.values[0].Kind {
 	case FullValue:
 		// merge values
-		value, err := MergeValues(m.values, m.registry)
+		value, ref, err := MergeValues(m.values, m.registry)
 		if err != nil {
 			return nil, err
 		}
+
+		// ensure release
+		defer ref.Release()
 
 		// TODO: Borrow?
 

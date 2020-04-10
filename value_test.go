@@ -166,24 +166,28 @@ func TestMergeValues(t *testing.T) {
 		ops: map[string]*Operator{
 			"op": {
 				Name: "op",
-				Apply: func(value []byte, ops [][]byte) ([]byte, error) {
+				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
+					// TODO: Borrow slice.
+
 					// concat
 					for _, op := range ops {
 						value = append(value, op...)
 					}
 
-					return value, nil
+					return value, NoopRef, nil
 				},
 			},
 		},
 	}
 
-	value, err := MergeValues(values, registry)
+	value, ref, err := MergeValues(values, registry)
 	assert.NoError(t, err)
 	assert.Equal(t, Value{
 		Kind:  FullValue,
 		Value: []byte("abcdef"),
 	}, value)
+
+	ref.Release()
 }
 
 func BenchmarkEncodeFullValue(b *testing.B) {
@@ -364,8 +368,8 @@ func BenchmarkMergeValues(b *testing.B) {
 		ops: map[string]*Operator{
 			"op": {
 				Name: "op",
-				Apply: func(value []byte, ops [][]byte) ([]byte, error) {
-					return value, nil
+				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
+					return value, NoopRef, nil
 				},
 			},
 		},
@@ -375,9 +379,11 @@ func BenchmarkMergeValues(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, err := MergeValues(values, registry)
+		_, ref, err := MergeValues(values, registry)
 		if err != nil {
 			panic(err)
 		}
+
+		ref.Release()
 	}
 }

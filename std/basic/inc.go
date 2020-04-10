@@ -7,16 +7,17 @@ import (
 	"github.com/vmihailenco/msgpack/v4"
 
 	"github.com/256dpi/turing"
+	"github.com/256dpi/turing/pkg/coding"
 )
 
 var IncAdd = &turing.Operator{
 	Name: "std/counter/IncAdd",
 	Zero: []byte("0"),
-	Apply: func(value []byte, ops [][]byte) ([]byte, error) {
+	Apply: func(value []byte, ops [][]byte) ([]byte, turing.Ref, error) {
 		// parse value
 		count, err := strconv.ParseInt(cast.ToString(value), 10, 64)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// apply operands
@@ -24,17 +25,21 @@ var IncAdd = &turing.Operator{
 			// parse operand
 			increment, err := strconv.ParseInt(cast.ToString(op), 10, 64)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			// add increment
 			count += increment
 		}
 
-		// encode count
-		value = strconv.AppendInt(nil, count, 10)
+		// borrow slice
+		buf, ref := coding.Borrow(24)
 
-		return value, nil
+		// encode count
+		buf = buf[:0]
+		buf = strconv.AppendInt(buf, count, 10)
+
+		return buf, ref, nil
 	},
 }
 
