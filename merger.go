@@ -127,23 +127,14 @@ func (m *merger) recycle() {
 	// unset registry
 	m.registry = nil
 
-	// reset stack
-	for i := range m.stack {
-		m.stack[i] = nil
-	}
-	m.stack = m.stack[:0]
-
 	// release refs
-	for i, ref := range m.refs {
+	for _, ref := range m.refs {
 		ref.Release()
-		m.refs[i] = nil
 	}
-	m.refs = m.refs[:0]
 
-	// reset values
-	for i := range m.values {
-		m.values[i] = Value{}
-	}
+	// reset slices
+	m.stack = m.stack[:0]
+	m.refs = m.refs[:0]
 	m.values = m.values[:0]
 
 	// return
