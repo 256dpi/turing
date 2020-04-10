@@ -263,15 +263,13 @@ func MergeValues(values []Value, registry *registry) (Value, Ref, error) {
 	return result, newRef, nil
 }
 
-// ComputeValue will compute the final value. A full value is immediately
-// returned while a stacked value is merged with the first operators zero value.
+// ComputeValue will compute the final value from a stack value using the zero
+// value from the first operand operator.
 func ComputeValue(value Value, registry *registry) (Value, Ref, error) {
-	// directly return full value
-	if value.Kind == FullValue {
-		return value, NoopRef, nil
+	// check kind
+	if value.Kind != StackValue {
+		return Value{}, nil, fmt.Errorf("turing: compute value: expected stack value, got: %d", value.Kind)
 	}
-
-	// value is a stack value
 
 	// get first operator
 	operator, ok := registry.ops[value.Stack[0].Name]

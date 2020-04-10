@@ -90,25 +90,42 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 		return nil, false, nil, err
 	}
 
-	// TODO: Release.
+	// directly return full value
+	if value.Kind == FullValue {
+		// increment closers
+		t.closers++
+
+		// wrap closer
+		wrappedCloser := closerFunc(func() error {
+			t.closers--
+			return closer.Close()
+		})
+
+		return value.Value, true, wrappedCloser, nil
+	}
+
+	// value is a stack value
+
+	// ensure close
+	defer closer.Close()
 
 	// compute value
-	value, _, err = ComputeValue(value, t.registry)
+	value, ref, err := ComputeValue(value, t.registry)
 	if err != nil {
-		_ = closer.Close()
 		return nil, false, nil, err
 	}
 
 	// increment closers
 	t.closers++
 
-	// wrap closer
-	wrappedCloser := closerFunc(func() error {
+	// prepare ref closer
+	refCloser := closerFunc(func() error {
 		t.closers--
-		return closer.Close()
+		ref.Release()
+		return nil
 	})
 
-	return value.Value, true, wrappedCloser, nil
+	return value.Value, true, refCloser, nil
 }
 
 // Use will lookup the specified key and yield it to the provided function if it
@@ -369,9 +386,14 @@ func (i *Iterator) Prev() bool {
 	return i.iter.Prev()
 }
 
-// Key will return the current key. Unless copy is true, the key is only valid
-// until the next call of Next().
-func (i *Iterator) Key() []byte {
+// Key will return a buffered key that can be used until released.
+func (i *Iterator) Key() ([]byte, Ref) {
+	return coding.Copy(i.TempKey())
+}
+
+// TempKey will return the temporary key which is only valid until the next
+// iteration or the iterator is closed.
+func (i *Iterator) TempKey() []byte {
 	// get key
 	key := trimUserKey(i.iter.Key())
 	if len(key) == 0 {
@@ -381,34 +403,34 @@ func (i *Iterator) Key() []byte {
 	return key
 }
 
-// Value will return the current value. Unless copy is true, the value is only
-// valid until the next call of Next().
-func (i *Iterator) Value() ([]byte, error) {
+// Value will return a buffered value that can be used until released.
+func (i *Iterator) Value() ([]byte, Ref, error) {
 	// get value
 	bytes := i.iter.Value()
 	if len(bytes) == 0 {
-		return nil, nil
+		return nil, NoopRef, nil
 	}
 
 	// decode value (no need to clone as copying is explicit)
 	var value Value
 	err := value.Decode(bytes, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	// TODO: Release.
+	// copy and return full value
+	if value.Kind == FullValue {
+		val, ref := coding.Copy(value.Value)
+		return val, ref, nil
+	}
 
 	// compute value
-	value, _, err = ComputeValue(value, i.txn.registry)
+	value, ref, err := ComputeValue(value, i.txn.registry)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	// set bytes
-	bytes = value.Value
-
-	return bytes, nil
+	return value.Value, ref, nil
 }
 
 // Error will return the error

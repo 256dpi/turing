@@ -34,13 +34,16 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 	// iterate through all pairs
 	for iter.First(); iter.Valid(); iter.Next() {
 		// get value
-		value, err := iter.Value()
+		value, ref, err := iter.Value()
 		if err != nil {
 			return err
 		}
 
 		// add pair
-		m.Pairs[string(iter.Key())] = turing.Copy(value)
+		m.Pairs[string(iter.TempKey())] = turing.Copy(value)
+
+		// release value
+		ref.Release()
 	}
 
 	return nil
