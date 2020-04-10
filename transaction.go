@@ -388,16 +388,11 @@ func (i *Iterator) Prev() bool {
 
 // Key will return the current key. Unless copy is true, the key is only valid
 // until the next call of Next().
-func (i *Iterator) Key(copy bool) []byte {
+func (i *Iterator) Key() []byte {
 	// get key
 	key := trimUserKey(i.iter.Key())
 	if len(key) == 0 {
 		return nil
-	}
-
-	// make copy
-	if copy {
-		key = Copy(nil, key)
 	}
 
 	return key
@@ -405,7 +400,7 @@ func (i *Iterator) Key(copy bool) []byte {
 
 // Value will return the current value. Unless copy is true, the value is only
 // valid until the next call of Next().
-func (i *Iterator) Value(copy bool) ([]byte, error) {
+func (i *Iterator) Value() ([]byte, error) {
 	// get value
 	bytes := i.iter.Value()
 	if len(bytes) == 0 {
@@ -429,11 +424,6 @@ func (i *Iterator) Value(copy bool) ([]byte, error) {
 
 	// set bytes
 	bytes = value.Value
-
-	// make copy
-	if copy {
-		bytes = Copy(nil, bytes)
-	}
 
 	return bytes, nil
 }
