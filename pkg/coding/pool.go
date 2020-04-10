@@ -33,8 +33,8 @@ func (r *Ref) Release() {
 
 var noop = &Ref{done: true}
 
-// Borrow will return a slice that has at least the specified length. If the
-// requested length is unavailable a slice will be allocated. To recycle the
+// Borrow will return a slice that has the specified length. If the requested
+// length is too small or too long a slice will be allocated. To recycle the
 // slice, it must be released by calling Release() on the returned ref value.
 // Always release any returned value, even if the slice grows it is possible
 // to return the originally requested slice.
@@ -52,5 +52,5 @@ func Borrow(len int) ([]byte, *Ref) {
 	ref := pool.Get().(*Ref)
 	ref.done = false
 
-	return ref.array[0:maxSize], ref
+	return ref.array[0:len], ref
 }
