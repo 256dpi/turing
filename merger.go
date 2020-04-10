@@ -30,8 +30,12 @@ func newMerger(registry *registry, value []byte) *merger {
 	// borrow merger
 	merger := mergerPool.Get().(*merger)
 	merger.registry = registry
-	merger.stack = append(merger.stack, value)
 	merger.order = true
+
+	// add value
+	value, ref := coding.Copy(value)
+	merger.stack = append(merger.stack, value)
+	merger.refs = append(merger.refs, ref)
 
 	return merger
 }
