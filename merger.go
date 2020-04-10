@@ -2,6 +2,8 @@ package turing
 
 import (
 	"sync"
+
+	"github.com/256dpi/turing/pkg/coding"
 )
 
 const mergerPreAllocationSize = 1000
@@ -9,6 +11,7 @@ const mergerPreAllocationSize = 1000
 type merger struct {
 	registry *registry
 	stack    [][]byte
+	refs     []Ref
 	values   []Value
 	order    bool
 }
@@ -17,6 +20,7 @@ var mergerPool = sync.Pool{
 	New: func() interface{} {
 		return &merger{
 			stack:  make([][]byte, 0, mergerPreAllocationSize),
+			refs:   make([]Ref, 0, mergerPreAllocationSize),
 			values: make([]Value, 0, mergerPreAllocationSize),
 		}
 	},
@@ -37,7 +41,9 @@ func (m *merger) MergeNewer(value []byte) error {
 	m.sortStack(true)
 
 	// add value
+	value, ref := coding.Copy(value)
 	m.stack = append(m.stack, value)
+	m.refs = append(m.refs, ref)
 
 	return nil
 }
@@ -47,32 +53,16 @@ func (m *merger) MergeOlder(value []byte) error {
 	m.sortStack(false)
 
 	// add value
+	value, ref := coding.Copy(value)
 	m.stack = append(m.stack, value)
+	m.refs = append(m.refs, ref)
 
 	return nil
 }
 
 func (m *merger) Finish() ([]byte, error) {
-	// return merger
-	defer func() {
-		// unset registry
-		m.registry = nil
-
-		// reset stack
-		for i := range m.stack {
-			m.stack[i] = nil
-		}
-		m.stack = m.stack[:0]
-
-		// reset values
-		for i := range m.values {
-			m.values[i] = Value{}
-		}
-		m.values = m.values[:0]
-
-		// return
-		mergerPool.Put(m)
-	}()
+	// recycle merger
+	defer m.recycle()
 
 	// sort stack
 	m.sortStack(true)
@@ -127,6 +117,33 @@ func (m *merger) Finish() ([]byte, error) {
 	default:
 		panic("unexpected condition")
 	}
+}
+
+func (m *merger) recycle() {
+	// unset registry
+	m.registry = nil
+
+	// reset stack
+	for i := range m.stack {
+		m.stack[i] = nil
+	}
+	m.stack = m.stack[:0]
+
+	// release refs
+	for i, ref := range m.refs {
+		ref.Release()
+		m.refs[i] = nil
+	}
+	m.refs = m.refs[:0]
+
+	// reset values
+	for i := range m.values {
+		m.values[i] = Value{}
+	}
+	m.values = m.values[:0]
+
+	// return
+	mergerPool.Put(m)
 }
 
 func (m *merger) sortStack(fwd bool) {
