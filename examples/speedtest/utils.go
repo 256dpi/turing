@@ -5,10 +5,8 @@ import (
 )
 
 func encodeInt(num int64) []byte {
-	// borrow slice
+	// encode int (allocating a 10 byte slice is faster than using a pool)
 	buf := make([]byte, 10)
-
-	// encode int
 	n := binary.PutVarint(buf, num)
 	if n <= 0 {
 		panic("encode error")
