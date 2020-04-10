@@ -9,7 +9,7 @@ import (
 )
 
 func TestInc(t *testing.T) {
-	machine := turing.TestMachine(&Inc{}, &Get{})
+	machine := turing.Test(&Inc{}, &Get{})
 	defer machine.Stop()
 
 	err := machine.Execute(&Inc{
@@ -44,7 +44,7 @@ func TestInc(t *testing.T) {
 }
 
 func BenchmarkInc(b *testing.B) {
-	machine := turing.TestMachine(&Inc{}, &Get{})
+	machine := turing.Test(&Inc{}, &Get{})
 	defer machine.Stop()
 
 	b.ReportAllocs()
