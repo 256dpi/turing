@@ -21,18 +21,18 @@ var stateKey = []byte("$state")
 type state struct {
 	Index uint64
 	Batch uint64
-	Last  uint64
+	Last  uint16
 }
 
 func (s *state) Encode() ([]byte, Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.VarUint(1)
+		enc.Uint8(1)
 
 		// encode body
-		enc.VarUint(s.Index)
-		enc.VarUint(s.Batch)
-		enc.VarUint(s.Last)
+		enc.Uint64(s.Index)
+		enc.Uint64(s.Batch)
+		enc.Uint16(s.Last)
 
 		return nil
 	})
@@ -41,16 +41,16 @@ func (s *state) Encode() ([]byte, Ref, error) {
 func (s *state) Decode(data []byte) error {
 	return coding.Decode(data, func(dec *coding.Decoder) error {
 		// decode version
-		var version uint64
-		dec.VarUint(&version)
+		var version uint8
+		dec.Uint8(&version)
 		if version != 1 {
 			return fmt.Errorf("turing: state decode: invalid version")
 		}
 
 		// decode body
-		dec.VarUint(&s.Index)
-		dec.VarUint(&s.Batch)
-		dec.VarUint(&s.Last)
+		dec.Uint64(&s.Index)
+		dec.Uint64(&s.Batch)
+		dec.Uint16(&s.Last)
 
 		return nil
 	})
@@ -221,7 +221,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 	// execute all instructions
 	for i, ins := range list {
 		// skip instruction if already applied
-		if index != 0 && d.state.Batch == index && d.state.Last >= uint64(i) {
+		if index != 0 && d.state.Batch == index && d.state.Last >= uint16(i) {
 			continue
 		}
 
@@ -274,7 +274,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 			// update state
 			d.state.Batch = index
-			d.state.Last = uint64(i)
+			d.state.Last = uint16(i)
 
 			// encode state
 			encodedState, ref, err := d.state.Encode()
