@@ -7,7 +7,7 @@ import (
 )
 
 // Kind represents the kind of value stored at a key.
-type Kind byte
+type Kind uint8
 
 const (
 	// FullValue is a full value.
@@ -45,10 +45,10 @@ func (v *Value) Encode(borrow bool) ([]byte, Ref, error) {
 
 	return coding.Encode(borrow, func(enc *coding.Encoder) error {
 		// write version
-		enc.VarUint(1)
+		enc.Uint8(1)
 
 		// write kind
-		enc.VarUint(uint64(v.Kind))
+		enc.Uint8(uint8(v.Kind))
 
 		// write value
 		enc.Tail(v.Value)
@@ -61,15 +61,15 @@ func (v *Value) Encode(borrow bool) ([]byte, Ref, error) {
 func (v *Value) Decode(bytes []byte, clone bool) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
-		var version uint64
-		dec.VarUint(&version)
+		var version uint8
+		dec.Uint8(&version)
 		if version != 1 {
 			return fmt.Errorf("turing: decode value: invalid version")
 		}
 
 		// read kind
-		var kind uint64
-		dec.VarUint(&kind)
+		var kind uint8
+		dec.Uint8(&kind)
 		v.Kind = Kind(kind)
 		if !v.Kind.Valid() {
 			return fmt.Errorf("turing: decode value: invalid kind: %d", v.Kind)

@@ -80,7 +80,7 @@ func BenchmarkEncodeCommand(b *testing.B) {
 }
 
 func BenchmarkDecodeCommand(b *testing.B) {
-	data := []byte("\x01\x02\x03foo\x03bar\x03baz\x03quz")
+	data := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -95,7 +95,7 @@ func BenchmarkDecodeCommand(b *testing.B) {
 }
 
 func BenchmarkWalkCommand(b *testing.B) {
-	data := []byte("\x01\x02\x03foo\x03bar\x03baz\x03quz")
+	data := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
 
 	b.ReportAllocs()
 	b.ResetTimer()
