@@ -167,18 +167,12 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 		return err
 	}
 
-	// decode command (no need to clone as result is not reused)
-	err = cmd.Decode(data, false)
+	// walk command and decode results
+	err = WalkCommand(data, func(i int, op Operation) error {
+		return list[i].Decode(op.Data)
+	})
 	if err != nil {
 		return err
-	}
-
-	// decode instructions
-	for i, op := range cmd.Operations {
-		err = list[i].Decode(op.Data)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
