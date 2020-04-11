@@ -39,25 +39,26 @@ func (e *Encoder) Bool(yes bool) {
 
 // Int8 writes a one byte integer.
 func (e *Encoder) Int8(num int8) {
-	e.int(int64(num), 1)
+	e.Int(int64(num), 1)
 }
 
 // Int16 writes a two byte integer.
 func (e *Encoder) Int16(num int16) {
-	e.int(int64(num), 2)
+	e.Int(int64(num), 2)
 }
 
 // Int32 writes a four byte integer.
 func (e *Encoder) Int32(num int32) {
-	e.int(int64(num), 4)
+	e.Int(int64(num), 4)
 }
 
 // Int64 writes a eight byte integer.
 func (e *Encoder) Int64(num int64) {
-	e.int(num, 8)
+	e.Int(num, 8)
 }
 
-func (e *Encoder) int(n int64, size int) {
+// Int writes a one, two, four or eight byte integer.
+func (e *Encoder) Int(n int64, size int) {
 	// convert
 	un := uint64(n) << 1
 	if n < 0 {
@@ -88,25 +89,26 @@ func (e *Encoder) int(n int64, size int) {
 
 // Uint8 writes a one byte unsigned integer.
 func (e *Encoder) Uint8(num uint8) {
-	e.uint(uint64(num), 1)
+	e.Uint(uint64(num), 1)
 }
 
 // Uint16 writes a two byte unsigned integer.
 func (e *Encoder) Uint16(num uint16) {
-	e.uint(uint64(num), 2)
+	e.Uint(uint64(num), 2)
 }
 
 // Uint32 writes a four byte unsigned integer.
 func (e *Encoder) Uint32(num uint32) {
-	e.uint(uint64(num), 4)
+	e.Uint(uint64(num), 4)
 }
 
 // Uint64 writes a eight byte unsigned integer.
 func (e *Encoder) Uint64(num uint64) {
-	e.uint(num, 8)
+	e.Uint(num, 8)
 }
 
-func (e *Encoder) uint(num uint64, size int) {
+// Uint writes a one, two, four or eight byte unsigned integer.
+func (e *Encoder) Uint(num uint64, size int) {
 	// handle length
 	if e.buf == nil {
 		e.len += size
