@@ -9,8 +9,8 @@ const computerPreAllocationSize = 1000
 
 type computer struct {
 	registry *registry
-	names    [computerPreAllocationSize]string
-	operands [computerPreAllocationSize][]byte
+	opNames  [computerPreAllocationSize]string
+	opValues [computerPreAllocationSize][]byte
 }
 
 var computerPool = sync.Pool{
@@ -32,8 +32,8 @@ func (c *computer) stack(values []Value) (Value, Ref, error) {
 	defer c.recycle()
 
 	// validate and collect operands
-	names := c.names[:0]
-	operands := c.operands[:0]
+	opNames := c.opNames[:0]
+	opValues := c.opValues[:0]
 	for _, value := range values {
 		// check value
 		if value.Kind != StackValue {
@@ -42,8 +42,8 @@ func (c *computer) stack(values []Value) (Value, Ref, error) {
 
 		// decode stack
 		err := WalkStack(value.Value, func(op Operand) error {
-			names = append(names, op.Name)
-			operands = append(operands, op.Value)
+			opNames = append(opNames, op.Name)
+			opValues = append(opValues, op.Value)
 			return nil
 		})
 		if err != nil {
@@ -53,14 +53,14 @@ func (c *computer) stack(values []Value) (Value, Ref, error) {
 
 	// prepare new stack
 	stack := Stack{
-		Operands: make([]Operand, 0, len(names)),
+		Operands: make([]Operand, 0, len(opNames)),
 	}
 
 	// collect stack values
-	for i := range names {
+	for i := range opNames {
 		stack.Operands = append(stack.Operands, Operand{
-			Name:  names[i],
-			Value: operands[i],
+			Name:  opNames[i],
+			Value: opValues[i],
 		})
 	}
 
@@ -97,8 +97,8 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 	base := values[0].Value
 
 	// validate and collect operands
-	names := c.names[:0]
-	operands := c.operands[:0]
+	opNames := c.opNames[:0]
+	opValues := c.opValues[:0]
 	for _, value := range values[1:] {
 		// check value
 		if value.Kind != StackValue {
@@ -107,8 +107,8 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 
 		// decode stack
 		err := WalkStack(value.Value, func(op Operand) error {
-			names = append(names, op.Name)
-			operands = append(operands, op.Value)
+			opNames = append(opNames, op.Name)
+			opValues = append(opValues, op.Value)
 			return nil
 		})
 		if err != nil {
@@ -118,12 +118,12 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 
 	// merge all operands
 	var start int
-	var name = names[0]
+	var name = opNames[0]
 	var err error
 	var ref Ref
 	for i := 1; ; i++ {
 		// continue if not finished and same name
-		if i < len(names) && name == names[i] {
+		if i < len(opNames) && name == opNames[i] {
 			continue
 		}
 
@@ -142,7 +142,7 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 
 		// merge base with operands
 		var newRef Ref
-		base, newRef, err = operator.Apply(base, operands[start:i])
+		base, newRef, err = operator.Apply(base, opValues[start:i])
 		if err != nil {
 			return Value{}, nil, err
 		}
@@ -156,12 +156,12 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 		ref = newRef
 
 		// break if last
-		if i == len(names) {
+		if i == len(opNames) {
 			break
 		}
 
 		// otherwise set next
-		name = names[i]
+		name = opNames[i]
 		start = i
 	}
 
