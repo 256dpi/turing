@@ -1,31 +1,63 @@
 package coding
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEncode(t *testing.T) {
+	enc := "\x01"
+	enc += "\xFE"
+	enc += "\xFF\xFE"
+	enc += "\xFF\xFF\xFF\xFE"
+	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE"
+	enc += "\xFF"
+	enc += "\xFF\xFF"
+	enc += "\xFF\xFF\xFF\xFF"
+	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+	enc += "\x0e"
+	enc += "\x80\x04"
+	enc += "\x03foo"
+	enc += "\x03bar"
+	enc += "baz"
+
 	res, _, err := Encode(true, func(enc *Encoder) error {
 		enc.Bool(true)
+		enc.Int8(math.MaxInt8)
+		enc.Int16(math.MaxInt16)
+		enc.Int32(math.MaxInt32)
+		enc.Int64(math.MaxInt64)
+		enc.Uint8(math.MaxUint8)
+		enc.Uint16(math.MaxUint16)
+		enc.Uint32(math.MaxUint32)
+		enc.Uint64(math.MaxUint64)
 		enc.VarInt(7)
+		enc.VarUint(512)
 		enc.String("foo")
 		enc.Bytes([]byte("bar"))
-		enc.VarUint(512)
 		enc.Tail([]byte("baz"))
 		return nil
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, []byte("\x01\x0e\x03foo\x03bar\x80\x04baz"), res)
+	assert.Equal(t, []byte(enc), res)
 
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
 		_, ref, _ := Encode(true, func(enc *Encoder) error {
 			enc.Bool(true)
+			enc.Int8(math.MaxInt8)
+			enc.Int16(math.MaxInt16)
+			enc.Int32(math.MaxInt32)
+			enc.Int64(math.MaxInt64)
+			enc.Uint8(math.MaxUint8)
+			enc.Uint16(math.MaxUint16)
+			enc.Uint32(math.MaxUint32)
+			enc.Uint64(math.MaxUint64)
 			enc.VarInt(7)
+			enc.VarUint(512)
 			enc.String("foo")
 			enc.Bytes([]byte("bar"))
-			enc.VarUint(512)
 			enc.Tail([]byte("baz"))
 			return nil
 		})
@@ -40,10 +72,18 @@ func BenchmarkEncode(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, ref, err := Encode(true, func(enc *Encoder) error {
 			enc.Bool(true)
+			enc.Int8(math.MaxInt8)
+			enc.Int16(math.MaxInt16)
+			enc.Int32(math.MaxInt32)
+			enc.Int64(math.MaxInt64)
+			enc.Uint8(math.MaxUint8)
+			enc.Uint16(math.MaxUint16)
+			enc.Uint32(math.MaxUint32)
+			enc.Uint64(math.MaxUint64)
 			enc.VarInt(7)
+			enc.VarUint(512)
 			enc.String("foo")
 			enc.Bytes([]byte("bar"))
-			enc.VarUint(512)
 			enc.Tail([]byte("baz"))
 			return nil
 		})

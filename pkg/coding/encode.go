@@ -29,25 +29,104 @@ func (e *Encoder) Reset(buf []byte) {
 }
 
 // Bool writes a boolean.
-func (e *Encoder) Bool(truthy bool) {
-	if truthy {
-		e.VarUint(1)
+func (e *Encoder) Bool(yes bool) {
+	if yes {
+		e.Uint8(1)
 	} else {
-		e.VarUint(0)
+		e.Uint8(0)
 	}
 }
 
-// VarUint writes a variable unsigned integer.
-func (e *Encoder) VarUint(num uint64) {
+// Int8 writes a one byte integer.
+func (e *Encoder) Int8(num int8) {
+	e.int(int64(num), 1)
+}
+
+// Int16 writes a two byte integer.
+func (e *Encoder) Int16(num int16) {
+	e.int(int64(num), 2)
+}
+
+// Int32 writes a four byte integer.
+func (e *Encoder) Int32(num int32) {
+	e.int(int64(num), 4)
+}
+
+// Int64 writes a eight byte integer.
+func (e *Encoder) Int64(num int64) {
+	e.int(num, 8)
+}
+
+func (e *Encoder) int(n int64, size int) {
+	// convert
+	un := uint64(n) << 1
+	if n < 0 {
+		un = ^un
+	}
+
 	// handle length
 	if e.buf == nil {
-		e.len += binary.PutUvarint(e.b10[:], num)
+		e.len += size
 		return
 	}
 
 	// write number
-	n := binary.PutUvarint(e.buf, num)
-	e.buf = e.buf[n:]
+	switch size {
+	case 1:
+		e.buf[0] = uint8(un)
+	case 2:
+		binary.BigEndian.PutUint16(e.buf, uint16(un))
+	case 4:
+		binary.BigEndian.PutUint32(e.buf, uint32(un))
+	case 8:
+		binary.BigEndian.PutUint64(e.buf, un)
+	}
+
+	// slice
+	e.buf = e.buf[size:]
+}
+
+// Uint8 writes a one byte unsigned integer.
+func (e *Encoder) Uint8(num uint8) {
+	e.uint(uint64(num), 1)
+}
+
+// Uint16 writes a two byte unsigned integer.
+func (e *Encoder) Uint16(num uint16) {
+	e.uint(uint64(num), 2)
+}
+
+// Uint32 writes a four byte unsigned integer.
+func (e *Encoder) Uint32(num uint32) {
+	e.uint(uint64(num), 4)
+}
+
+// Uint64 writes a eight byte unsigned integer.
+func (e *Encoder) Uint64(num uint64) {
+	e.uint(num, 8)
+}
+
+func (e *Encoder) uint(num uint64, size int) {
+	// handle length
+	if e.buf == nil {
+		e.len += size
+		return
+	}
+
+	// write number
+	switch size {
+	case 1:
+		e.buf[0] = uint8(num)
+	case 2:
+		binary.BigEndian.PutUint16(e.buf, uint16(num))
+	case 4:
+		binary.BigEndian.PutUint32(e.buf, uint32(num))
+	case 8:
+		binary.BigEndian.PutUint64(e.buf, num)
+	}
+
+	// slice
+	e.buf = e.buf[size:]
 }
 
 // VarInt writes a variable signed integer.
@@ -60,6 +139,19 @@ func (e *Encoder) VarInt(num int64) {
 
 	// write number
 	n := binary.PutVarint(e.buf, num)
+	e.buf = e.buf[n:]
+}
+
+// VarUint writes a variable unsigned integer.
+func (e *Encoder) VarUint(num uint64) {
+	// handle length
+	if e.buf == nil {
+		e.len += binary.PutUvarint(e.b10[:], num)
+		return
+	}
+
+	// write number
+	n := binary.PutUvarint(e.buf, num)
 	e.buf = e.buf[n:]
 }
 

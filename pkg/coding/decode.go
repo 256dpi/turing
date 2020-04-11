@@ -28,9 +28,117 @@ func NewDecoder(bytes []byte) *Decoder {
 
 // Bool reads a boolean.
 func (d *Decoder) Bool(bol *bool) {
-	var num uint64
-	d.VarUint(&num)
+	var num uint8
+	d.Uint8(&num)
 	*bol = num == 1
+}
+
+// Int8 reads a one byte integer.
+func (d *Decoder) Int8(num *int8) {
+	*num = int8(d.int(1))
+}
+
+// Int16 reads a two byte integer.
+func (d *Decoder) Int16(num *int16) {
+	*num = int16(d.int(2))
+}
+
+// Int32 reads a four byte integer.
+func (d *Decoder) Int32(num *int32) {
+	*num = int32(d.int(4))
+}
+
+// Int64 reads a eight byte integer.
+func (d *Decoder) Int64(num *int64) {
+	*num = d.int(8)
+}
+
+func (d *Decoder) int(size int) int64 {
+	// skip if errored
+	if d.err != nil {
+		return 0
+	}
+
+	// check length
+	if len(d.buf) < size {
+		d.err = ErrBufferTooShort
+		return 0
+	}
+
+	// read
+	var num uint64
+	switch size {
+	case 1:
+		num = uint64(d.buf[0])
+	case 2:
+		num = uint64(binary.BigEndian.Uint16(d.buf))
+	case 4:
+		num = uint64(binary.BigEndian.Uint32(d.buf))
+	case 8:
+		num = binary.BigEndian.Uint64(d.buf)
+	}
+
+	// slice
+	d.buf = d.buf[size:]
+
+	// convert
+	n := int64(num >> 1)
+	if num&1 != 0 {
+		n = ^n
+	}
+
+	return n
+}
+
+// Uint8 reads a one byte unsigned integer.
+func (d *Decoder) Uint8(num *uint8) {
+	*num = uint8(d.uint(1))
+}
+
+// Uint16 reads a two byte unsigned integer.
+func (d *Decoder) Uint16(num *uint16) {
+	*num = uint16(d.uint(2))
+}
+
+// Uint32 reads a four byte unsigned integer.
+func (d *Decoder) Uint32(num *uint32) {
+	*num = uint32(d.uint(4))
+}
+
+// Uint64 reads a eight byte unsigned integer.
+func (d *Decoder) Uint64(num *uint64) {
+	*num = d.uint(8)
+}
+
+func (d *Decoder) uint(size int) uint64 {
+	// skip if errored
+	if d.err != nil {
+		return 0
+	}
+
+	// check length
+	if len(d.buf) < size {
+		d.err = ErrBufferTooShort
+		return 0
+	}
+
+	// read
+	var num uint64
+	switch size {
+	case 1:
+		num = uint64(d.buf[0])
+	case 2:
+		num = uint64(binary.BigEndian.Uint16(d.buf))
+	case 4:
+		num = uint64(binary.BigEndian.Uint32(d.buf))
+	case 8:
+		num = binary.BigEndian.Uint64(d.buf)
+	}
+
+	// slice
+	d.buf = d.buf[size:]
+
+	return num
 }
 
 // VarUint reads a variable unsigned integer.
@@ -40,7 +148,7 @@ func (d *Decoder) VarUint(num *uint64) {
 		return
 	}
 
-	// read length
+	// read
 	var n int
 	*num, n = binary.Uvarint(d.buf)
 	if n == 0 {
@@ -59,7 +167,7 @@ func (d *Decoder) VarInt(num *int64) {
 		return
 	}
 
-	// read length
+	// read
 	var n int
 	*num, n = binary.Varint(d.buf)
 	if n == 0 {

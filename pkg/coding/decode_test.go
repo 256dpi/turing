@@ -1,50 +1,106 @@
 package coding
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDecode(t *testing.T) {
-	data := []byte("\x01\x0e\x03foo\x03bar\x80\x04baz")
+	enc := "\x01"
+	enc += "\xFE"
+	enc += "\xFF\xFE"
+	enc += "\xFF\xFF\xFF\xFE"
+	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE"
+	enc += "\xFF"
+	enc += "\xFF\xFF"
+	enc += "\xFF\xFF\xFF\xFF"
+	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+	enc += "\x0e"
+	enc += "\x80\x04"
+	enc += "\x03foo"
+	enc += "\x03bar"
+	enc += "baz"
+
+	data := []byte(enc)
 
 	var bol bool
-	var num int64
+	var i8 int8
+	var i16 int16
+	var i32 int32
+	var i64 int64
+	var u8 uint8
+	var u16 uint16
+	var u32 uint32
+	var u64 uint64
+	var vi int64
+	var vu uint64
 	var str string
 	var buf []byte
-	var mum uint64
 	var tail []byte
 	err := Decode(data, func(dec *Decoder) error {
 		dec.Bool(&bol)
-		dec.VarInt(&num)
+		dec.Int8(&i8)
+		dec.Int16(&i16)
+		dec.Int32(&i32)
+		dec.Int64(&i64)
+		dec.Uint8(&u8)
+		dec.Uint16(&u16)
+		dec.Uint32(&u32)
+		dec.Uint64(&u64)
+		dec.VarInt(&vi)
+		dec.VarUint(&vu)
 		dec.String(&str, false)
 		dec.Bytes(&buf, false)
-		dec.VarUint(&mum)
 		dec.Tail(&tail, false)
 		return nil
 	})
 	assert.NoError(t, err)
 	assert.True(t, bol)
-	assert.Equal(t, int64(7), num)
+	assert.Equal(t, int8(math.MaxInt8), i8)
+	assert.Equal(t, int16(math.MaxInt16), i16)
+	assert.Equal(t, int32(math.MaxInt32), i32)
+	assert.Equal(t, int64(math.MaxInt64), i64)
+	assert.Equal(t, uint8(math.MaxUint8), u8)
+	assert.Equal(t, uint16(math.MaxUint16), u16)
+	assert.Equal(t, uint32(math.MaxUint32), u32)
+	assert.Equal(t, uint64(math.MaxUint64), u64)
+	assert.Equal(t, int64(7), vi)
+	assert.Equal(t, uint64(512), vu)
 	assert.Equal(t, "foo", str)
 	assert.Equal(t, []byte("bar"), buf)
-	assert.Equal(t, uint64(512), mum)
 	assert.Equal(t, []byte("baz"), tail)
 
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
 		var bol bool
-		var num int64
+		var i8 int8
+		var i16 int16
+		var i32 int32
+		var i64 int64
+		var u8 uint8
+		var u16 uint16
+		var u32 uint32
+		var u64 uint64
+		var vi int64
+		var vu uint64
 		var str string
 		var buf []byte
-		var mum uint64
 		var tail []byte
 		_ = Decode(data, func(dec *Decoder) error {
 			dec.Bool(&bol)
-			dec.VarInt(&num)
+			dec.Int8(&i8)
+			dec.Int16(&i16)
+			dec.Int32(&i32)
+			dec.Int64(&i64)
+			dec.Uint8(&u8)
+			dec.Uint16(&u16)
+			dec.Uint32(&u32)
+			dec.Uint64(&u64)
+			dec.VarInt(&vi)
+			dec.VarUint(&vu)
 			dec.String(&str, false)
 			dec.Bytes(&buf, false)
-			dec.VarUint(&mum)
 			dec.Tail(&tail, false)
 			return nil
 		})
@@ -52,24 +108,55 @@ func TestDecode(t *testing.T) {
 }
 
 func BenchmarkDecode(b *testing.B) {
-	data := []byte("\x01\x0e\x03foo\x03bar\x80\x04baz")
+	enc := "\x01"
+	enc += "\xFE"
+	enc += "\xFF\xFE"
+	enc += "\xFF\xFF\xFF\xFE"
+	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFE"
+	enc += "\xFF"
+	enc += "\xFF\xFF"
+	enc += "\xFF\xFF\xFF\xFF"
+	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+	enc += "\x0e"
+	enc += "\x80\x04"
+	enc += "\x03foo"
+	enc += "\x03bar"
+	enc += "baz"
+
+	data := []byte(enc)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		var bol bool
-		var num int64
+		var i8 int8
+		var i16 int16
+		var i32 int32
+		var i64 int64
+		var u8 uint8
+		var u16 uint16
+		var u32 uint32
+		var u64 uint64
+		var vi int64
+		var vu uint64
 		var str string
 		var buf []byte
-		var mum uint64
 		var tail []byte
 		err := Decode(data, func(dec *Decoder) error {
 			dec.Bool(&bol)
-			dec.VarInt(&num)
+			dec.Int8(&i8)
+			dec.Int16(&i16)
+			dec.Int32(&i32)
+			dec.Int64(&i64)
+			dec.Uint8(&u8)
+			dec.Uint16(&u16)
+			dec.Uint32(&u32)
+			dec.Uint64(&u64)
+			dec.VarInt(&vi)
+			dec.VarUint(&vu)
 			dec.String(&str, false)
 			dec.Bytes(&buf, false)
-			dec.VarUint(&mum)
 			dec.Tail(&tail, false)
 			return nil
 		})
