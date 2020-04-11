@@ -29,12 +29,12 @@ func NewDecoder(bytes []byte) *Decoder {
 // Bool reads a boolean.
 func (d *Decoder) Bool(bol *bool) {
 	var num uint64
-	d.Uint(&num)
+	d.VarUint(&num)
 	*bol = num == 1
 }
 
-// Uint reads an unsigned integer.
-func (d *Decoder) Uint(num *uint64) {
+// VarUint reads a variable unsigned integer.
+func (d *Decoder) VarUint(num *uint64) {
 	// skip if errored
 	if d.err != nil {
 		return
@@ -52,8 +52,8 @@ func (d *Decoder) Uint(num *uint64) {
 	d.buf = d.buf[n:]
 }
 
-// Int reads a signed integer.
-func (d *Decoder) Int(num *int64) {
+// VarInt reads a variable signed integer.
+func (d *Decoder) VarInt(num *int64) {
 	// skip if errored
 	if d.err != nil {
 		return

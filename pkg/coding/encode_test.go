@@ -9,10 +9,10 @@ import (
 func TestEncode(t *testing.T) {
 	res, _, err := Encode(true, func(enc *Encoder) error {
 		enc.Bool(true)
-		enc.Int(7)
+		enc.VarInt(7)
 		enc.String("foo")
 		enc.Bytes([]byte("bar"))
-		enc.Uint(512)
+		enc.VarUint(512)
 		enc.Tail([]byte("baz"))
 		return nil
 	})
@@ -22,10 +22,10 @@ func TestEncode(t *testing.T) {
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
 		_, ref, _ := Encode(true, func(enc *Encoder) error {
 			enc.Bool(true)
-			enc.Int(7)
+			enc.VarInt(7)
 			enc.String("foo")
 			enc.Bytes([]byte("bar"))
-			enc.Uint(512)
+			enc.VarUint(512)
 			enc.Tail([]byte("baz"))
 			return nil
 		})
@@ -40,10 +40,10 @@ func BenchmarkEncode(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, ref, err := Encode(true, func(enc *Encoder) error {
 			enc.Bool(true)
-			enc.Int(7)
+			enc.VarInt(7)
 			enc.String("foo")
 			enc.Bytes([]byte("bar"))
-			enc.Uint(512)
+			enc.VarUint(512)
 			enc.Tail([]byte("baz"))
 			return nil
 		})

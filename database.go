@@ -27,12 +27,12 @@ type state struct {
 func (s *state) Encode() ([]byte, Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.Uint(1)
+		enc.VarUint(1)
 
 		// encode body
-		enc.Uint(s.Index)
-		enc.Uint(s.Batch)
-		enc.Uint(s.Last)
+		enc.VarUint(s.Index)
+		enc.VarUint(s.Batch)
+		enc.VarUint(s.Last)
 
 		return nil
 	})
@@ -42,15 +42,15 @@ func (s *state) Decode(data []byte) error {
 	return coding.Decode(data, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("turing: state decode: invalid version")
 		}
 
 		// decode body
-		dec.Uint(&s.Index)
-		dec.Uint(&s.Batch)
-		dec.Uint(&s.Last)
+		dec.VarUint(&s.Index)
+		dec.VarUint(&s.Batch)
+		dec.VarUint(&s.Last)
 
 		return nil
 	})

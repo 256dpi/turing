@@ -47,7 +47,7 @@ func (g *Get) Execute(txn *turing.Transaction) error {
 func (g *Get) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.Uint(1)
+		enc.VarUint(1)
 
 		// encode body
 		enc.Bytes(g.Key)
@@ -63,7 +63,7 @@ func (g *Get) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("stdset: decode get: invalid version")
 		}

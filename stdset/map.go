@@ -58,13 +58,13 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 func (m *Map) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.Uint(1)
+		enc.VarUint(1)
 
 		// encode prefix
 		enc.Bytes(m.Prefix)
 
 		// encode length
-		enc.Uint(uint64(len(m.Pairs)))
+		enc.VarUint(uint64(len(m.Pairs)))
 
 		// encode pairs
 		for key, value := range m.Pairs {
@@ -81,7 +81,7 @@ func (m *Map) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("stdset: decode map: invalid version")
 		}
@@ -91,7 +91,7 @@ func (m *Map) Decode(bytes []byte) error {
 
 		// decode length
 		var length uint64
-		dec.Uint(&length)
+		dec.VarUint(&length)
 
 		// decode pairs
 		m.Pairs = map[string][]byte{}

@@ -45,10 +45,10 @@ func (v *Value) Encode(borrow bool) ([]byte, Ref, error) {
 
 	return coding.Encode(borrow, func(enc *coding.Encoder) error {
 		// write version
-		enc.Uint(1)
+		enc.VarUint(1)
 
 		// write kind
-		enc.Uint(uint64(v.Kind))
+		enc.VarUint(uint64(v.Kind))
 
 		// write value
 		enc.Tail(v.Value)
@@ -62,14 +62,14 @@ func (v *Value) Decode(bytes []byte, clone bool) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("turing: decode value: invalid version")
 		}
 
 		// read kind
 		var kind uint64
-		dec.Uint(&kind)
+		dec.VarUint(&kind)
 		v.Kind = Kind(kind)
 		if !v.Kind.Valid() {
 			return fmt.Errorf("turing: decode value: invalid kind: %d", v.Kind)

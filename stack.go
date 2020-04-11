@@ -28,10 +28,10 @@ func (s *Stack) Encode(borrow bool) ([]byte, Ref, error) {
 
 	return coding.Encode(borrow, func(enc *coding.Encoder) error {
 		// write version
-		enc.Uint(1)
+		enc.VarUint(1)
 
 		// write length
-		enc.Uint(uint64(len(s.Operands)))
+		enc.VarUint(uint64(len(s.Operands)))
 
 		// write operands
 		for _, op := range s.Operands {
@@ -48,14 +48,14 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("turing: decode stack: invalid version")
 		}
 
 		// decode length
 		var length uint64
-		dec.Uint(&length)
+		dec.VarUint(&length)
 
 		// decode operands
 		s.Operands = make([]Operand, int(length))
@@ -73,14 +73,14 @@ func WalkStack(bytes []byte, fn func(op Operand) error) error {
 	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("turing: walk stack: invalid version")
 		}
 
 		// decode length
 		var length uint64
-		dec.Uint(&length)
+		dec.VarUint(&length)
 
 		// decode operands
 		var op Operand

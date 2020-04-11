@@ -31,14 +31,14 @@ func (e *Encoder) Reset(buf []byte) {
 // Bool writes a boolean.
 func (e *Encoder) Bool(truthy bool) {
 	if truthy {
-		e.Uint(1)
+		e.VarUint(1)
 	} else {
-		e.Uint(0)
+		e.VarUint(0)
 	}
 }
 
-// Uint writes an unsigned integer.
-func (e *Encoder) Uint(num uint64) {
+// VarUint writes a variable unsigned integer.
+func (e *Encoder) VarUint(num uint64) {
 	// handle length
 	if e.buf == nil {
 		e.len += binary.PutUvarint(e.b10[:], num)
@@ -50,8 +50,8 @@ func (e *Encoder) Uint(num uint64) {
 	e.buf = e.buf[n:]
 }
 
-// Int writes a signed integer.
-func (e *Encoder) Int(num int64) {
+// VarInt writes a variable signed integer.
+func (e *Encoder) VarInt(num int64) {
 	// handle length
 	if e.buf == nil {
 		e.len += binary.PutVarint(e.b10[:], num)

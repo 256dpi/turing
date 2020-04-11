@@ -32,10 +32,10 @@ func (c *Command) Encode(borrow bool) ([]byte, Ref, error) {
 
 	return coding.Encode(borrow, func(enc *coding.Encoder) error {
 		// encode version
-		enc.Uint(1)
+		enc.VarUint(1)
 
 		// encode number of operations
-		enc.Uint(uint64(len(c.Operations)))
+		enc.VarUint(uint64(len(c.Operations)))
 
 		// encode operations
 		for _, op := range c.Operations {
@@ -53,14 +53,14 @@ func (c *Command) Decode(bytes []byte, clone bool) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("turing: decode command: invalid version")
 		}
 
 		// decode number of operations
 		var length uint64
-		dec.Uint(&length)
+		dec.VarUint(&length)
 
 		// decode operations
 		c.Operations = make([]Operation, length)
@@ -78,14 +78,14 @@ func WalkCommand(bytes []byte, fn func(i int, op Operation) error) error {
 	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("turing: walk command: invalid version")
 		}
 
 		// decode number of operations
 		var length uint64
-		dec.Uint(&length)
+		dec.VarUint(&length)
 
 		// decode operations
 		var op Operation

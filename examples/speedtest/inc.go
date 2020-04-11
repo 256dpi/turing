@@ -89,8 +89,8 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 
 func (i *inc) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
-		enc.Int(i.Key)
-		enc.Int(i.Value)
+		enc.VarInt(i.Key)
+		enc.VarInt(i.Value)
 		enc.Bool(i.Merge)
 		return nil
 	})
@@ -98,8 +98,8 @@ func (i *inc) Encode() ([]byte, turing.Ref, error) {
 
 func (i *inc) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
-		dec.Int(&i.Key)
-		dec.Int(&i.Value)
+		dec.VarInt(&i.Key)
+		dec.VarInt(&i.Value)
 		dec.Bool(&i.Merge)
 		return nil
 	})

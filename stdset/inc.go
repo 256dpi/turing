@@ -84,10 +84,10 @@ func (i *Inc) Execute(txn *turing.Transaction) error {
 func (i *Inc) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.Uint(1)
+		enc.VarUint(1)
 
 		// encode body
-		enc.Int(i.Value)
+		enc.VarInt(i.Value)
 		enc.Tail(i.Key)
 
 		return nil
@@ -99,13 +99,13 @@ func (i *Inc) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("stdset: decode inc: invalid version")
 		}
 
 		// decode body
-		dec.Int(&i.Value)
+		dec.VarInt(&i.Value)
 		dec.Tail(&i.Key, true)
 
 		return nil

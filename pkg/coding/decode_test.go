@@ -17,10 +17,10 @@ func TestDecode(t *testing.T) {
 	var tail []byte
 	err := Decode(data, func(dec *Decoder) error {
 		dec.Bool(&bol)
-		dec.Int(&num)
+		dec.VarInt(&num)
 		dec.String(&str, false)
 		dec.Bytes(&buf, false)
-		dec.Uint(&mum)
+		dec.VarUint(&mum)
 		dec.Tail(&tail, false)
 		return nil
 	})
@@ -41,10 +41,10 @@ func TestDecode(t *testing.T) {
 		var tail []byte
 		_ = Decode(data, func(dec *Decoder) error {
 			dec.Bool(&bol)
-			dec.Int(&num)
+			dec.VarInt(&num)
 			dec.String(&str, false)
 			dec.Bytes(&buf, false)
-			dec.Uint(&mum)
+			dec.VarUint(&mum)
 			dec.Tail(&tail, false)
 			return nil
 		})
@@ -66,10 +66,10 @@ func BenchmarkDecode(b *testing.B) {
 		var tail []byte
 		err := Decode(data, func(dec *Decoder) error {
 			dec.Bool(&bol)
-			dec.Int(&num)
+			dec.VarInt(&num)
 			dec.String(&str, false)
 			dec.Bytes(&buf, false)
-			dec.Uint(&mum)
+			dec.VarUint(&mum)
 			dec.Tail(&tail, false)
 			return nil
 		})

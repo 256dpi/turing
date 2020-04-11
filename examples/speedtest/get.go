@@ -46,16 +46,16 @@ func (g *get) Execute(txn *turing.Transaction) error {
 
 func (g *get) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
-		enc.Int(g.Key)
-		enc.Int(g.Value)
+		enc.VarInt(g.Key)
+		enc.VarInt(g.Value)
 		return nil
 	})
 }
 
 func (g *get) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
-		dec.Int(&g.Key)
-		dec.Int(&g.Value)
+		dec.VarInt(&g.Key)
+		dec.VarInt(&g.Value)
 		return nil
 	})
 }

@@ -48,13 +48,13 @@ func (l *List) Execute(txn *turing.Transaction) error {
 func (l *List) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.Uint(1)
+		enc.VarUint(1)
 
 		// encode prefix
 		enc.Bytes(l.Prefix)
 
 		// encode length
-		enc.Uint(uint64(len(l.Keys)))
+		enc.VarUint(uint64(len(l.Keys)))
 
 		// encode keys
 		for _, key := range l.Keys {
@@ -70,7 +70,7 @@ func (l *List) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
-		dec.Uint(&version)
+		dec.VarUint(&version)
 		if version != 1 {
 			return fmt.Errorf("stdset: decode list: invalid version")
 		}
@@ -80,7 +80,7 @@ func (l *List) Decode(bytes []byte) error {
 
 		// decode length
 		var length uint64
-		dec.Uint(&length)
+		dec.VarUint(&length)
 
 		// decode keys
 		l.Keys = make([][]byte, length)
