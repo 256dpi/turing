@@ -88,7 +88,8 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 	switch m.values[0].Kind {
 	case FullValue:
 		// merge values
-		value, ref, err := MergeValues(m.values, m.registry)
+		computer := newComputer(m.registry)
+		value, ref, err := computer.eval(m.values)
 		if err != nil {
 			return nil, nil, err
 		}

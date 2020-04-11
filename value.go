@@ -160,119 +160,6 @@ func StackValues(values []Value) (Value, error) {
 	return value, nil
 }
 
-// MergeValues will merge the provided values.
-func MergeValues(values []Value, registry *registry) (Value, Ref, error) {
-	// get first value
-	value := values[0].Value
-	if values[0].Kind != FullValue {
-		return Value{}, nil, fmt.Errorf("turing: merge values: expected full value, got: %d", values[0].Kind)
-	}
-
-	// slice
-	values = values[1:]
-
-	// validate and count values
-	var total int
-	for _, value := range values {
-		if value.Kind != StackValue {
-			return Value{}, nil, fmt.Errorf("turing: merge values: expected stack value, got: %d", value.Kind)
-		}
-
-		// increment
-		total += len(value.Stack)
-	}
-
-	// TODO: Allocating those slices is expensive.
-
-	// validate and collect operands
-	names := make([]string, 0, total)
-	operands := make([][]byte, 0, total)
-	for _, value := range values {
-		for _, operand := range value.Stack {
-			names = append(names, operand.Name)
-			operands = append(operands, operand.Value)
-		}
-	}
-
-	// merge all operands
-	var start int
-	var name string
-	var err error
-	var ref Ref
-	for i := range names {
-		// continue if first or same name
-		if i == 0 {
-			name = names[i]
-			continue
-		} else if name == names[i] {
-			continue
-		}
-
-		// operator changed, merge values
-
-		// lookup operator
-		operator, ok := registry.ops[name]
-		if !ok {
-			return Value{}, nil, fmt.Errorf("turing: merge values: unknown operator: %q", name)
-		}
-
-		// count execution
-		if operator.counter != nil {
-			operator.counter.Inc()
-		}
-
-		// merge value with operands
-		var newRef Ref
-		value, newRef, err = operator.Apply(value, operands[start:i])
-		if err != nil {
-			return Value{}, nil, err
-		}
-
-		// release old ref
-		if ref != nil {
-			ref.Release()
-		}
-
-		// set new ref
-		ref = newRef
-
-		// set new name
-		name = names[i]
-		start = i
-	}
-
-	// lookup operator
-	operator, ok := registry.ops[name]
-	if !ok {
-		return Value{}, nil, fmt.Errorf("turing: merge values: unknown operator: %q", name)
-	}
-
-	// count execution
-	if operator.counter != nil {
-		operator.counter.Inc()
-	}
-
-	// merge value with operands
-	var newRef Ref
-	value, newRef, err = operator.Apply(value, operands[start:])
-	if err != nil {
-		return Value{}, nil, err
-	}
-
-	// release old ref
-	if ref != nil {
-		ref.Release()
-	}
-
-	// prepare result
-	result := Value{
-		Kind:  FullValue,
-		Value: value,
-	}
-
-	return result, newRef, nil
-}
-
 // ComputeValue will compute the final value from a stack value using the zero
 // value from the first operand operator.
 func ComputeValue(value Value, registry *registry) (Value, Ref, error) {
@@ -293,8 +180,12 @@ func ComputeValue(value Value, registry *registry) (Value, Ref, error) {
 		Value: operator.Zero,
 	}
 
+	// prepare list
+	list := [2]Value{zero, value}
+
 	// merge values
-	value, ref, err := MergeValues([]Value{zero, value}, registry)
+	computer := newComputer(registry)
+	value, ref, err := computer.eval(list[:])
 	if err != nil {
 		return Value{}, NoopRef, err
 	}
