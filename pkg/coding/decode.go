@@ -158,6 +158,11 @@ func (d *Decoder) Tail(bytes *[]byte, clone bool) {
 	}
 }
 
+// Error will return the error.
+func (d *Decoder) Error() error {
+	return d.err
+}
+
 // Release will release the decoder.
 func (d *Decoder) Release() {
 	// reset decoder
@@ -185,7 +190,7 @@ func Decode(bytes []byte, fn func(dec *Decoder) error) error {
 	// decode
 	err := fn(dec)
 	if err == nil {
-		err = dec.err
+		err = dec.Error()
 	}
 
 	return err
