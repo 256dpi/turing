@@ -217,7 +217,9 @@ func MergeValues(values []Value, registry *registry) (Value, Ref, error) {
 		}
 
 		// count execution
-		operator.counter.Inc()
+		if operator.counter != nil {
+			operator.counter.Inc()
+		}
 
 		// merge value with operands
 		var newRef Ref
@@ -246,7 +248,9 @@ func MergeValues(values []Value, registry *registry) (Value, Ref, error) {
 	}
 
 	// count execution
-	operator.counter.Inc()
+	if operator.counter != nil {
+		operator.counter.Inc()
+	}
 
 	// merge value with operands
 	var newRef Ref
