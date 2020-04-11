@@ -69,3 +69,33 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 		return nil
 	})
 }
+
+// WalkStack will walk the provided encoded stack and yield the operands to the
+// provided callback.
+func WalkStack(bytes []byte, fn func(name string, value []byte) bool) error {
+	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+		// decode version
+		var version uint64
+		dec.Uint(&version)
+		if version != 1 {
+			return fmt.Errorf("turing: decode stack: invalid version")
+		}
+
+		// decode length
+		var length uint64
+		dec.Uint(&length)
+
+		// decode operands
+		var name string
+		var value []byte
+		for i := 0; i < int(length); i++ {
+			dec.String(&name, false)
+			dec.Bytes(&value, false)
+			if !fn(name, value) {
+				return nil
+			}
+		}
+
+		return nil
+	})
+}
