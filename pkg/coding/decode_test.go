@@ -31,6 +31,24 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, []byte("bar"), buf)
 	assert.Equal(t, uint64(512), mum)
 	assert.Equal(t, []byte("baz"), tail)
+
+	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
+		var bol bool
+		var num int64
+		var str string
+		var buf []byte
+		var mum uint64
+		var tail []byte
+		_ = Decode(data, func(dec *Decoder) error {
+			dec.Bool(&bol)
+			dec.Int(&num)
+			dec.String(&str, false)
+			dec.Bytes(&buf, false)
+			dec.Uint(&mum)
+			dec.Tail(&tail, false)
+			return nil
+		})
+	}))
 }
 
 func BenchmarkDecode(b *testing.B) {

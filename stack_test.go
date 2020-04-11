@@ -35,6 +35,21 @@ func TestStackCoding(t *testing.T) {
 		return true
 	})
 	assert.Equal(t, in.Operands, ops)
+
+	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
+		_, ref, _ := in.Encode(true)
+		ref.Release()
+	}))
+
+	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
+		_ = out.Decode(bytes, false)
+	}))
+
+	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
+		_ =  WalkStack(bytes, func(op Operand) bool {
+			return true
+		})
+	}))
 }
 
 func BenchmarkEncodeStack(b *testing.B) {

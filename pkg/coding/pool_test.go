@@ -20,6 +20,11 @@ func TestBorrow(t *testing.T) {
 
 	ref.Release()
 	assert.True(t, ref.done)
+
+	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
+		_, ref := Borrow(123)
+		ref.Release()
+	}))
 }
 
 func TestCopy(t *testing.T) {
