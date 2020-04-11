@@ -72,15 +72,19 @@ func TestComputerEval(t *testing.T) {
 	}
 
 	computer := newComputer(registry)
-
 	value, ref, err := computer.eval(values)
 	assert.NoError(t, err)
 	assert.Equal(t, Value{
 		Kind:  FullValue,
 		Value: []byte("abcdef"),
 	}, value)
-
 	ref.Release()
+
+	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
+		computer := newComputer(registry)
+		_, ref, _ := computer.eval(values)
+		ref.Release()
+	}))
 }
 
 func TestComputerStack(t *testing.T) {
@@ -129,7 +133,6 @@ func TestComputerStack(t *testing.T) {
 	}
 
 	computer := newComputer(nil)
-
 	value, ref, err := computer.stack(values)
 	assert.NoError(t, err)
 	assert.Equal(t, Value{
@@ -159,8 +162,13 @@ func TestComputerStack(t *testing.T) {
 			},
 		}),
 	}, value)
-
 	ref.Release()
+
+	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
+		computer := newComputer(nil)
+		_, ref, _ := computer.stack(values)
+		ref.Release()
+	}))
 }
 
 func BenchmarkComputerEval(b *testing.B) {

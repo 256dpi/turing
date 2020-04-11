@@ -29,16 +29,12 @@ func TestStackCoding(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, in, out)
 
-	var names []string
-	var values [][]byte
-	err = WalkStack(bytes, func(name string, value []byte) bool {
-		names = append(names, name)
-		values = append(values, value)
+	var ops []Operand
+	err = WalkStack(bytes, func(op Operand) bool {
+		ops = append(ops, op)
 		return true
 	})
-
-	assert.Equal(t, []string{"foo", "baz"}, names)
-	assert.Equal(t, [][]byte{[]byte("bar"), []byte("quz")}, values)
+	assert.Equal(t, in.Operands, ops)
 }
 
 func BenchmarkEncodeStack(b *testing.B) {
@@ -90,7 +86,7 @@ func BenchmarkWalkStack(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := WalkStack(data, func(name string, value []byte) bool {
+		err := WalkStack(data, func(op Operand) bool {
 			return true
 		})
 		if err != nil {
