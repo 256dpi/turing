@@ -8,7 +8,7 @@ import (
 	"github.com/tidwall/cast"
 )
 
-// ErrBufferTooShort if the provided buffer is too short.
+// ErrBufferTooShort if returned if the provided buffer is too short.
 var ErrBufferTooShort = errors.New("turing: buffer too short")
 
 // Decoder manages data decoding.
