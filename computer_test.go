@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestComputer(t *testing.T) {
+func TestComputerEval(t *testing.T) {
 	values := []Value{
 		{
 			Kind:  FullValue,
@@ -14,38 +14,44 @@ func TestComputer(t *testing.T) {
 		},
 		{
 			Kind: StackValue,
-			Stack: []Operand{
-				{
-					Name:  "op",
-					Value: []byte("b"),
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "op",
+						Value: []byte("b"),
+					},
+					{
+						Name:  "op",
+						Value: []byte("c"),
+					},
 				},
-				{
-					Name:  "op",
-					Value: []byte("c"),
-				},
-			},
+			}),
 		},
 		{
 			Kind: StackValue,
-			Stack: []Operand{
-				{
-					Name:  "op",
-					Value: []byte("d"),
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "op",
+						Value: []byte("d"),
+					},
 				},
-			},
+			}),
 		},
 		{
 			Kind: StackValue,
-			Stack: []Operand{
-				{
-					Name:  "op",
-					Value: []byte("e"),
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "op",
+						Value: []byte("e"),
+					},
+					{
+						Name:  "op",
+						Value: []byte("f"),
+					},
 				},
-				{
-					Name:  "op",
-					Value: []byte("f"),
-				},
-			},
+			}),
 		},
 	}
 
@@ -77,7 +83,87 @@ func TestComputer(t *testing.T) {
 	ref.Release()
 }
 
-func BenchmarkComputer(b *testing.B) {
+func TestComputerStack(t *testing.T) {
+	values := []Value{
+		{
+			Kind: StackValue,
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "foo",
+						Value: []byte("foo"),
+					},
+					{
+						Name:  "bar",
+						Value: []byte("bar"),
+					},
+				},
+			}),
+		},
+		{
+			Kind: StackValue,
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "baz",
+						Value: []byte("baz"),
+					},
+				},
+			}),
+		},
+		{
+			Kind: StackValue,
+			Value: mustEncodeStack(Stack{
+				[]Operand{
+					{
+						Name:  "bar",
+						Value: []byte("bar"),
+					},
+					{
+						Name:  "baz",
+						Value: []byte("baz"),
+					},
+				},
+			}),
+		},
+	}
+
+	computer := newComputer(nil)
+
+	value, ref, err := computer.stack(values)
+	assert.NoError(t, err)
+	assert.Equal(t, Value{
+		Kind: StackValue,
+		Value: mustEncodeStack(Stack{
+			Operands: []Operand{
+				{
+					Name:  "foo",
+					Value: []byte("foo"),
+				},
+				{
+					Name:  "bar",
+					Value: []byte("bar"),
+				},
+				{
+					Name:  "baz",
+					Value: []byte("baz"),
+				},
+				{
+					Name:  "bar",
+					Value: []byte("bar"),
+				},
+				{
+					Name:  "baz",
+					Value: []byte("baz"),
+				},
+			},
+		}),
+	}, value)
+
+	ref.Release()
+}
+
+func BenchmarkComputerEval(b *testing.B) {
 	values := []Value{
 		{
 			Kind:  FullValue,
@@ -85,38 +171,44 @@ func BenchmarkComputer(b *testing.B) {
 		},
 		{
 			Kind: StackValue,
-			Stack: []Operand{
-				{
-					Name:  "op",
-					Value: []byte("foo"),
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "op",
+						Value: []byte("foo"),
+					},
+					{
+						Name:  "op",
+						Value: []byte("bar"),
+					},
 				},
-				{
-					Name:  "op",
-					Value: []byte("bar"),
-				},
-			},
+			}),
 		},
 		{
 			Kind: StackValue,
-			Stack: []Operand{
-				{
-					Name:  "op",
-					Value: []byte("baz"),
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "op",
+						Value: []byte("baz"),
+					},
 				},
-			},
+			}),
 		},
 		{
 			Kind: StackValue,
-			Stack: []Operand{
-				{
-					Name:  "op",
-					Value: []byte("bar"),
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "op",
+						Value: []byte("bar"),
+					},
+					{
+						Name:  "op",
+						Value: []byte("baz"),
+					},
 				},
-				{
-					Name:  "op",
-					Value: []byte("baz"),
-				},
-			},
+			}),
 		},
 	}
 
@@ -144,4 +236,73 @@ func BenchmarkComputer(b *testing.B) {
 
 		ref.Release()
 	}
+}
+
+func BenchmarkComputerStack(b *testing.B) {
+	values := []Value{
+		{
+			Kind: StackValue,
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "foo",
+						Value: []byte("foo"),
+					},
+					{
+						Name:  "bar",
+						Value: []byte("bar"),
+					},
+				},
+			}),
+		},
+		{
+			Kind: StackValue,
+			Value: mustEncodeStack(Stack{
+				Operands: []Operand{
+					{
+						Name:  "baz",
+						Value: []byte("baz"),
+					},
+				},
+			}),
+		},
+		{
+			Kind: StackValue,
+			Value: mustEncodeStack(Stack{
+				[]Operand{
+					{
+						Name:  "bar",
+						Value: []byte("bar"),
+					},
+					{
+						Name:  "baz",
+						Value: []byte("baz"),
+					},
+				},
+			}),
+		},
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		computer := newComputer(nil)
+
+		_, ref, err := computer.stack(values)
+		if err != nil {
+			panic(err)
+		}
+
+		ref.Release()
+	}
+}
+
+func mustEncodeStack(stack Stack) []byte {
+	res, _, err := stack.Encode(false)
+	if err != nil {
+		panic(err)
+	}
+
+	return res
 }

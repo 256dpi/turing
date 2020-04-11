@@ -110,10 +110,14 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 		return res, m, nil
 	case StackValue:
 		// stack values
-		value, err := StackValues(m.values)
+		computer := newComputer(m.registry)
+		value, ref, err := computer.stack(m.values)
 		if err != nil {
 			return nil, nil, err
 		}
+
+		// ensure release
+		defer ref.Release()
 
 		// encode value
 		res, resRef, err := value.Encode(true)

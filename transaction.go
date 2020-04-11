@@ -297,13 +297,27 @@ func (t *Transaction) Merge(key, value []byte, operator *Operator) error {
 		return fmt.Errorf("turing: unregistered operator: %s", operator.Name)
 	}
 
-	// prepare value
-	val := Value{
-		Kind: StackValue,
-		Stack: []Operand{{
+	// prepare stack
+	stack := Stack{
+		Operands: []Operand{{
 			Name:  operator.Name,
 			Value: value,
 		}},
+	}
+
+	// encode stack
+	sv, svr, err := stack.Encode(true)
+	if err != nil {
+		return err
+	}
+
+	// ensure release
+	defer svr.Release()
+
+	// prepare value
+	val := Value{
+		Kind:  StackValue,
+		Value: sv,
 	}
 
 	// encode value

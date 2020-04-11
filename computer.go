@@ -27,6 +27,62 @@ func newComputer(registry *registry) *computer {
 	return computer
 }
 
+func (c *computer) stack(values []Value) (Value, Ref, error) {
+	// ensure recycle
+	defer c.recycle()
+
+	// validate and collect operands
+	names := c.names[:0]
+	operands := c.operands[:0]
+	for _, value := range values {
+		// check value
+		if value.Kind != StackValue {
+			return Value{}, nil, fmt.Errorf("turing: computer stack: expected stack value as operand, got: %d", value.Kind)
+		}
+
+		// decode stack
+		var stack Stack
+		err := stack.Decode(value.Value, false)
+		if err != nil {
+			return Value{}, nil, err
+		}
+
+		// add operands
+		for _, operand := range stack.Operands {
+			names = append(names, operand.Name)
+			operands = append(operands, operand.Value)
+		}
+	}
+
+	// collect stack values
+	ops := make([]Operand, 0, len(names))
+	for i := range names {
+		ops = append(ops, Operand{
+			Name:  names[i],
+			Value: operands[i],
+		})
+	}
+
+	// prepare new stack
+	stack := Stack{
+		Operands: ops,
+	}
+
+	// encode stack
+	sv, svr, err := stack.Encode(true)
+	if err != nil {
+		return Value{}, nil, err
+	}
+
+	// create value
+	value := Value{
+		Kind:  StackValue,
+		Value: sv,
+	}
+
+	return value, svr, nil
+}
+
 func (c *computer) eval(values []Value) (Value, Ref, error) {
 	// ensure recycle
 	defer c.recycle()
@@ -53,8 +109,15 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 			return Value{}, nil, fmt.Errorf("turing: computer eval: expected stack value as operand, got: %d", value.Kind)
 		}
 
+		// decode stack
+		var stack Stack
+		err := stack.Decode(value.Value, false)
+		if err != nil {
+			return Value{}, nil, err
+		}
+
 		// add operands
-		for _, operand := range value.Stack {
+		for _, operand := range stack.Operands {
 			names = append(names, operand.Name)
 			operands = append(operands, operand.Value)
 		}
