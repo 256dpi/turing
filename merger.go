@@ -1,6 +1,7 @@
 package turing
 
 import (
+	"io"
 	"sync"
 
 	"github.com/256dpi/turing/pkg/coding"
@@ -14,6 +15,8 @@ type merger struct {
 	refs     []Ref
 	values   []Value
 	order    bool
+	retained bool
+	resRef   Ref
 }
 
 var mergerPool = sync.Pool{
@@ -64,7 +67,7 @@ func (m *merger) MergeOlder(value []byte) error {
 	return nil
 }
 
-func (m *merger) Finish() ([]byte, error) {
+func (m *merger) Finish() ([]byte, io.Closer, error) {
 	// recycle merger
 	defer m.recycle()
 
@@ -76,7 +79,7 @@ func (m *merger) Finish() ([]byte, error) {
 		var value Value
 		err := value.Decode(op, false)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		m.values = append(m.values, value)
 	}
@@ -87,40 +90,57 @@ func (m *merger) Finish() ([]byte, error) {
 		// merge values
 		value, ref, err := MergeValues(m.values, m.registry)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// ensure release
 		defer ref.Release()
 
-		// TODO: Borrow?
-
 		// encode result
-		bytes, _, err := value.Encode(false)
+		res, resRef, err := value.Encode(true)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		return bytes, nil
+		// retain for closing
+		m.retained = true
+		m.resRef = resRef
+
+		return res, m, nil
 	case StackValue:
 		// stack values
 		value, err := StackValues(m.values)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-
-		// TODO: Borrow?
 
 		// encode value
-		bytes, _, err := value.Encode(false)
+		res, resRef, err := value.Encode(true)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		return bytes, nil
+		// retain for closing
+		m.retained = true
+		m.resRef = resRef
+
+		return res, m, nil
 	default:
 		panic("unexpected condition")
 	}
+}
+
+func (m *merger) Close() error {
+	// release ref
+	m.resRef.Release()
+
+	// clear flag
+	m.retained = false
+
+	// return
+	mergerPool.Put(m)
+
+	return nil
 }
 
 func (m *merger) recycle() {
@@ -137,8 +157,10 @@ func (m *merger) recycle() {
 	m.refs = m.refs[:0]
 	m.values = m.values[:0]
 
-	// return
-	mergerPool.Put(m)
+	// return if not retained
+	if !m.retained {
+		mergerPool.Put(m)
+	}
 }
 
 func (m *merger) sortStack(fwd bool) {

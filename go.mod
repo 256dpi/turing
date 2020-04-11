@@ -14,3 +14,5 @@ require (
 	github.com/tidwall/cast v0.0.0-20160910020434-3045c88cf4cd
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )
+
+replace github.com/cockroachdb/pebble v0.0.0-20200219202912-046831eaec09 => github.com/256dpi/pebble v0.0.0-20200410195651-0b510113bf5e
