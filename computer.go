@@ -5,12 +5,11 @@ import (
 	"sync"
 )
 
-const computerPreAllocationSize = 1000
-
 type computer struct {
 	registry *registry
-	opNames  [computerPreAllocationSize]string
-	opValues [computerPreAllocationSize][]byte
+	opNames  [1000]string
+	opValues [1000][]byte
+	operands [1000]Operand
 }
 
 var computerPool = sync.Pool{
@@ -53,7 +52,7 @@ func (c *computer) stack(values []Value) (Value, Ref, error) {
 
 	// prepare new stack
 	stack := Stack{
-		Operands: make([]Operand, 0, len(opNames)),
+		Operands: c.operands[:0],
 	}
 
 	// collect stack values
