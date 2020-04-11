@@ -17,136 +17,155 @@ type Decoder struct {
 	err error
 }
 
+// NewDecoder will return a decoder for the provided byte slice.
+func NewDecoder(bytes []byte) *Decoder {
+	// borrow decoder
+	dec := decoderPool.Get().(*Decoder)
+	dec.buf = bytes
+
+	return dec
+}
+
 // Bool reads a boolean.
-func (e *Decoder) Bool(bol *bool) {
+func (d *Decoder) Bool(bol *bool) {
 	var num uint64
-	e.Uint(&num)
+	d.Uint(&num)
 	*bol = num == 1
 }
 
 // Uint reads an unsigned integer.
-func (e *Decoder) Uint(num *uint64) {
+func (d *Decoder) Uint(num *uint64) {
 	// skip if errored
-	if e.err != nil {
+	if d.err != nil {
 		return
 	}
 
 	// read length
 	var n int
-	*num, n = binary.Uvarint(e.buf)
+	*num, n = binary.Uvarint(d.buf)
 	if n == 0 {
-		e.err = ErrBufferTooShort
+		d.err = ErrBufferTooShort
 		return
 	}
 
 	// slice
-	e.buf = e.buf[n:]
+	d.buf = d.buf[n:]
 }
 
 // Int reads a signed integer.
-func (e *Decoder) Int(num *int64) {
+func (d *Decoder) Int(num *int64) {
 	// skip if errored
-	if e.err != nil {
+	if d.err != nil {
 		return
 	}
 
 	// read length
 	var n int
-	*num, n = binary.Varint(e.buf)
+	*num, n = binary.Varint(d.buf)
 	if n == 0 {
-		e.err = ErrBufferTooShort
+		d.err = ErrBufferTooShort
 		return
 	}
 
 	// slice
-	e.buf = e.buf[n:]
+	d.buf = d.buf[n:]
 }
 
 // String reads a length prefixed string. If the string is not cloned it may
 // change if the decoded byte slice changes.
-func (e *Decoder) String(str *string, clone bool) {
+func (d *Decoder) String(str *string, clone bool) {
 	// skip if errored
-	if e.err != nil {
+	if d.err != nil {
 		return
 	}
 
 	// read length
-	length, n := binary.Uvarint(e.buf)
+	length, n := binary.Uvarint(d.buf)
 	if n == 0 {
-		e.err = ErrBufferTooShort
+		d.err = ErrBufferTooShort
 		return
 	}
 
 	// slice
-	e.buf = e.buf[n:]
+	d.buf = d.buf[n:]
 
 	// check length
-	if len(e.buf) < int(length) {
-		e.err = ErrBufferTooShort
+	if len(d.buf) < int(length) {
+		d.err = ErrBufferTooShort
 		return
 	}
 
 	// cast or set string
 	if clone {
-		*str = string(e.buf[:length])
-		e.buf = e.buf[length:]
+		*str = string(d.buf[:length])
+		d.buf = d.buf[length:]
 	} else {
-		*str = cast.ToString(e.buf[:length])
-		e.buf = e.buf[length:]
+		*str = cast.ToString(d.buf[:length])
+		d.buf = d.buf[length:]
 	}
 }
 
 // Bytes reads a length prefixed byte slice. If the byte slice is not cloned it
 // may change if the decoded byte slice changes.
-func (e *Decoder) Bytes(bytes *[]byte, clone bool) {
+func (d *Decoder) Bytes(bytes *[]byte, clone bool) {
 	// skip if errored
-	if e.err != nil {
+	if d.err != nil {
 		return
 	}
 
 	// read length
-	length, n := binary.Uvarint(e.buf)
+	length, n := binary.Uvarint(d.buf)
 	if n == 0 {
-		e.err = ErrBufferTooShort
+		d.err = ErrBufferTooShort
 		return
 	}
 
 	// slice
-	e.buf = e.buf[n:]
+	d.buf = d.buf[n:]
 
 	// check length
-	if len(e.buf) < int(length) {
-		e.err = ErrBufferTooShort
+	if len(d.buf) < int(length) {
+		d.err = ErrBufferTooShort
 		return
 	}
 
 	// clone or set bytes
 	if clone {
 		*bytes = make([]byte, length)
-		copy(*bytes, e.buf[:length])
-		e.buf = e.buf[length:]
+		copy(*bytes, d.buf[:length])
+		d.buf = d.buf[length:]
 	} else {
-		*bytes = e.buf[:length]
-		e.buf = e.buf[length:]
+		*bytes = d.buf[:length]
+		d.buf = d.buf[length:]
 	}
 }
 
 // Tail reads a tail byte slice.
-func (e *Decoder) Tail(bytes *[]byte, clone bool) {
+func (d *Decoder) Tail(bytes *[]byte, clone bool) {
 	// skip if errored
-	if e.err != nil {
+	if d.err != nil {
 		return
 	}
 
 	// clone or set bytes
 	if clone {
-		*bytes = make([]byte, len(e.buf))
-		copy(*bytes, e.buf[:len(e.buf)])
-		e.buf = e.buf[len(e.buf):]
+		*bytes = make([]byte, len(d.buf))
+		copy(*bytes, d.buf[:len(d.buf)])
+		d.buf = d.buf[len(d.buf):]
 	} else {
-		*bytes = e.buf[:len(e.buf)]
-		e.buf = e.buf[len(e.buf):]
+		*bytes = d.buf[:len(d.buf)]
+		d.buf = d.buf[len(d.buf):]
 	}
+}
+
+// Release will release the decoder.
+func (d *Decoder) Release() {
+	// reset decoder
+	d.buf = nil
+	d.err = nil
+
+	// return decoder
+	decoderPool.Put(d)
 }
 
 var decoderPool = sync.Pool{
@@ -158,21 +177,16 @@ var decoderPool = sync.Pool{
 // Decode will decode data using the provided decoding function. The function is
 // run once to decode the data. It will return whether the buffer was long enough
 // to read all data.
-func Decode(buf []byte, fn func(dec *Decoder) error) error {
-	// borrow decoder
-	dec := decoderPool.Get().(*Decoder)
-	dec.buf = buf
+func Decode(bytes []byte, fn func(dec *Decoder) error) error {
+	// get decoder
+	dec := NewDecoder(bytes)
+	defer dec.Release()
 
 	// decode
 	err := fn(dec)
 	if err == nil {
 		err = dec.err
 	}
-
-	// return decoder
-	dec.buf = nil
-	dec.err = nil
-	decoderPool.Put(dec)
 
 	return err
 }

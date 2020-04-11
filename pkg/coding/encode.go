@@ -12,6 +12,22 @@ type Encoder struct {
 	buf []byte
 }
 
+// NewEncoder will return an encoder.
+func NewEncoder() *Encoder {
+	return encoderPool.Get().(*Encoder)
+}
+
+// Length will return the accumulated length.
+func (e *Encoder) Length() int {
+	return e.len
+}
+
+// Reset will reset the encoder and set the provided byte slice.
+func (e *Encoder) Reset(buf []byte) {
+	e.len = 0
+	e.buf = buf
+}
+
 // Bool writes a boolean.
 func (e *Encoder) Bool(truthy bool) {
 	if truthy {
@@ -96,6 +112,16 @@ func (e *Encoder) Tail(buf []byte) {
 	e.buf = e.buf[len(buf):]
 }
 
+// Release will release the encoder.
+func (e *Encoder) Release() {
+	// reset encoder
+	e.len = 0
+	e.buf = nil
+
+	// return encoder
+	encoderPool.Put(e)
+}
+
 var encoderPool = sync.Pool{
 	New: func() interface{} {
 		return &Encoder{}
@@ -106,12 +132,8 @@ var encoderPool = sync.Pool{
 // is run once to assess the length of the buffer and once to encode the data.
 func Encode(borrow bool, fn func(enc *Encoder) error) ([]byte, *Ref, error) {
 	// borrow encoder
-	enc := encoderPool.Get().(*Encoder)
-	defer func() {
-		enc.len = 0
-		enc.buf = nil
-		encoderPool.Put(enc)
-	}()
+	enc := NewEncoder()
+	defer enc.Release()
 
 	// count
 	err := fn(enc)
@@ -119,18 +141,21 @@ func Encode(borrow bool, fn func(enc *Encoder) error) ([]byte, *Ref, error) {
 		return nil, nil, err
 	}
 
+	// get length
+	length := enc.Length()
+
 	// get buffer
 	var buf []byte
 	var ref *Ref
 	if borrow {
-		buf, ref = Borrow(enc.len)
+		buf, ref = Borrow(length)
 		buf = buf[:enc.len]
 	} else {
-		buf = make([]byte, enc.len)
+		buf = make([]byte, length)
 	}
 
-	// set buffer
-	enc.buf = buf
+	// reset encoder
+	enc.Reset(buf)
 
 	// encode
 	err = fn(enc)
