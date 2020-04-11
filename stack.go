@@ -57,10 +57,8 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 		var length uint64
 		dec.Uint(&length)
 
-		// prepare operands
-		s.Operands = make([]Operand, int(length))
-
 		// decode operands
+		s.Operands = make([]Operand, int(length))
 		for i := range s.Operands {
 			dec.String(&s.Operands[i].Name, clone)
 			dec.Bytes(&s.Operands[i].Value, clone)
@@ -70,15 +68,14 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 	})
 }
 
-// WalkStack will walk the provided encoded stack and yield the operands to the
-// provided callback.
+// WalkStack will walk the encoded stack and yield the operands to the callback.
 func WalkStack(bytes []byte, fn func(name string, value []byte) bool) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint64
 		dec.Uint(&version)
 		if version != 1 {
-			return fmt.Errorf("turing: decode stack: invalid version")
+			return fmt.Errorf("turing: walk stack: invalid version")
 		}
 
 		// decode length
