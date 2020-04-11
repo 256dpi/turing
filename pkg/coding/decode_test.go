@@ -21,6 +21,8 @@ func TestDecode(t *testing.T) {
 	enc += "\x80\x04"
 	enc += "\x03foo"
 	enc += "\x03bar"
+	enc += "\x03foo"
+	enc += "\x03bar"
 	enc += "baz"
 
 	data := []byte(enc)
@@ -36,7 +38,9 @@ func TestDecode(t *testing.T) {
 	var u64 uint64
 	var vi int64
 	var vu uint64
+	var fs string
 	var vs string
+	var fb []byte
 	var vb []byte
 	var tail []byte
 	err := Decode(data, func(dec *Decoder) error {
@@ -51,6 +55,8 @@ func TestDecode(t *testing.T) {
 		dec.Uint64(&u64)
 		dec.VarInt(&vi)
 		dec.VarUint(&vu)
+		dec.String(&fs, 1, false)
+		dec.Bytes(&fb, 1, false)
 		dec.VarString(&vs, false)
 		dec.VarBytes(&vb, false)
 		dec.Tail(&tail, false)
@@ -68,6 +74,8 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, uint64(math.MaxUint64), u64)
 	assert.Equal(t, int64(7), vi)
 	assert.Equal(t, uint64(512), vu)
+	assert.Equal(t, "foo", fs)
+	assert.Equal(t, []byte("bar"), fb)
 	assert.Equal(t, "foo", vs)
 	assert.Equal(t, []byte("bar"), vb)
 	assert.Equal(t, []byte("baz"), tail)
@@ -84,7 +92,9 @@ func TestDecode(t *testing.T) {
 		var u64 uint64
 		var vi int64
 		var vu uint64
+		var fs string
 		var vs string
+		var fb []byte
 		var vb []byte
 		var tail []byte
 		_ = Decode(data, func(dec *Decoder) error {
@@ -99,6 +109,8 @@ func TestDecode(t *testing.T) {
 			dec.Uint64(&u64)
 			dec.VarInt(&vi)
 			dec.VarUint(&vu)
+			dec.String(&fs, 1, false)
+			dec.Bytes(&fb, 1, false)
 			dec.VarString(&vs, false)
 			dec.VarBytes(&vb, false)
 			dec.Tail(&tail, false)
@@ -121,6 +133,8 @@ func BenchmarkDecode(b *testing.B) {
 	enc += "\x80\x04"
 	enc += "\x03foo"
 	enc += "\x03bar"
+	enc += "\x03foo"
+	enc += "\x03bar"
 	enc += "baz"
 
 	data := []byte(enc)
@@ -140,7 +154,9 @@ func BenchmarkDecode(b *testing.B) {
 		var u64 uint64
 		var vi int64
 		var vu uint64
+		var fs string
 		var vs string
+		var fb []byte
 		var vb []byte
 		var tail []byte
 		err := Decode(data, func(dec *Decoder) error {
@@ -155,7 +171,9 @@ func BenchmarkDecode(b *testing.B) {
 			dec.Uint64(&u64)
 			dec.VarInt(&vi)
 			dec.VarUint(&vu)
+			dec.String(&fs, 1, false)
 			dec.VarString(&vs, false)
+			dec.Bytes(&fb, 1, false)
 			dec.VarBytes(&vb, false)
 			dec.Tail(&tail, false)
 			return nil

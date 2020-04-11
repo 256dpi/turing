@@ -157,6 +157,40 @@ func (e *Encoder) VarUint(num uint64) {
 	e.buf = e.buf[n:]
 }
 
+// String writes a fixed length prefixed string.
+func (e *Encoder) String(str string, lenSize int) {
+	// handle length
+	if e.buf == nil {
+		e.len += lenSize
+		e.len += len(str)
+		return
+	}
+
+	// write length
+	e.Uint(uint64(len(str)), lenSize)
+
+	// write string
+	copy(e.buf, str)
+	e.buf = e.buf[len(str):]
+}
+
+// Bytes writes a variable length prefixed byte slice.
+func (e *Encoder) Bytes(buf []byte, lenSize int) {
+	// handle length
+	if e.buf == nil {
+		e.len += lenSize
+		e.len += len(buf)
+		return
+	}
+
+	// write length
+	e.Uint(uint64(len(buf)), lenSize)
+
+	// write bytes
+	copy(e.buf, buf)
+	e.buf = e.buf[len(buf):]
+}
+
 // VarString writes a variable length prefixed string.
 func (e *Encoder) VarString(str string) {
 	// handle length

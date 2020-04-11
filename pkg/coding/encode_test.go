@@ -21,6 +21,8 @@ func TestEncode(t *testing.T) {
 	enc += "\x80\x04"
 	enc += "\x03foo"
 	enc += "\x03bar"
+	enc += "\x03foo"
+	enc += "\x03bar"
 	enc += "baz"
 
 	res, _, err := Encode(true, func(enc *Encoder) error {
@@ -35,6 +37,8 @@ func TestEncode(t *testing.T) {
 		enc.Uint64(math.MaxUint64)
 		enc.VarInt(7)
 		enc.VarUint(512)
+		enc.String("foo", 1)
+		enc.Bytes([]byte("bar"), 1)
 		enc.VarString("foo")
 		enc.VarBytes([]byte("bar"))
 		enc.Tail([]byte("baz"))
@@ -56,6 +60,8 @@ func TestEncode(t *testing.T) {
 			enc.Uint64(math.MaxUint64)
 			enc.VarInt(7)
 			enc.VarUint(512)
+			enc.String("foo", 1)
+			enc.Bytes([]byte("bar"), 1)
 			enc.VarString("foo")
 			enc.VarBytes([]byte("bar"))
 			enc.Tail([]byte("baz"))
@@ -82,6 +88,8 @@ func BenchmarkEncode(b *testing.B) {
 			enc.Uint64(math.MaxUint64)
 			enc.VarInt(7)
 			enc.VarUint(512)
+			enc.String("foo", 1)
+			enc.Bytes([]byte("bar"), 1)
 			enc.VarString("foo")
 			enc.VarBytes([]byte("bar"))
 			enc.Tail([]byte("baz"))

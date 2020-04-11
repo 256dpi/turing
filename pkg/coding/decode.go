@@ -191,6 +191,69 @@ func (d *Decoder) VarInt(num *int64) {
 	d.buf = d.buf[n:]
 }
 
+// String reads a fixed length prefixed string. If the string is not cloned it
+// may change if the decoded byte slice changes.
+func (d *Decoder) String(str *string, lenSize int, clone bool) {
+	// skip if errored
+	if d.err != nil {
+		return
+	}
+
+	// read length
+	var length uint64
+	d.Uint(&length, lenSize)
+	if d.err != nil {
+		return
+	}
+
+	// check length
+	if len(d.buf) < int(length) {
+		d.err = ErrBufferTooShort
+		return
+	}
+
+	// cast or set string
+	if clone {
+		*str = string(d.buf[:length])
+		d.buf = d.buf[length:]
+	} else {
+		*str = cast.ToString(d.buf[:length])
+		d.buf = d.buf[length:]
+	}
+}
+
+// Bytes reads a fixed length prefixed byte slice. If the byte slice is not
+// cloned it may change if the decoded byte slice changes.
+func (d *Decoder) Bytes(bytes *[]byte, lenSize int, clone bool) {
+	// skip if errored
+	if d.err != nil {
+		return
+	}
+
+	// read length
+	var length uint64
+	d.Uint(&length, lenSize)
+	if d.err != nil {
+		return
+	}
+
+	// check length
+	if len(d.buf) < int(length) {
+		d.err = ErrBufferTooShort
+		return
+	}
+
+	// clone or set bytes
+	if clone {
+		*bytes = make([]byte, length)
+		copy(*bytes, d.buf[:length])
+		d.buf = d.buf[length:]
+	} else {
+		*bytes = d.buf[:length]
+		d.buf = d.buf[length:]
+	}
+}
+
 // VarString reads a variable length prefixed string. If the string is not
 // cloned it may change if the decoded byte slice changes.
 func (d *Decoder) VarString(str *string, clone bool) {
