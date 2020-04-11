@@ -191,9 +191,9 @@ func (d *Decoder) VarInt(num *int64) {
 	d.buf = d.buf[n:]
 }
 
-// String reads a length prefixed string. If the string is not cloned it may
-// change if the decoded byte slice changes.
-func (d *Decoder) String(str *string, clone bool) {
+// VarString reads a variable length prefixed string. If the string is not
+// cloned it may change if the decoded byte slice changes.
+func (d *Decoder) VarString(str *string, clone bool) {
 	// skip if errored
 	if d.err != nil {
 		return
@@ -225,9 +225,9 @@ func (d *Decoder) String(str *string, clone bool) {
 	}
 }
 
-// Bytes reads a length prefixed byte slice. If the byte slice is not cloned it
-// may change if the decoded byte slice changes.
-func (d *Decoder) Bytes(bytes *[]byte, clone bool) {
+// VarBytes reads a variable length prefixed byte slice. If the byte slice is
+// not cloned it may change if the decoded byte slice changes.
+func (d *Decoder) VarBytes(bytes *[]byte, clone bool) {
 	// skip if errored
 	if d.err != nil {
 		return

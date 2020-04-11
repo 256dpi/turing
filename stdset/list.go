@@ -51,14 +51,14 @@ func (l *List) Encode() ([]byte, turing.Ref, error) {
 		enc.VarUint(1)
 
 		// encode prefix
-		enc.Bytes(l.Prefix)
+		enc.VarBytes(l.Prefix)
 
 		// encode length
 		enc.VarUint(uint64(len(l.Keys)))
 
 		// encode keys
 		for _, key := range l.Keys {
-			enc.Bytes(key)
+			enc.VarBytes(key)
 		}
 
 		return nil
@@ -76,7 +76,7 @@ func (l *List) Decode(bytes []byte) error {
 		}
 
 		// decode prefix
-		dec.Bytes(&l.Prefix, true)
+		dec.VarBytes(&l.Prefix, true)
 
 		// decode length
 		var length uint64
@@ -85,7 +85,7 @@ func (l *List) Decode(bytes []byte) error {
 		// decode keys
 		l.Keys = make([][]byte, length)
 		for i := 0; i < int(length); i++ {
-			dec.Bytes(&l.Keys[i], true)
+			dec.VarBytes(&l.Keys[i], true)
 		}
 
 		return nil

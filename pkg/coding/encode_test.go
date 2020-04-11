@@ -35,8 +35,8 @@ func TestEncode(t *testing.T) {
 		enc.Uint64(math.MaxUint64)
 		enc.VarInt(7)
 		enc.VarUint(512)
-		enc.String("foo")
-		enc.Bytes([]byte("bar"))
+		enc.VarString("foo")
+		enc.VarBytes([]byte("bar"))
 		enc.Tail([]byte("baz"))
 		return nil
 	})
@@ -56,8 +56,8 @@ func TestEncode(t *testing.T) {
 			enc.Uint64(math.MaxUint64)
 			enc.VarInt(7)
 			enc.VarUint(512)
-			enc.String("foo")
-			enc.Bytes([]byte("bar"))
+			enc.VarString("foo")
+			enc.VarBytes([]byte("bar"))
 			enc.Tail([]byte("baz"))
 			return nil
 		})
@@ -82,8 +82,8 @@ func BenchmarkEncode(b *testing.B) {
 			enc.Uint64(math.MaxUint64)
 			enc.VarInt(7)
 			enc.VarUint(512)
-			enc.String("foo")
-			enc.Bytes([]byte("bar"))
+			enc.VarString("foo")
+			enc.VarBytes([]byte("bar"))
 			enc.Tail([]byte("baz"))
 			return nil
 		})

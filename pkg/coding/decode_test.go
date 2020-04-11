@@ -36,8 +36,8 @@ func TestDecode(t *testing.T) {
 	var u64 uint64
 	var vi int64
 	var vu uint64
-	var str string
-	var buf []byte
+	var vs string
+	var vb []byte
 	var tail []byte
 	err := Decode(data, func(dec *Decoder) error {
 		dec.Bool(&bol)
@@ -51,8 +51,8 @@ func TestDecode(t *testing.T) {
 		dec.Uint64(&u64)
 		dec.VarInt(&vi)
 		dec.VarUint(&vu)
-		dec.String(&str, false)
-		dec.Bytes(&buf, false)
+		dec.VarString(&vs, false)
+		dec.VarBytes(&vb, false)
 		dec.Tail(&tail, false)
 		return nil
 	})
@@ -68,8 +68,8 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, uint64(math.MaxUint64), u64)
 	assert.Equal(t, int64(7), vi)
 	assert.Equal(t, uint64(512), vu)
-	assert.Equal(t, "foo", str)
-	assert.Equal(t, []byte("bar"), buf)
+	assert.Equal(t, "foo", vs)
+	assert.Equal(t, []byte("bar"), vb)
 	assert.Equal(t, []byte("baz"), tail)
 
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
@@ -84,8 +84,8 @@ func TestDecode(t *testing.T) {
 		var u64 uint64
 		var vi int64
 		var vu uint64
-		var str string
-		var buf []byte
+		var vs string
+		var vb []byte
 		var tail []byte
 		_ = Decode(data, func(dec *Decoder) error {
 			dec.Bool(&bol)
@@ -99,8 +99,8 @@ func TestDecode(t *testing.T) {
 			dec.Uint64(&u64)
 			dec.VarInt(&vi)
 			dec.VarUint(&vu)
-			dec.String(&str, false)
-			dec.Bytes(&buf, false)
+			dec.VarString(&vs, false)
+			dec.VarBytes(&vb, false)
 			dec.Tail(&tail, false)
 			return nil
 		})
@@ -140,8 +140,8 @@ func BenchmarkDecode(b *testing.B) {
 		var u64 uint64
 		var vi int64
 		var vu uint64
-		var str string
-		var buf []byte
+		var vs string
+		var vb []byte
 		var tail []byte
 		err := Decode(data, func(dec *Decoder) error {
 			dec.Bool(&bol)
@@ -155,8 +155,8 @@ func BenchmarkDecode(b *testing.B) {
 			dec.Uint64(&u64)
 			dec.VarInt(&vi)
 			dec.VarUint(&vu)
-			dec.String(&str, false)
-			dec.Bytes(&buf, false)
+			dec.VarString(&vs, false)
+			dec.VarBytes(&vb, false)
 			dec.Tail(&tail, false)
 			return nil
 		})

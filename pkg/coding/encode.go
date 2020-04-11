@@ -157,8 +157,8 @@ func (e *Encoder) VarUint(num uint64) {
 	e.buf = e.buf[n:]
 }
 
-// String writes a length prefixed string.
-func (e *Encoder) String(str string) {
+// VarString writes a variable length prefixed string.
+func (e *Encoder) VarString(str string) {
 	// handle length
 	if e.buf == nil {
 		e.len += binary.PutUvarint(e.b10[:], uint64(len(str)))
@@ -175,8 +175,8 @@ func (e *Encoder) String(str string) {
 	e.buf = e.buf[len(str):]
 }
 
-// Bytes writes a length prefixed byte slice.
-func (e *Encoder) Bytes(buf []byte) {
+// VarBytes writes a variable length prefixed byte slice.
+func (e *Encoder) VarBytes(buf []byte) {
 	// handle length
 	if e.buf == nil {
 		e.len += binary.PutUvarint(e.b10[:], uint64(len(buf)))

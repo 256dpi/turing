@@ -45,7 +45,7 @@ func (s *Set) Encode() ([]byte, turing.Ref, error) {
 		enc.VarUint(1)
 
 		// encode body
-		enc.Bytes(s.Key)
+		enc.VarBytes(s.Key)
 		enc.Tail(s.Value)
 
 		return nil
@@ -63,7 +63,7 @@ func (s *Set) Decode(bytes []byte) error {
 		}
 
 		// decode body
-		dec.Bytes(&s.Key, true)
+		dec.VarBytes(&s.Key, true)
 		dec.Tail(&s.Value, true)
 
 		return nil

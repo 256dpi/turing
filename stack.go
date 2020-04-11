@@ -35,8 +35,8 @@ func (s *Stack) Encode(borrow bool) ([]byte, Ref, error) {
 
 		// write operands
 		for _, op := range s.Operands {
-			enc.String(op.Name)
-			enc.Bytes(op.Value)
+			enc.VarString(op.Name)
+			enc.VarBytes(op.Value)
 		}
 
 		return nil
@@ -60,8 +60,8 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 		// decode operands
 		s.Operands = make([]Operand, int(length))
 		for i := range s.Operands {
-			dec.String(&s.Operands[i].Name, clone)
-			dec.Bytes(&s.Operands[i].Value, clone)
+			dec.VarString(&s.Operands[i].Name, clone)
+			dec.VarBytes(&s.Operands[i].Value, clone)
 		}
 
 		return nil
@@ -86,8 +86,8 @@ func WalkStack(bytes []byte, fn func(op Operand) error) error {
 		var op Operand
 		var err error
 		for i := 0; i < int(length); i++ {
-			dec.String(&op.Name, false)
-			dec.Bytes(&op.Value, false)
+			dec.VarString(&op.Name, false)
+			dec.VarBytes(&op.Value, false)
 			if err = fn(op); err != nil {
 				return err
 			}

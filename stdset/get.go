@@ -50,7 +50,7 @@ func (g *Get) Encode() ([]byte, turing.Ref, error) {
 		enc.VarUint(1)
 
 		// encode body
-		enc.Bytes(g.Key)
+		enc.VarBytes(g.Key)
 		enc.Bool(g.Exists)
 		enc.Tail(g.Value)
 
@@ -69,7 +69,7 @@ func (g *Get) Decode(bytes []byte) error {
 		}
 
 		// decode body
-		dec.Bytes(&g.Key, true)
+		dec.VarBytes(&g.Key, true)
 		dec.Bool(&g.Exists)
 		dec.Tail(&g.Value, true)
 

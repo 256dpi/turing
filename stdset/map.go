@@ -61,15 +61,15 @@ func (m *Map) Encode() ([]byte, turing.Ref, error) {
 		enc.VarUint(1)
 
 		// encode prefix
-		enc.Bytes(m.Prefix)
+		enc.VarBytes(m.Prefix)
 
 		// encode length
 		enc.VarUint(uint64(len(m.Pairs)))
 
 		// encode pairs
 		for key, value := range m.Pairs {
-			enc.String(key)
-			enc.Bytes(value)
+			enc.VarString(key)
+			enc.VarBytes(value)
 		}
 
 		return nil
@@ -87,7 +87,7 @@ func (m *Map) Decode(bytes []byte) error {
 		}
 
 		// decode prefix
-		dec.Bytes(&m.Prefix, true)
+		dec.VarBytes(&m.Prefix, true)
 
 		// decode length
 		var length uint64
@@ -98,11 +98,11 @@ func (m *Map) Decode(bytes []byte) error {
 		for i := 0; i < int(length); i++ {
 			// decode key
 			var key string
-			dec.String(&key, true)
+			dec.VarString(&key, true)
 
 			// decode value
 			var value []byte
-			dec.Bytes(&value, true)
+			dec.VarBytes(&value, true)
 
 			// set pair
 			m.Pairs[key] = value

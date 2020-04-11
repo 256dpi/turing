@@ -39,8 +39,8 @@ func (c *Command) Encode(borrow bool) ([]byte, Ref, error) {
 
 		// encode operations
 		for _, op := range c.Operations {
-			enc.String(op.Name)
-			enc.Bytes(op.Data)
+			enc.VarString(op.Name)
+			enc.VarBytes(op.Data)
 		}
 
 		return nil
@@ -65,8 +65,8 @@ func (c *Command) Decode(bytes []byte, clone bool) error {
 		// decode operations
 		c.Operations = make([]Operation, length)
 		for i := 0; i < int(length); i++ {
-			dec.String(&c.Operations[i].Name, clone)
-			dec.Bytes(&c.Operations[i].Data, clone)
+			dec.VarString(&c.Operations[i].Name, clone)
+			dec.VarBytes(&c.Operations[i].Data, clone)
 		}
 
 		return nil
@@ -91,8 +91,8 @@ func WalkCommand(bytes []byte, fn func(i int, op Operation) error) error {
 		var op Operation
 		var err error
 		for i := 0; i < int(length); i++ {
-			dec.String(&op.Name, false)
-			dec.Bytes(&op.Data, false)
+			dec.VarString(&op.Name, false)
+			dec.VarBytes(&op.Data, false)
 			if err = fn(i, op); err != nil {
 				return err
 			}
