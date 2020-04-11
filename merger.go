@@ -36,7 +36,7 @@ func newMerger(registry *registry, value []byte) *merger {
 	merger.order = true
 
 	// add operand
-	op, ref := coding.Copy(value)
+	op, ref := coding.Clone(value)
 	merger.operands = append(merger.operands, op)
 	merger.opRefs = append(merger.opRefs, ref)
 
@@ -48,7 +48,7 @@ func (m *merger) MergeNewer(value []byte) error {
 	m.sort(true)
 
 	// add operand
-	op, ref := coding.Copy(value)
+	op, ref := coding.Clone(value)
 	m.operands = append(m.operands, op)
 	m.opRefs = append(m.opRefs, ref)
 
@@ -60,7 +60,7 @@ func (m *merger) MergeOlder(value []byte) error {
 	m.sort(false)
 
 	// add operand
-	op, ref := coding.Copy(value)
+	op, ref := coding.Clone(value)
 	m.operands = append(m.operands, op)
 	m.opRefs = append(m.opRefs, ref)
 

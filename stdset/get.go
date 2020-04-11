@@ -32,7 +32,7 @@ func (g *Get) Effect() int {
 func (g *Get) Execute(txn *turing.Transaction) error {
 	// get value
 	err := txn.Use(g.Key, func(value []byte) error {
-		g.Value = turing.Copy(value)
+		g.Value = turing.Clone(value)
 		g.Exists = true
 		return nil
 	})

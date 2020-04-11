@@ -45,7 +45,7 @@ func (m *Map) Execute(txn *turing.Transaction) error {
 		}
 
 		// add pair
-		m.Pairs[string(iter.TempKey())] = turing.Copy(value)
+		m.Pairs[string(iter.TempKey())] = turing.Clone(value)
 
 		// release value
 		ref.Release()

@@ -23,7 +23,7 @@ func TestBorrow(t *testing.T) {
 }
 
 func TestCopy(t *testing.T) {
-	buf, ref := Copy([]byte("foo"))
+	buf, ref := Clone([]byte("foo"))
 	assert.Equal(t, []byte("foo"), buf)
 	ref.Release()
 }

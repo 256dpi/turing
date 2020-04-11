@@ -419,7 +419,7 @@ func (i *Iterator) Prev() bool {
 
 // Key will return a buffered key that can be used until released.
 func (i *Iterator) Key() ([]byte, Ref) {
-	return coding.Copy(i.TempKey())
+	return coding.Clone(i.TempKey())
 }
 
 // TempKey will return the temporary key which is only valid until the next
@@ -451,7 +451,7 @@ func (i *Iterator) Value() ([]byte, Ref, error) {
 
 	// copy and return full value
 	if value.Kind == FullValue {
-		val, ref := coding.Copy(value.Value)
+		val, ref := coding.Clone(value.Value)
 		return val, ref, nil
 	}
 

@@ -1,7 +1,7 @@
 package turing
 
-// Copy will make a copy of the provided slice.
-func Copy(src []byte) []byte {
+// Clone will make a copy of the provided slice.
+func Clone(src []byte) []byte {
 	// make copy
 	dst := make([]byte, len(src))
 	copy(dst, src)

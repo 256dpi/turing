@@ -55,8 +55,8 @@ func Borrow(len int) ([]byte, *Ref) {
 	return ref.array[0:len], ref
 }
 
-// Copy will copy the provided slice into borrowed slice.
-func Copy(a []byte) ([]byte, *Ref) {
+// Clone will copy the provided slice into a borrowed slice.
+func Clone(a []byte) ([]byte, *Ref) {
 	// borrow buffer
 	buf, ref := Borrow(len(a))
 
