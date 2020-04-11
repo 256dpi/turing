@@ -54,18 +54,17 @@ func (c *computer) stack(values []Value) (Value, Ref, error) {
 		}
 	}
 
+	// prepare new stack
+	stack := Stack{
+		Operands: make([]Operand, 0, len(names)),
+	}
+
 	// collect stack values
-	ops := make([]Operand, 0, len(names))
 	for i := range names {
-		ops = append(ops, Operand{
+		stack.Operands = append(stack.Operands, Operand{
 			Name:  names[i],
 			Value: operands[i],
 		})
-	}
-
-	// prepare new stack
-	stack := Stack{
-		Operands: ops,
 	}
 
 	// encode stack

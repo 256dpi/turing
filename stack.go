@@ -57,7 +57,7 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 		var length uint64
 		dec.Uint(&length)
 
-		// prepare stack
+		// prepare operands
 		s.Operands = make([]Operand, int(length))
 
 		// decode operands

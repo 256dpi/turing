@@ -114,7 +114,7 @@ func TestComputerStack(t *testing.T) {
 		{
 			Kind: StackValue,
 			Value: mustEncodeStack(Stack{
-				[]Operand{
+				Operands: []Operand{
 					{
 						Name:  "bar",
 						Value: []byte("bar"),
@@ -269,7 +269,7 @@ func BenchmarkComputerStack(b *testing.B) {
 		{
 			Kind: StackValue,
 			Value: mustEncodeStack(Stack{
-				[]Operand{
+				Operands: []Operand{
 					{
 						Name:  "bar",
 						Value: []byte("bar"),
