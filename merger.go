@@ -7,8 +7,6 @@ import (
 	"github.com/256dpi/turing/pkg/coding"
 )
 
-const mergerPreAllocationSize = 1000
-
 type merger struct {
 	registry *registry
 	operands [][]byte
@@ -22,9 +20,9 @@ type merger struct {
 var mergerPool = sync.Pool{
 	New: func() interface{} {
 		return &merger{
-			operands: make([][]byte, 0, mergerPreAllocationSize),
-			opRefs:   make([]Ref, 0, mergerPreAllocationSize),
-			values:   make([]Value, 0, mergerPreAllocationSize),
+			operands: make([][]byte, 0, 1000),
+			opRefs:   make([]Ref, 0, 1000),
+			values:   make([]Value, 0, 1000),
 		}
 	},
 }
