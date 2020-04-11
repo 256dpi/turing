@@ -41,10 +41,10 @@ func (c *computer) stack(values []Value) (Value, Ref, error) {
 		}
 
 		// decode stack
-		err := WalkStack(value.Value, func(op Operand) bool {
+		err := WalkStack(value.Value, func(op Operand) error {
 			names = append(names, op.Name)
 			operands = append(operands, op.Value)
-			return true
+			return nil
 		})
 		if err != nil {
 			return Value{}, nil, err
@@ -106,10 +106,10 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 		}
 
 		// decode stack
-		err := WalkStack(value.Value, func(op Operand) bool {
+		err := WalkStack(value.Value, func(op Operand) error {
 			names = append(names, op.Name)
 			operands = append(operands, op.Value)
-			return true
+			return nil
 		})
 		if err != nil {
 			return Value{}, nil, err

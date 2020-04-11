@@ -1,5 +1,10 @@
 package turing
 
+import "errors"
+
+// ErrBreak can be returned in walker callbacks to return early.
+var ErrBreak = errors.New("break")
+
 // Clone will make a copy of the provided slice.
 func Clone(src []byte) []byte {
 	// make copy
