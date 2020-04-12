@@ -99,6 +99,7 @@ func TestComputerCombine(t *testing.T) {
 	}, value)
 	ref.Release()
 
+	// alloc comes from operator
 	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(registry)
 		_, ref, _ := computer.combine(values)
@@ -183,6 +184,7 @@ func TestComputerEval(t *testing.T) {
 	}, value)
 	ref.Release()
 
+	// allocs come from operator
 	assert.Equal(t, 2.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(registry)
 		_, ref, _ := computer.eval(values)
