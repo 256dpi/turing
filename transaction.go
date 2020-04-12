@@ -118,7 +118,8 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	defer closer.Close()
 
 	// compute value
-	value, ref, err := ComputeValue(value, t.registry)
+	computer := newComputer(t.registry)
+	value, ref, err := computer.resolve(value)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -456,7 +457,8 @@ func (i *Iterator) Value() ([]byte, Ref, error) {
 	}
 
 	// compute value
-	value, ref, err := ComputeValue(value, i.txn.registry)
+	computer := newComputer(i.txn.registry)
+	value, ref, err := computer.resolve(value)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -190,6 +190,51 @@ func TestComputerEval(t *testing.T) {
 	}))
 }
 
+func TestComputerResolve(t *testing.T) {
+	value := Value{
+		Kind: StackValue,
+		Value: mustEncodeStack(Stack{
+			Operands: []Operand{
+				{
+					Name:  "op",
+					Value: []byte("foo"),
+				},
+				{
+					Name:  "op",
+					Value: []byte("bar"),
+				},
+			},
+		}),
+	}
+
+	registry := &registry{
+		ops: map[string]*Operator{
+			"op": {
+				Name: "op",
+				Zero: []byte(""),
+				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
+					return ops[len(ops)-1], NoopRef, nil
+				},
+			},
+		},
+	}
+
+	computer := newComputer(registry)
+	val, ref, err := computer.resolve(value)
+	assert.NoError(t, err)
+	assert.Equal(t, Value{
+		Kind:  FullValue,
+		Value: []byte("bar"),
+	}, val)
+	ref.Release()
+
+	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
+		computer := newComputer(registry)
+		_, ref, _ := computer.resolve(value)
+		ref.Release()
+	}))
+}
+
 func BenchmarkComputerCombine(b *testing.B) {
 	values := []Value{
 		{
@@ -321,6 +366,48 @@ func BenchmarkComputerEval(b *testing.B) {
 			panic(err)
 		}
 
+		ref.Release()
+	}
+}
+
+func BenchmarkComputerResolve(b *testing.B) {
+	value := Value{
+		Kind: StackValue,
+		Value: mustEncodeStack(Stack{
+			Operands: []Operand{
+				{
+					Name:  "op",
+					Value: []byte("foo"),
+				},
+				{
+					Name:  "op",
+					Value: []byte("bar"),
+				},
+			},
+		}),
+	}
+
+	registry := &registry{
+		ops: map[string]*Operator{
+			"op": {
+				Name: "op",
+				Zero: []byte(""),
+				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
+					return value, NoopRef, nil
+				},
+			},
+		},
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		computer := newComputer(registry)
+		_, ref, err := computer.resolve(value)
+		if err != nil {
+			panic(err)
+		}
 		ref.Release()
 	}
 }

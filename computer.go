@@ -195,6 +195,43 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 	return result, ref, nil
 }
 
+func (c *computer) resolve(value Value) (Value, Ref, error) {
+	// check kind
+	if value.Kind != StackValue {
+		return Value{}, nil, fmt.Errorf("turing: computer resolve: expected stack value, got: %d", value.Kind)
+	}
+
+	// decode stack
+	var stack Stack
+	err := stack.Decode(value.Value, false)
+	if err != nil {
+		return Value{}, nil, err
+	}
+
+	// get first operator
+	operator, ok := c.registry.ops[stack.Operands[0].Name]
+	if !ok {
+		return Value{}, nil, fmt.Errorf("turing: computer resolve: missing operator: %s", stack.Operands[0].Name)
+	}
+
+	// prepare zero value
+	zero := Value{
+		Kind:  FullValue,
+		Value: operator.Zero,
+	}
+
+	// prepare list
+	list := [2]Value{zero, value}
+
+	// merge values
+	value, ref, err := c.eval(list[:])
+	if err != nil {
+		return Value{}, NoopRef, err
+	}
+
+	return value, ref, nil
+}
+
 func (c *computer) pipeline(names []string, values [][]byte, fn func(op *Operator, ops [][]byte) error) error {
 	// process all operands
 	var start int
