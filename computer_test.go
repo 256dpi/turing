@@ -183,7 +183,7 @@ func TestComputerEval(t *testing.T) {
 	}, value)
 	ref.Release()
 
-	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
+	assert.Equal(t, 2.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(registry)
 		_, ref, _ := computer.eval(values)
 		ref.Release()
