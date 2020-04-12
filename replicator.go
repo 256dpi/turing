@@ -7,17 +7,23 @@ import (
 )
 
 type replicator struct {
-	config   Config
-	registry *registry
-	manager  *manager
-	database *database
+	config       Config
+	registry     *registry
+	manager      *manager
+	database     *database
+	instructions []Instruction
+	operations   []Operation
+	references   []Ref
 }
 
 func newReplicator(config Config, registry *registry, manager *manager) *replicator {
 	return &replicator{
-		config:   config,
-		registry: registry,
-		manager:  manager,
+		config:       config,
+		registry:     registry,
+		manager:      manager,
+		instructions: make([]Instruction, config.UpdateBatchSize),
+		operations:   make([]Operation, config.UpdateBatchSize),
+		references:   make([]Ref, config.UpdateBatchSize),
 	}
 }
 
@@ -41,64 +47,76 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	timer := observe(replicatorUpdate)
 	defer timer.finish()
 
-	// allocate instruction list
-	list := make([]Instruction, r.config.UpdateBatchSize)
-
 	// handle entries
 	for i, entry := range entries {
-		// reset list
-		list = list[:0]
+		// reset lists
+		instructions := r.instructions[:0]
+		operations := r.operations[:0]
+		references := r.references[:0]
 
-		// decode command (no need to clone as only used temporary)
-		var cmd Command
-		err := cmd.Decode(entry.Cmd, false)
-		if err != nil {
-			return nil, err
-		}
-
-		// decode operations
-		for _, op := range cmd.Operations {
+		// decode command
+		err := WalkCommand(entry.Cmd, func(i int, op Operation) error {
 			// build instruction
 			ins, err := r.registry.build(op.Name)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			// decode instruction
 			err = ins.Decode(op.Data)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			// add instruction
-			list = append(list, ins)
+			instructions = append(instructions, ins)
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
 		}
 
 		// execute instructions
-		err = r.database.update(list, entry.Index)
+		err = r.database.update(instructions, entry.Index)
 		if err != nil {
 			return nil, err
 		}
 
 		// encode operations
-		for j, ins := range list {
+		for _, ins := range instructions {
 			// encode instruction
 			bytes, ref, err := ins.Encode()
 			if err != nil {
 				return nil, err
 			}
 
-			// ensure release
-			defer ref.Release()
+			// set append operation
+			operations = append(operations, Operation{
+				Name: ins.Describe().Name,
+				Data: bytes,
+			})
 
-			// set bytes
-			cmd.Operations[j].Data = bytes
+			// append reference
+			references = append(references, ref)
 		}
+
+		// prepare command
+		cmd := Command{
+			Operations: operations,
+		}
+
+		// TODO: Borrow slice.
 
 		// encode command
 		bytes, _, err := cmd.Encode(false)
 		if err != nil {
 			return nil, err
+		}
+
+		// release references
+		for _, ref := range references {
+			ref.Release()
 		}
 
 		// set result
