@@ -10,7 +10,6 @@ import (
 	"github.com/lni/dragonboat/v3/logger"
 
 	"github.com/256dpi/turing/pkg/coding"
-	"github.com/256dpi/turing/pkg/semaphore"
 )
 
 // ErrDatabaseClosed is returned if the database has been closed.
@@ -85,7 +84,7 @@ type database struct {
 	options  *pebble.WriteOptions
 	write    sync.Mutex
 	read     sync.RWMutex
-	readers  *semaphore.Semaphore
+	readers  chan struct{}
 	closed   bool
 }
 
@@ -176,7 +175,12 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		manager:  manager,
 		pebble:   pdb,
 		options:  options,
-		readers:  semaphore.New(config.ConcurrentReaders),
+		readers:  make(chan struct{}, config.ConcurrentReaders),
+	}
+
+	// fill tokens
+	for i := 0; i < cap(db.readers); i++ {
+		db.readers <- struct{}{}
 	}
 
 	// init manager
@@ -336,9 +340,11 @@ func (d *database) update(list []Instruction, index uint64) error {
 var databaseLookup = systemMetrics.WithLabelValues("database.lookup")
 
 func (d *database) lookup(list []Instruction) error {
-	// get reader token
-	d.readers.Acquire(nil, 0)
-	defer d.readers.Release()
+	// acquire reader token
+	<-d.readers
+	defer func() {
+		d.readers <- struct{}{}
+	}()
 
 	// acquire read mutex
 	d.read.RLock()
