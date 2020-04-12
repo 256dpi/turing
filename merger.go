@@ -82,6 +82,9 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 		m.values = append(m.values, value)
 	}
 
+	// TODO: Merge with zero value if the base value is a stack.
+	//  => Improve pebble to provide the info.
+
 	// merge values if first value is a full value, otherwise stack all values
 	switch m.values[0].Kind {
 	case FullValue:
