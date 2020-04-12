@@ -115,35 +115,20 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 		}
 	}
 
-	// merge all operands
-	var start int
-	var name = opNames[0]
-	var err error
+	// merge all operands with base
 	var ref Ref
-	for i := 1; ; i++ {
-		// continue if not finished and same name
-		if i < len(opNames) && name == opNames[i] {
-			continue
-		}
-
-		// operator changed or finished, merge values
-
-		// lookup operator
-		operator, ok := c.registry.ops[name]
-		if !ok {
-			return Value{}, nil, fmt.Errorf("turing: computer eval: unknown operator: %q", name)
-		}
-
+	err := c.pipeline(opNames, opValues, func(op *Operator, ops [][]byte) error {
 		// count execution if possible
-		if operator.counter != nil {
-			operator.counter.Inc()
+		if op.counter != nil {
+			op.counter.Inc()
 		}
 
 		// merge base with operands
 		var newRef Ref
-		base, newRef, err = operator.Apply(base, opValues[start:i])
+		var err error
+		base, newRef, err = op.Apply(base, ops)
 		if err != nil {
-			return Value{}, nil, err
+			return err
 		}
 
 		// release old ref
@@ -154,14 +139,10 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 		// set new ref
 		ref = newRef
 
-		// break if last
-		if i == len(opNames) {
-			break
-		}
-
-		// otherwise set next
-		name = opNames[i]
-		start = i
+		return nil
+	})
+	if err != nil {
+		return Value{}, nil, err
 	}
 
 	// prepare result
@@ -171,6 +152,43 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 	}
 
 	return result, ref, nil
+}
+
+func (c *computer) pipeline(names []string, values [][]byte, fn func(op *Operator, ops [][]byte) error) error {
+	// process all operands
+	var start int
+	var name = names[0]
+	for i := 1; ; i++ {
+		// continue if not finished and same name
+		if i < len(names) && name == names[i] {
+			continue
+		}
+
+		// operator changed or finished, yield operands
+
+		// lookup operator
+		operator, ok := c.registry.ops[name]
+		if !ok {
+			return fmt.Errorf("turing: computer pipeline: unknown operator: %q", name)
+		}
+
+		// yield operator and values
+		err := fn(operator, values[start:i])
+		if err != nil {
+			return err
+		}
+
+		// break if last
+		if i == len(names) {
+			break
+		}
+
+		// otherwise set next
+		name = names[i]
+		start = i
+	}
+
+	return nil
 }
 
 func (c *computer) recycle() {
