@@ -41,17 +41,20 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 	timer := observe(replicatorUpdate)
 	defer timer.finish()
 
+	// allocate instruction list
+	list := make([]Instruction, r.config.UpdateBatchSize)
+
 	// handle entries
 	for i, entry := range entries {
+		// reset list
+		list = list[:0]
+
 		// decode command (no need to clone as only used temporary)
 		var cmd Command
 		err := cmd.Decode(entry.Cmd, false)
 		if err != nil {
 			return nil, err
 		}
-
-		// prepare instruction list
-		list := make([]Instruction, 0, len(cmd.Operations))
 
 		// decode operations
 		for _, op := range cmd.Operations {
@@ -91,8 +94,6 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 			// set bytes
 			cmd.Operations[j].Data = bytes
 		}
-
-		// TODO: Borrow?
 
 		// encode command
 		bytes, _, err := cmd.Encode(false)
