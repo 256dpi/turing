@@ -35,7 +35,8 @@ func (s *sum) Execute(txn *turing.Transaction) error {
 	iter := txn.Iterator(nil)
 	defer iter.Close()
 
-	for iter.Next() {
+	// iterate over key space
+	for iter.First(); iter.Valid(); iter.Next() {
 		// get value
 		val, ref, err := iter.Value()
 		if err != nil {
