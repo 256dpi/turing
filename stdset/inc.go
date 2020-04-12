@@ -38,6 +38,26 @@ var Add = &turing.Operator{
 
 		return buf, ref, nil
 	},
+	Combine: func(ops [][]byte) ([]byte, turing.Ref, error) {
+		// apply operands
+		var count int64
+		for _, op := range ops {
+			// parse operand (fallback to zero)
+			increment, _ := strconv.ParseInt(cast.ToString(op), 10, 64)
+
+			// add increment
+			count += increment
+		}
+
+		// borrow slice
+		buf, ref := coding.Borrow(int64Len)
+
+		// encode count
+		buf = buf[:0]
+		buf = strconv.AppendInt(buf, count, 10)
+
+		return buf, ref, nil
+	},
 }
 
 // Inc will increment an numerical value.
