@@ -1,4 +1,4 @@
-package turing
+package tape
 
 import (
 	"testing"

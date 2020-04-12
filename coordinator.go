@@ -9,6 +9,8 @@ import (
 	"github.com/lni/dragonboat/v3/config"
 	"github.com/lni/dragonboat/v3/plugin/pebble"
 	"github.com/lni/dragonboat/v3/statemachine"
+
+	"github.com/256dpi/turing/tape"
 )
 
 const clusterID uint64 = 1
@@ -17,7 +19,7 @@ type coordinator struct {
 	node       *dragonboat.NodeHost
 	reads      *bundler
 	writes     *bundler
-	operations []Operation
+	operations []tape.Operation
 }
 
 func createCoordinator(cfg Config, registry *registry, manager *manager) (*coordinator, error) {
@@ -74,7 +76,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// create coordinator
 	coordinator := &coordinator{
 		node:       node,
-		operations: make([]Operation, cfg.UpdateBatchSize),
+		operations: make([]tape.Operation, cfg.UpdateBatchSize),
 	}
 
 	// create read bundler
@@ -123,7 +125,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	session := c.node.GetNoOPSession(clusterID)
 
 	// prepare command
-	cmd := Command{
+	cmd := tape.Command{
 		Operations: c.operations[:0],
 	}
 
@@ -139,7 +141,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 		defer ref.Release()
 
 		// add operation
-		cmd.Operations = append(cmd.Operations, Operation{
+		cmd.Operations = append(cmd.Operations, tape.Operation{
 			Name: ins.Describe().Name,
 			Data: encodedInstruction,
 		})
@@ -170,7 +172,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	}
 
 	// walk command and decode results
-	err = WalkCommand(data, func(i int, op Operation) error {
+	err = tape.WalkCommand(data, func(i int, op tape.Operation) error {
 		// decode result if available
 		if len(op.Data) > 0 {
 			return list[i].Decode(op.Data)

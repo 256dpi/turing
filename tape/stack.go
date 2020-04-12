@@ -1,4 +1,4 @@
-package turing
+package tape
 
 import (
 	"fmt"
@@ -18,11 +18,11 @@ type Stack struct {
 }
 
 // Encode will encode the stack.
-func (s *Stack) Encode(borrow bool) ([]byte, Ref, error) {
+func (s *Stack) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 	// check operands
 	for _, op := range s.Operands {
 		if op.Name == "" {
-			return nil, NoopRef, fmt.Errorf("turing: encode stack: missing operand name")
+			return nil, nil, fmt.Errorf("turing: encode stack: missing operand name")
 		}
 	}
 

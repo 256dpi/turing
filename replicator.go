@@ -5,6 +5,8 @@ import (
 
 	"github.com/cockroachdb/pebble"
 	"github.com/lni/dragonboat/v3/statemachine"
+
+	"github.com/256dpi/turing/tape"
 )
 
 type replicator struct {
@@ -13,7 +15,7 @@ type replicator struct {
 	manager      *manager
 	database     *database
 	instructions []Instruction
-	operations   []Operation
+	operations   []tape.Operation
 	references   []Ref
 }
 
@@ -23,7 +25,7 @@ func newReplicator(config Config, registry *registry, manager *manager) *replica
 		registry:     registry,
 		manager:      manager,
 		instructions: make([]Instruction, config.UpdateBatchSize),
-		operations:   make([]Operation, config.UpdateBatchSize),
+		operations:   make([]tape.Operation, config.UpdateBatchSize),
 		references:   make([]Ref, config.UpdateBatchSize),
 	}
 }
@@ -56,7 +58,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		references := r.references[:0]
 
 		// decode command
-		err := WalkCommand(entry.Cmd, func(i int, op Operation) error {
+		err := tape.WalkCommand(entry.Cmd, func(i int, op tape.Operation) error {
 			// build instruction
 			ins, err := r.registry.build(op.Name)
 			if err != nil {
@@ -88,7 +90,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		for _, ins := range instructions {
 			// append empty operation when no result
 			if ins.Describe().NoResult {
-				operations = append(operations, Operation{
+				operations = append(operations, tape.Operation{
 					Name: ins.Describe().Name,
 				})
 
@@ -102,7 +104,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 			}
 
 			// set append operation
-			operations = append(operations, Operation{
+			operations = append(operations, tape.Operation{
 				Name: ins.Describe().Name,
 				Data: bytes,
 			})
@@ -118,7 +120,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		}
 
 		// prepare command
-		cmd := Command{
+		cmd := tape.Command{
 			Operations: operations,
 		}
 

@@ -5,13 +5,14 @@ import (
 	"sync"
 
 	"github.com/256dpi/turing/coding"
+	"github.com/256dpi/turing/tape"
 )
 
 type merger struct {
 	registry *registry
 	operands [][]byte
 	opRefs   []Ref
-	values   []Value
+	values   []tape.Value
 	order    bool
 	retained bool
 	resRef   Ref
@@ -22,7 +23,7 @@ var mergerPool = sync.Pool{
 		return &merger{
 			operands: make([][]byte, 0, 1000),
 			opRefs:   make([]Ref, 0, 1000),
-			values:   make([]Value, 0, 1000),
+			values:   make([]tape.Value, 0, 1000),
 		}
 	},
 }
@@ -74,7 +75,7 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 
 	// decode values (no need to clone as only used temporary)
 	for _, op := range m.operands {
-		var value Value
+		var value tape.Value
 		err := value.Decode(op, false)
 		if err != nil {
 			return nil, nil, err
@@ -87,7 +88,7 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 
 	// merge values if first value is a full value, otherwise stack all values
 	switch m.values[0].Kind {
-	case FullValue:
+	case tape.FullValue:
 		// merge values
 		computer := newComputer(m.registry)
 		value, ref, err := computer.eval(m.values)
@@ -109,7 +110,7 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 		m.resRef = resRef
 
 		return res, m, nil
-	case StackValue:
+	case tape.StackValue:
 		// stack values
 		computer := newComputer(m.registry)
 		value, ref, err := computer.combine(m.values)

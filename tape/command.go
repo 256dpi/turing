@@ -1,4 +1,4 @@
-package turing
+package tape
 
 import (
 	"fmt"
@@ -22,11 +22,11 @@ type Command struct {
 }
 
 // Encode will encode the command into a byte slice.
-func (c *Command) Encode(borrow bool) ([]byte, Ref, error) {
+func (c *Command) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 	// check operations
 	for _, op := range c.Operations {
 		if op.Name == "" {
-			return nil, NoopRef, fmt.Errorf("turing: encode command: missing operation name")
+			return nil, nil, fmt.Errorf("turing: encode command: missing operation name")
 		}
 	}
 

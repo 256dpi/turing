@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/pebble"
 
 	"github.com/256dpi/turing/coding"
+	"github.com/256dpi/turing/tape"
 )
 
 // TODO: Can a transaction be used concurrently?
@@ -91,7 +92,7 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	}
 
 	// decode value (no need to clone as available until closed)
-	var value Value
+	var value tape.Value
 	err = value.Decode(bytes, false)
 	if err != nil {
 		_ = closer.Close()
@@ -99,7 +100,7 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	}
 
 	// directly return full value
-	if value.Kind == FullValue {
+	if value.Kind == tape.FullValue {
 		// increment closers
 		t.closers++
 
@@ -178,8 +179,8 @@ func (t *Transaction) Set(key, value []byte) error {
 	}
 
 	// prepare value
-	val := Value{
-		Kind:  FullValue,
+	val := tape.Value{
+		Kind:  tape.FullValue,
 		Value: value,
 	}
 
@@ -299,8 +300,8 @@ func (t *Transaction) Merge(key, value []byte, operator *Operator) error {
 	}
 
 	// prepare stack
-	stack := Stack{
-		Operands: []Operand{{
+	stack := tape.Stack{
+		Operands: []tape.Operand{{
 			Name:  operator.Name,
 			Value: value,
 		}},
@@ -316,8 +317,8 @@ func (t *Transaction) Merge(key, value []byte, operator *Operator) error {
 	defer svr.Release()
 
 	// prepare value
-	val := Value{
-		Kind:  StackValue,
+	val := tape.Value{
+		Kind:  tape.StackValue,
 		Value: sv,
 	}
 
@@ -444,14 +445,14 @@ func (i *Iterator) Value() ([]byte, Ref, error) {
 	}
 
 	// decode value (no need to clone as copying is explicit)
-	var value Value
+	var value tape.Value
 	err := value.Decode(bytes, false)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// copy and return full value
-	if value.Kind == FullValue {
+	if value.Kind == tape.FullValue {
 		val, ref := coding.Clone(value.Value)
 		return val, ref, nil
 	}

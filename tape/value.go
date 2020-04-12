@@ -1,4 +1,4 @@
-package turing
+package tape
 
 import (
 	"fmt"
@@ -37,10 +37,10 @@ type Value struct {
 }
 
 // Encode will encode the value.
-func (v *Value) Encode(borrow bool) ([]byte, Ref, error) {
+func (v *Value) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 	// check kind
 	if !v.Kind.Valid() {
-		return nil, NoopRef, fmt.Errorf("turing: encode value: invalid kind: %c", v.Kind)
+		return nil, nil, fmt.Errorf("turing: encode value: invalid kind: %c", v.Kind)
 	}
 
 	return coding.Encode(borrow, func(enc *coding.Encoder) error {

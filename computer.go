@@ -3,13 +3,15 @@ package turing
 import (
 	"fmt"
 	"sync"
+
+	"github.com/256dpi/turing/tape"
 )
 
 type computer struct {
 	registry *registry
 	strings  [1000]string
 	bytes    [1000][]byte
-	operands [1000]Operand
+	operands [1000]tape.Operand
 	refs     [1000]Ref
 }
 
@@ -27,7 +29,7 @@ func newComputer(registry *registry) *computer {
 	return computer
 }
 
-func (c *computer) combine(values []Value) (Value, Ref, error) {
+func (c *computer) combine(values []tape.Value) (tape.Value, Ref, error) {
 	// ensure recycle
 	defer c.recycle()
 
@@ -36,23 +38,23 @@ func (c *computer) combine(values []Value) (Value, Ref, error) {
 	opValues := c.bytes[:0]
 	for _, value := range values {
 		// check value
-		if value.Kind != StackValue {
-			return Value{}, nil, fmt.Errorf("turing: computer combine: expected stack value as operand, got: %d", value.Kind)
+		if value.Kind != tape.StackValue {
+			return tape.Value{}, nil, fmt.Errorf("turing: computer combine: expected stack value as operand, got: %d", value.Kind)
 		}
 
 		// decode stack
-		err := WalkStack(value.Value, func(op Operand) error {
+		err := tape.WalkStack(value.Value, func(op tape.Operand) error {
 			opNames = append(opNames, op.Name)
 			opValues = append(opValues, op.Value)
 			return nil
 		})
 		if err != nil {
-			return Value{}, nil, err
+			return tape.Value{}, nil, err
 		}
 	}
 
 	// prepare new stack
-	stack := Stack{
+	stack := tape.Stack{
 		Operands: c.operands[:0],
 	}
 
@@ -62,7 +64,7 @@ func (c *computer) combine(values []Value) (Value, Ref, error) {
 		// append if combine is missing
 		if operator.Combine == nil {
 			for _, op := range ops {
-				stack.Operands = append(stack.Operands, Operand{
+				stack.Operands = append(stack.Operands, tape.Operand{
 					Name:  operator.Name,
 					Value: op,
 				})
@@ -85,7 +87,7 @@ func (c *computer) combine(values []Value) (Value, Ref, error) {
 		}
 
 		// append operand
-		stack.Operands = append(stack.Operands, Operand{
+		stack.Operands = append(stack.Operands, tape.Operand{
 			Name:  operator.Name,
 			Value: value,
 		})
@@ -96,13 +98,13 @@ func (c *computer) combine(values []Value) (Value, Ref, error) {
 		return nil
 	})
 	if err != nil {
-		return Value{}, nil, err
+		return tape.Value{}, nil, err
 	}
 
 	// encode stack
 	sv, svr, err := stack.Encode(true)
 	if err != nil {
-		return Value{}, nil, err
+		return tape.Value{}, nil, err
 	}
 
 	// release refs
@@ -111,26 +113,26 @@ func (c *computer) combine(values []Value) (Value, Ref, error) {
 	}
 
 	// create value
-	value := Value{
-		Kind:  StackValue,
+	value := tape.Value{
+		Kind:  tape.StackValue,
 		Value: sv,
 	}
 
 	return value, svr, nil
 }
 
-func (c *computer) eval(values []Value) (Value, Ref, error) {
+func (c *computer) eval(values []tape.Value) (tape.Value, Ref, error) {
 	// ensure recycle
 	defer c.recycle()
 
 	// check values
 	if len(values) < 2 {
-		return Value{}, nil, fmt.Errorf("turing: computer eval: need at least two values")
+		return tape.Value{}, nil, fmt.Errorf("turing: computer eval: need at least two values")
 	}
 
 	// check first value
-	if values[0].Kind != FullValue {
-		return Value{}, nil, fmt.Errorf("turing: computer eval: expected full value as base, got: %d", values[0].Kind)
+	if values[0].Kind != tape.FullValue {
+		return tape.Value{}, nil, fmt.Errorf("turing: computer eval: expected full value as base, got: %d", values[0].Kind)
 	}
 
 	// get base value
@@ -141,18 +143,18 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 	opValues := c.bytes[:0]
 	for _, value := range values[1:] {
 		// check value
-		if value.Kind != StackValue {
-			return Value{}, nil, fmt.Errorf("turing: computer eval: expected stack value as operand, got: %d", value.Kind)
+		if value.Kind != tape.StackValue {
+			return tape.Value{}, nil, fmt.Errorf("turing: computer eval: expected stack value as operand, got: %d", value.Kind)
 		}
 
 		// decode stack
-		err := WalkStack(value.Value, func(op Operand) error {
+		err := tape.WalkStack(value.Value, func(op tape.Operand) error {
 			opNames = append(opNames, op.Name)
 			opValues = append(opValues, op.Value)
 			return nil
 		})
 		if err != nil {
-			return Value{}, nil, err
+			return tape.Value{}, nil, err
 		}
 	}
 
@@ -183,43 +185,43 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 		return nil
 	})
 	if err != nil {
-		return Value{}, nil, err
+		return tape.Value{}, nil, err
 	}
 
 	// prepare result
-	result := Value{
-		Kind:  FullValue,
+	result := tape.Value{
+		Kind:  tape.FullValue,
 		Value: base,
 	}
 
 	return result, ref, nil
 }
 
-func (c *computer) resolve(value Value) (Value, Ref, error) {
+func (c *computer) resolve(value tape.Value) (tape.Value, Ref, error) {
 	// check kind
-	if value.Kind != StackValue {
-		return Value{}, nil, fmt.Errorf("turing: computer resolve: expected stack value, got: %d", value.Kind)
+	if value.Kind != tape.StackValue {
+		return tape.Value{}, nil, fmt.Errorf("turing: computer resolve: expected stack value, got: %d", value.Kind)
 	}
 
 	// get first operator
 	var operator *Operator
-	err := WalkStack(value.Value, func(op Operand) error {
+	err := tape.WalkStack(value.Value, func(op tape.Operand) error {
 		// get first operator
 		operator = c.registry.ops[op.Name]
 		if operator == nil {
 			return fmt.Errorf("turing: computer resolve: missing operator: %s", op.Name)
 		}
 
-		return ErrBreak
+		return tape.ErrBreak
 	})
 	if err != nil {
-		return Value{}, nil, err
+		return tape.Value{}, nil, err
 	}
 
 	// prepare list
-	list := [2]Value{
+	list := [2]tape.Value{
 		{
-			Kind:  FullValue,
+			Kind:  tape.FullValue,
 			Value: operator.Zero,
 		},
 		value,
@@ -228,7 +230,7 @@ func (c *computer) resolve(value Value) (Value, Ref, error) {
 	// merge values
 	value, ref, err := c.eval(list[:])
 	if err != nil {
-		return Value{}, NoopRef, err
+		return tape.Value{}, NoopRef, err
 	}
 
 	return value, ref, nil

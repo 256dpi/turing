@@ -4,14 +4,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/256dpi/turing/tape"
 )
 
 func TestComputerCombine(t *testing.T) {
-	values := []Value{
+	values := []tape.Value{
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op1",
 						Value: []byte("foo"),
@@ -24,9 +26,9 @@ func TestComputerCombine(t *testing.T) {
 			}),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op2",
 						Value: []byte("baz"),
@@ -35,9 +37,9 @@ func TestComputerCombine(t *testing.T) {
 			}),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op2",
 						Value: []byte("bar"),
@@ -74,10 +76,10 @@ func TestComputerCombine(t *testing.T) {
 	computer := newComputer(registry)
 	value, ref, err := computer.combine(values)
 	assert.NoError(t, err)
-	assert.Equal(t, Value{
-		Kind: StackValue,
-		Value: mustEncodeStack(Stack{
-			Operands: []Operand{
+	assert.Equal(t, tape.Value{
+		Kind: tape.StackValue,
+		Value: mustEncodeStack(tape.Stack{
+			Operands: []tape.Operand{
 				{
 					Name:  "op1",
 					Value: []byte("foo"),
@@ -108,15 +110,15 @@ func TestComputerCombine(t *testing.T) {
 }
 
 func TestComputerEval(t *testing.T) {
-	values := []Value{
+	values := []tape.Value{
 		{
-			Kind:  FullValue,
+			Kind:  tape.FullValue,
 			Value: []byte("a"),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op",
 						Value: []byte("b"),
@@ -129,9 +131,9 @@ func TestComputerEval(t *testing.T) {
 			}),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op",
 						Value: []byte("d"),
@@ -140,9 +142,9 @@ func TestComputerEval(t *testing.T) {
 			}),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op",
 						Value: []byte("e"),
@@ -178,8 +180,8 @@ func TestComputerEval(t *testing.T) {
 	computer := newComputer(registry)
 	value, ref, err := computer.eval(values)
 	assert.NoError(t, err)
-	assert.Equal(t, Value{
-		Kind:  FullValue,
+	assert.Equal(t, tape.Value{
+		Kind:  tape.FullValue,
 		Value: []byte("abcdef"),
 	}, value)
 	ref.Release()
@@ -193,10 +195,10 @@ func TestComputerEval(t *testing.T) {
 }
 
 func TestComputerResolve(t *testing.T) {
-	value := Value{
-		Kind: StackValue,
-		Value: mustEncodeStack(Stack{
-			Operands: []Operand{
+	value := tape.Value{
+		Kind: tape.StackValue,
+		Value: mustEncodeStack(tape.Stack{
+			Operands: []tape.Operand{
 				{
 					Name:  "op",
 					Value: []byte("foo"),
@@ -224,8 +226,8 @@ func TestComputerResolve(t *testing.T) {
 	computer := newComputer(registry)
 	val, ref, err := computer.resolve(value)
 	assert.NoError(t, err)
-	assert.Equal(t, Value{
-		Kind:  FullValue,
+	assert.Equal(t, tape.Value{
+		Kind:  tape.FullValue,
 		Value: []byte("bar"),
 	}, val)
 	ref.Release()
@@ -238,11 +240,11 @@ func TestComputerResolve(t *testing.T) {
 }
 
 func BenchmarkComputerCombine(b *testing.B) {
-	values := []Value{
+	values := []tape.Value{
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "foo",
 						Value: []byte("foo"),
@@ -255,9 +257,9 @@ func BenchmarkComputerCombine(b *testing.B) {
 			}),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "baz",
 						Value: []byte("baz"),
@@ -266,9 +268,9 @@ func BenchmarkComputerCombine(b *testing.B) {
 			}),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "bar",
 						Value: []byte("bar"),
@@ -298,15 +300,15 @@ func BenchmarkComputerCombine(b *testing.B) {
 }
 
 func BenchmarkComputerEval(b *testing.B) {
-	values := []Value{
+	values := []tape.Value{
 		{
-			Kind:  FullValue,
+			Kind:  tape.FullValue,
 			Value: []byte("foo"),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op",
 						Value: []byte("foo"),
@@ -319,9 +321,9 @@ func BenchmarkComputerEval(b *testing.B) {
 			}),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op",
 						Value: []byte("baz"),
@@ -330,9 +332,9 @@ func BenchmarkComputerEval(b *testing.B) {
 			}),
 		},
 		{
-			Kind: StackValue,
-			Value: mustEncodeStack(Stack{
-				Operands: []Operand{
+			Kind: tape.StackValue,
+			Value: mustEncodeStack(tape.Stack{
+				Operands: []tape.Operand{
 					{
 						Name:  "op",
 						Value: []byte("bar"),
@@ -373,10 +375,10 @@ func BenchmarkComputerEval(b *testing.B) {
 }
 
 func BenchmarkComputerResolve(b *testing.B) {
-	value := Value{
-		Kind: StackValue,
-		Value: mustEncodeStack(Stack{
-			Operands: []Operand{
+	value := tape.Value{
+		Kind: tape.StackValue,
+		Value: mustEncodeStack(tape.Stack{
+			Operands: []tape.Operand{
 				{
 					Name:  "op",
 					Value: []byte("foo"),
@@ -414,7 +416,7 @@ func BenchmarkComputerResolve(b *testing.B) {
 	}
 }
 
-func mustEncodeStack(stack Stack) []byte {
+func mustEncodeStack(stack tape.Stack) []byte {
 	res, _, err := stack.Encode(false)
 	if err != nil {
 		panic(err)
