@@ -23,8 +23,9 @@ var members = flag.String("members", "", "the cluster members")
 var directory = flag.String("directory", "data", "the data directory")
 var standalone = flag.Bool("standalone", false, "enable standalone mode")
 var memory = flag.Bool("memory", false, "enable in-memory mode")
-var readers = flag.Int("readers", 1000, "the number of parallel readers")
 var writers = flag.Int("writers", 1000, "the number of parallel writers")
+var readers = flag.Int("readers", 1000, "the number of parallel readers")
+var scanners = flag.Int("scanners", 100, "the number of parallel scanners")
 var keySpace = flag.Int64("keySpace", 100000, "the size of the key space")
 
 var wg sync.WaitGroup
@@ -73,7 +74,7 @@ func main() {
 		Directory:  directory,
 		Standalone: *standalone,
 		Instructions: []turing.Instruction{
-			&inc{}, &get{},
+			&inc{}, &get{}, &sum{},
 		},
 	})
 	if err != nil {
@@ -98,7 +99,12 @@ func main() {
 		go reader(machine, done)
 	}
 
-	// TODO: Run scanners (full keyspace scan)
+	// run scanners
+	wg.Add(*scanners)
+	for i := 0; i < *scanners; i++ {
+		go scanner(machine, done)
+	}
+
 	// TODO: Run unsetter (single key deletion)
 	// TODO: Run deleter (key range deletion)
 
@@ -187,6 +193,44 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 
 		// increment
 		readCounter.Add(1)
+	}
+}
+
+var scanCounter = god.NewCounter("scan", nil)
+
+func scanner(machine *turing.Machine, done <-chan struct{}) {
+	defer wg.Done()
+
+	// create rng
+	rng := rand.New(rand.NewSource(rand.Int63()))
+
+	// prepare instruction
+	ins := &sum{}
+
+	// prepare options
+	opts := turing.Options{}
+
+	// write entries forever
+	for {
+		// check if done
+		select {
+		case <-done:
+			return
+		default:
+		}
+
+		// prepare options
+		opts.StaleRead = rng.Intn(4) > 0 // 75%
+
+		// get value
+		err := machine.Execute(ins, opts)
+		if err != nil {
+			handle(err)
+			continue
+		}
+
+		// increment
+		scanCounter.Add(1)
 	}
 }
 
