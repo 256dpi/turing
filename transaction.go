@@ -7,7 +7,7 @@ import (
 
 	"github.com/cockroachdb/pebble"
 
-	"github.com/256dpi/turing/pkg/coding"
+	"github.com/256dpi/turing/coding"
 )
 
 // TODO: Can a transaction be used concurrently?

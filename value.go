@@ -3,7 +3,7 @@ package turing
 import (
 	"fmt"
 
-	"github.com/256dpi/turing/pkg/coding"
+	"github.com/256dpi/turing/coding"
 )
 
 // Kind represents the kind of value stored at a key.

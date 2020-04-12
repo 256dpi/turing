@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/pkg/coding"
+	"github.com/256dpi/turing/coding"
 )
 
 // Map will map all key value pairs.

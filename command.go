@@ -3,7 +3,7 @@ package turing
 import (
 	"fmt"
 
-	"github.com/256dpi/turing/pkg/coding"
+	"github.com/256dpi/turing/coding"
 )
 
 // Operation is a single instruction executed as part of a command.

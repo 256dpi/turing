@@ -4,7 +4,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/256dpi/turing/pkg/coding"
+	"github.com/256dpi/turing/coding"
 )
 
 type merger struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/256dpi/god"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/pkg/coding"
+	"github.com/256dpi/turing/coding"
 )
 
 var addCounter = god.NewCounter("add", nil)

@@ -9,7 +9,7 @@ import (
 	"github.com/cockroachdb/pebble"
 	"github.com/lni/dragonboat/v3/logger"
 
-	"github.com/256dpi/turing/pkg/coding"
+	"github.com/256dpi/turing/coding"
 )
 
 // ErrDatabaseClosed is returned if the database has been closed.

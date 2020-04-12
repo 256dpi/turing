@@ -7,7 +7,7 @@ import (
 	"github.com/tidwall/cast"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/pkg/coding"
+	"github.com/256dpi/turing/coding"
 )
 
 const int64Len = 24
