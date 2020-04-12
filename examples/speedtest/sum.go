@@ -8,6 +8,7 @@ import (
 )
 
 type sum struct {
+	Start uint64
 	Total uint64
 }
 
@@ -31,12 +32,16 @@ func (s *sum) Execute(txn *turing.Transaction) error {
 	// reset
 	s.Total = 0
 
+	// get start
+	start := encodeNum(s.Start)
+
 	// get iterator
 	iter := txn.Iterator(nil)
 	defer iter.Close()
 
 	// iterate over key space
-	for iter.First(); iter.Valid(); iter.Next() {
+	i := 0
+	for iter.SeekGE(start); iter.Valid(); iter.Next() {
 		// get value
 		val, ref, err := iter.Value()
 		if err != nil {
@@ -48,6 +53,12 @@ func (s *sum) Execute(txn *turing.Transaction) error {
 
 		// release
 		ref.Release()
+
+		// increment
+		i++
+		if i >= int(*scanLength) {
+			break
+		}
 	}
 
 	return nil
@@ -55,6 +66,7 @@ func (s *sum) Execute(txn *turing.Transaction) error {
 
 func (s *sum) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
+		enc.Uint64(s.Start)
 		enc.Uint64(s.Total)
 		return nil
 	})
@@ -62,6 +74,7 @@ func (s *sum) Encode() ([]byte, turing.Ref, error) {
 
 func (s *sum) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+		dec.Uint64(&s.Start)
 		dec.Uint64(&s.Total)
 		return nil
 	})

@@ -25,8 +25,9 @@ var standalone = flag.Bool("standalone", false, "enable standalone mode")
 var memory = flag.Bool("memory", false, "enable in-memory mode")
 var writers = flag.Int("writers", 1000, "the number of parallel writers")
 var readers = flag.Int("readers", 1000, "the number of parallel readers")
-var scanners = flag.Int("scanners", 1, "the number of parallel scanners")
+var scanners = flag.Int("scanners", 50, "the number of parallel scanners")
 var keySpace = flag.Int64("keySpace", 100000, "the size of the key space")
+var scanLength = flag.Int64("scanLength", 100, "the length of the scan")
 
 var wg sync.WaitGroup
 
@@ -215,6 +216,9 @@ func scanner(machine *turing.Machine, done <-chan struct{}) {
 			return
 		default:
 		}
+
+		// prepare instruction
+		ins.Start = uint64(rng.Int63n(*keySpace - *scanLength))
 
 		// prepare options
 		opts.StaleRead = rng.Intn(4) > 0 // 75%
