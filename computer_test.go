@@ -228,7 +228,7 @@ func TestComputerResolve(t *testing.T) {
 	}, val)
 	ref.Release()
 
-	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
+	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(registry)
 		_, ref, _ := computer.resolve(value)
 		ref.Release()

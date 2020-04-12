@@ -201,27 +201,29 @@ func (c *computer) resolve(value Value) (Value, Ref, error) {
 		return Value{}, nil, fmt.Errorf("turing: computer resolve: expected stack value, got: %d", value.Kind)
 	}
 
-	// decode stack
-	var stack Stack
-	err := stack.Decode(value.Value, false)
+	// get first operator
+	var operator *Operator
+	err := WalkStack(value.Value, func(op Operand) error {
+		// get first operator
+		operator = c.registry.ops[op.Name]
+		if operator == nil {
+			return fmt.Errorf("turing: computer resolve: missing operator: %s", op.Name)
+		}
+
+		return ErrBreak
+	})
 	if err != nil {
 		return Value{}, nil, err
 	}
 
-	// get first operator
-	operator, ok := c.registry.ops[stack.Operands[0].Name]
-	if !ok {
-		return Value{}, nil, fmt.Errorf("turing: computer resolve: missing operator: %s", stack.Operands[0].Name)
-	}
-
-	// prepare zero value
-	zero := Value{
-		Kind:  FullValue,
-		Value: operator.Zero,
-	}
-
 	// prepare list
-	list := [2]Value{zero, value}
+	list := [2]Value{
+		{
+			Kind:  FullValue,
+			Value: operator.Zero,
+		},
+		value,
+	}
 
 	// merge values
 	value, ref, err := c.eval(list[:])
