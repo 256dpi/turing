@@ -105,9 +105,6 @@ func main() {
 		go scanner(machine, done)
 	}
 
-	// TODO: Run unsetter (single key deletion)
-	// TODO: Run deleter (key range deletion)
-
 	// prepare exit
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
