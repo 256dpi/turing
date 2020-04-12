@@ -15,6 +15,18 @@ const MaxEffect = 10000
 // using multiple transactions.
 const UnboundedEffect = -1
 
+// Ref manages the reference to buffer that can be released.
+type Ref interface {
+	Release()
+}
+
+type noopRef struct{}
+
+func (*noopRef) Release() {}
+
+// NoopRef can be return instead of nil.
+var NoopRef = &noopRef{}
+
 // Operator describes a merge operator.
 type Operator struct {
 	// The name of the operator.
@@ -32,24 +44,12 @@ type Operator struct {
 	counter prometheus.Counter
 }
 
-// Ref manages the reference to buffer that can be released.
-type Ref interface {
-	Release()
-}
-
-type noopRef struct{}
-
-func (*noopRef) Release() {}
-
-// NoopRef can be return instead of nil.
-var NoopRef = &noopRef{}
-
 // Instruction is the interface that is implemented by instructions that are
 // executed by the machine.
 type Instruction interface {
 	// Describe should return a description of the instruction. This method is
 	// called often, therefore it should just return a pointer to a statically
-	// allocated object and never build object on request.
+	// allocated object and never build the object on request.
 	Describe() *Description
 
 	// Effect should return the amount of modifications this instruction will
@@ -60,7 +60,7 @@ type Instruction interface {
 	// may modify many keys.
 	Effect() int
 
-	// Execute should execute the instruction.
+	// Execute should execute the instruction using the provided transaction.
 	Execute(*Transaction) error
 
 	// Encode should encode the instruction.
@@ -76,13 +76,12 @@ type Description struct {
 	// recommended to ease discoverability.
 	Name string
 
-	// The builder can be set to implement a custom builder. If not set, the
-	// default reflect based builder will be used. Note: Only write instructions
-	// are built dynamically.
+	// The builder can be set to provide a custom builder. If not set, the
+	// default reflect based builder will be used.
 	Builder func() Instruction
 
 	// The recycler can be used in conjunction with the custom builder to
-	// recycle built instruction using a shared pool.
+	// recycle built instructions.
 	Recycler func(Instruction)
 
 	// The operators used by this instruction. Deprecated operators must be
