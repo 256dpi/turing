@@ -13,7 +13,7 @@ const (
 	// FullValue is a full value.
 	FullValue Kind = 1
 
-	// StackValue is a stack of merge values.
+	// StackValue is a list of operands.
 	StackValue Kind = 2
 )
 
@@ -27,12 +27,9 @@ func (k Kind) Valid() bool {
 	}
 }
 
-// Value represents a decoded value
+// Value represents a decoded value.
 type Value struct {
-	// The kind of the value.
-	Kind Kind
-
-	// The value.
+	Kind  Kind
 	Value []byte
 }
 

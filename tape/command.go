@@ -8,16 +8,12 @@ import (
 
 // Operation is a single instruction executed as part of a command.
 type Operation struct {
-	// The instruction name.
 	Name string
-
-	// The instruction data.
 	Data []byte
 }
 
-// Command represents a set of operations to be executed together.
+// Command represents a set of operations to be executed.
 type Command struct {
-	// The operations.
 	Operations []Operation
 }
 

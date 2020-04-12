@@ -31,7 +31,7 @@ func TestValueCoding(t *testing.T) {
 	}))
 }
 
-func BenchmarkEncodeValue(b *testing.B) {
+func BenchmarkValueEncode(b *testing.B) {
 	value := Value{
 		Kind:  FullValue,
 		Value: []byte("foo bar"),
@@ -50,7 +50,7 @@ func BenchmarkEncodeValue(b *testing.B) {
 	}
 }
 
-func BenchmarkDecodeValue(b *testing.B) {
+func BenchmarkValueDecode(b *testing.B) {
 	data := []byte("\x01\x01foo")
 
 	b.ReportAllocs()

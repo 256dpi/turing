@@ -12,7 +12,7 @@ type Operand struct {
 	Value []byte
 }
 
-// Stack represents a stack of merge operands.
+// Stack represents a list of operands.
 type Stack struct {
 	Operands []Operand
 }

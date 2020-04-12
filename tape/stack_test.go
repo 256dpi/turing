@@ -52,7 +52,7 @@ func TestStackCoding(t *testing.T) {
 	}))
 }
 
-func BenchmarkEncodeStack(b *testing.B) {
+func BenchmarkStackEncode(b *testing.B) {
 	stack := Stack{
 		Operands: []Operand{
 			{
@@ -79,7 +79,7 @@ func BenchmarkEncodeStack(b *testing.B) {
 	}
 }
 
-func BenchmarkDecodeStack(b *testing.B) {
+func BenchmarkStackDecode(b *testing.B) {
 	data := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
 
 	b.ReportAllocs()
