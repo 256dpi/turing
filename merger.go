@@ -109,7 +109,7 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 	case StackValue:
 		// stack values
 		computer := newComputer(m.registry)
-		value, ref, err := computer.stack(m.values)
+		value, ref, err := computer.combine(m.values)
 		if err != nil {
 			return nil, nil, err
 		}

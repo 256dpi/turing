@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestComputerStack(t *testing.T) {
+func TestComputerCombine(t *testing.T) {
 	values := []Value{
 		{
 			Kind: StackValue,
@@ -52,7 +52,7 @@ func TestComputerStack(t *testing.T) {
 	}
 
 	computer := newComputer(nil)
-	value, ref, err := computer.stack(values)
+	value, ref, err := computer.combine(values)
 	assert.NoError(t, err)
 	assert.Equal(t, Value{
 		Kind: StackValue,
@@ -85,7 +85,7 @@ func TestComputerStack(t *testing.T) {
 
 	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(nil)
-		_, ref, _ := computer.stack(values)
+		_, ref, _ := computer.combine(values)
 		ref.Release()
 	}))
 }
@@ -171,7 +171,7 @@ func TestComputerEval(t *testing.T) {
 	}))
 }
 
-func BenchmarkComputerStack(b *testing.B) {
+func BenchmarkComputerCombine(b *testing.B) {
 	values := []Value{
 		{
 			Kind: StackValue,
@@ -222,7 +222,7 @@ func BenchmarkComputerStack(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		computer := newComputer(nil)
 
-		_, ref, err := computer.stack(values)
+		_, ref, err := computer.combine(values)
 		if err != nil {
 			panic(err)
 		}

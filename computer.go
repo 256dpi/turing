@@ -26,7 +26,7 @@ func newComputer(registry *registry) *computer {
 	return computer
 }
 
-func (c *computer) stack(values []Value) (Value, Ref, error) {
+func (c *computer) combine(values []Value) (Value, Ref, error) {
 	// ensure recycle
 	defer c.recycle()
 
@@ -36,7 +36,7 @@ func (c *computer) stack(values []Value) (Value, Ref, error) {
 	for _, value := range values {
 		// check value
 		if value.Kind != StackValue {
-			return Value{}, nil, fmt.Errorf("turing: computer stack: expected stack value as operand, got: %d", value.Kind)
+			return Value{}, nil, fmt.Errorf("turing: computer combine: expected stack value as operand, got: %d", value.Kind)
 		}
 
 		// decode stack
@@ -131,7 +131,7 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 		// lookup operator
 		operator, ok := c.registry.ops[name]
 		if !ok {
-			return Value{}, nil, fmt.Errorf("turing: merge values: unknown operator: %q", name)
+			return Value{}, nil, fmt.Errorf("turing: computer eval: unknown operator: %q", name)
 		}
 
 		// count execution if possible
