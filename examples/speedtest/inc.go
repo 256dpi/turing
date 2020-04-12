@@ -28,6 +28,20 @@ var incAdd = &turing.Operator{
 
 		return value, turing.NoopRef, nil
 	},
+	Combine: func(ops [][]byte) ([]byte, turing.Ref, error) {
+		addCounter.Add(1)
+
+		// combine operands
+		var count int64
+		for _, op := range ops {
+			count += decodeInt(op)
+		}
+
+		// encode value
+		value := encodeInt(count)
+
+		return value, turing.NoopRef, nil
+	},
 }
 
 type inc struct {

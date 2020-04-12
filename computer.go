@@ -7,9 +7,10 @@ import (
 
 type computer struct {
 	registry *registry
-	opNames  [1000]string
-	opValues [1000][]byte
+	strings  [1000]string
+	bytes    [1000][]byte
 	operands [1000]Operand
+	refs     [1000]Ref
 }
 
 var computerPool = sync.Pool{
@@ -31,8 +32,8 @@ func (c *computer) combine(values []Value) (Value, Ref, error) {
 	defer c.recycle()
 
 	// validate and collect operands
-	opNames := c.opNames[:0]
-	opValues := c.opValues[:0]
+	opNames := c.strings[:0]
+	opValues := c.bytes[:0]
 	for _, value := range values {
 		// check value
 		if value.Kind != StackValue {
@@ -55,18 +56,58 @@ func (c *computer) combine(values []Value) (Value, Ref, error) {
 		Operands: c.operands[:0],
 	}
 
-	// collect stack values
-	for i := range opNames {
+	// combine or append operands
+	refs := c.refs[:0]
+	err := c.pipeline(opNames, opValues, func(operator *Operator, ops [][]byte) error {
+		// append if combine is missing
+		if operator.Combine == nil {
+			for _, op := range ops {
+				stack.Operands = append(stack.Operands, Operand{
+					Name:  operator.Name,
+					Value: op,
+				})
+			}
+
+			return nil
+		}
+
+		// combine operands
+
+		// count execution if possible
+		if operator.counter != nil {
+			operator.counter.Inc()
+		}
+
+		// merge base with operands
+		value, ref, err := operator.Combine(ops)
+		if err != nil {
+			return err
+		}
+
+		// append operand
 		stack.Operands = append(stack.Operands, Operand{
-			Name:  opNames[i],
-			Value: opValues[i],
+			Name:  operator.Name,
+			Value: value,
 		})
+
+		// append ref
+		refs = append(refs, ref)
+
+		return nil
+	})
+	if err != nil {
+		return Value{}, nil, err
 	}
 
 	// encode stack
 	sv, svr, err := stack.Encode(true)
 	if err != nil {
 		return Value{}, nil, err
+	}
+
+	// release refs
+	for _, ref := range refs {
+		ref.Release()
 	}
 
 	// create value
@@ -96,8 +137,8 @@ func (c *computer) eval(values []Value) (Value, Ref, error) {
 	base := values[0].Value
 
 	// validate and collect operands
-	opNames := c.opNames[:0]
-	opValues := c.opValues[:0]
+	opNames := c.strings[:0]
+	opValues := c.bytes[:0]
 	for _, value := range values[1:] {
 		// check value
 		if value.Kind != StackValue {

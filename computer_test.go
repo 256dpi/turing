@@ -13,11 +13,11 @@ func TestComputerCombine(t *testing.T) {
 			Value: mustEncodeStack(Stack{
 				Operands: []Operand{
 					{
-						Name:  "foo",
+						Name:  "op1",
 						Value: []byte("foo"),
 					},
 					{
-						Name:  "bar",
+						Name:  "op1",
 						Value: []byte("bar"),
 					},
 				},
@@ -28,7 +28,7 @@ func TestComputerCombine(t *testing.T) {
 			Value: mustEncodeStack(Stack{
 				Operands: []Operand{
 					{
-						Name:  "baz",
+						Name:  "op2",
 						Value: []byte("baz"),
 					},
 				},
@@ -39,11 +39,11 @@ func TestComputerCombine(t *testing.T) {
 			Value: mustEncodeStack(Stack{
 				Operands: []Operand{
 					{
-						Name:  "bar",
+						Name:  "op2",
 						Value: []byte("bar"),
 					},
 					{
-						Name:  "baz",
+						Name:  "op1",
 						Value: []byte("baz"),
 					},
 				},
@@ -51,7 +51,27 @@ func TestComputerCombine(t *testing.T) {
 		},
 	}
 
-	computer := newComputer(nil)
+	registry := &registry{
+		ops: map[string]*Operator{
+			"op1": {
+				Name: "op1",
+			},
+			"op2": {
+				Name: "op2",
+				Combine: func(ops [][]byte) ([]byte, Ref, error) {
+					// concat operands
+					var value []byte
+					for _, op := range ops {
+						value = append(value, op...)
+					}
+
+					return value, NoopRef, nil
+				},
+			},
+		},
+	}
+
+	computer := newComputer(registry)
 	value, ref, err := computer.combine(values)
 	assert.NoError(t, err)
 	assert.Equal(t, Value{
@@ -59,23 +79,19 @@ func TestComputerCombine(t *testing.T) {
 		Value: mustEncodeStack(Stack{
 			Operands: []Operand{
 				{
-					Name:  "foo",
+					Name:  "op1",
 					Value: []byte("foo"),
 				},
 				{
-					Name:  "bar",
+					Name:  "op1",
 					Value: []byte("bar"),
 				},
 				{
-					Name:  "baz",
-					Value: []byte("baz"),
+					Name:  "op2",
+					Value: []byte("bazbar"),
 				},
 				{
-					Name:  "bar",
-					Value: []byte("bar"),
-				},
-				{
-					Name:  "baz",
+					Name:  "op1",
 					Value: []byte("baz"),
 				},
 			},
@@ -84,7 +100,7 @@ func TestComputerCombine(t *testing.T) {
 	ref.Release()
 
 	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
-		computer := newComputer(nil)
+		computer := newComputer(registry)
 		_, ref, _ := computer.combine(values)
 		ref.Release()
 	}))

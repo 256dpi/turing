@@ -27,7 +27,7 @@ type Operator struct {
 	Apply func(value []byte, ops [][]byte) ([]byte, Ref, error)
 
 	// An optional function called to combine operands.
-	// Combine func(ops [][]byte) ([]byte, error)
+	Combine func(ops [][]byte) ([]byte, Ref, error)
 
 	counter prometheus.Counter
 }
