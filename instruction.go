@@ -88,6 +88,10 @@ type Description struct {
 	// retained to ensure they can be used to compact older database levels.
 	Operators []*Operator
 
+	// NoResult may be set to true to indicate that the write instruction does
+	// not carry a result. This potentially reduces some RPC traffic.
+	NoResult bool
+
 	observer prometheus.Observer
 }
 

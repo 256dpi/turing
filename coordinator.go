@@ -171,7 +171,12 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 
 	// walk command and decode results
 	err = WalkCommand(data, func(i int, op Operation) error {
-		return list[i].Decode(op.Data)
+		// decode result if available
+		if len(op.Data) > 0 {
+			return list[i].Decode(op.Data)
+		}
+
+		return nil
 	})
 	if err != nil {
 		return err

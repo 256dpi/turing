@@ -71,6 +71,7 @@ var incDesc = &turing.Description{
 		inc.Merge = false
 		incPool.Put(inc)
 	},
+	NoResult: true,
 }
 
 func (i *inc) Describe() *turing.Description {

@@ -85,6 +85,15 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 
 		// encode operations
 		for _, ins := range instructions {
+			// append empty operation when no result
+			if ins.Describe().NoResult {
+				operations = append(operations, Operation{
+					Name: ins.Describe().Name,
+				})
+
+				continue
+			}
+
 			// encode instruction
 			bytes, ref, err := ins.Encode()
 			if err != nil {
