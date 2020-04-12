@@ -3,6 +3,7 @@ package turing
 import (
 	"io"
 
+	"github.com/cockroachdb/pebble"
 	"github.com/lni/dragonboat/v3/statemachine"
 )
 
@@ -165,11 +166,11 @@ func (r *replicator) Lookup(data interface{}) (interface{}, error) {
 }
 
 func (r *replicator) PrepareSnapshot() (interface{}, error) {
-	return nil, nil
+	return r.database.snapshot()
 }
 
-func (r *replicator) SaveSnapshot(_ interface{}, sink io.Writer, abort <-chan struct{}) error {
-	return r.database.backup(sink)
+func (r *replicator) SaveSnapshot(snapshot interface{}, sink io.Writer, abort <-chan struct{}) error {
+	return r.database.backup(snapshot.(*pebble.Snapshot), sink, abort)
 }
 
 func (r *replicator) RecoverFromSnapshot(source io.Reader, abort <-chan struct{}) error {

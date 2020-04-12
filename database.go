@@ -1,6 +1,7 @@
 package turing
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/pebble"
 	"github.com/lni/dragonboat/v3/logger"
+	"github.com/lni/dragonboat/v3/statemachine"
 
 	"github.com/256dpi/turing/coding"
 )
@@ -390,14 +392,31 @@ func (d *database) lookup(list []Instruction) error {
 }
 
 func (d *database) sync() error {
+	d.pebble.Flush()
 	// TODO: Should we do something?
 
 	return nil
 }
 
+func (d *database) snapshot() (*pebble.Snapshot, error) {
+	// acquire read mutex
+	d.read.RLock()
+	defer d.read.RUnlock()
+
+	// check if closed
+	if d.closed {
+		return nil, ErrDatabaseClosed
+	}
+
+	// make snapshot
+	snapshot := d.pebble.NewSnapshot()
+
+	return snapshot, nil
+}
+
 var databaseBackup = systemMetrics.WithLabelValues("database.backup")
 
-func (d *database) backup(sink io.Writer) error {
+func (d *database) backup(snapshot *pebble.Snapshot, sink io.Writer, stopped <-chan struct{}) error {
 	// acquire read mutex
 	d.read.RLock()
 	defer d.read.RUnlock()
@@ -411,7 +430,54 @@ func (d *database) backup(sink io.Writer) error {
 	timer := observe(databaseBackup)
 	defer timer.finish()
 
-	// TODO: Implement.
+	// create iterator
+	iter := snapshot.NewIter(&pebble.IterOptions{})
+	defer iter.Close()
+
+	// prepare buffer
+	buf := make([]byte, 8)
+
+	// iterate over all keys
+	for iter.First(); iter.Valid(); iter.Next() {
+		// write key length
+		binary.BigEndian.PutUint64(buf, uint64(len(iter.Key())))
+		_, err := sink.Write(buf)
+		if err != nil {
+			return err
+		}
+
+		// write key
+		_, err = sink.Write(iter.Key())
+		if err != nil {
+			return err
+		}
+
+		// write value length
+		binary.BigEndian.PutUint64(buf, uint64(len(iter.Value())))
+		_, err = sink.Write(buf)
+		if err != nil {
+			return err
+		}
+
+		// write value
+		_, err = sink.Write(iter.Value())
+		if err != nil {
+			return err
+		}
+
+		// check stopped
+		select {
+		case <-stopped:
+			return statemachine.ErrSnapshotStopped
+		default:
+		}
+	}
+
+	// close iterator
+	err := iter.Close()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -432,9 +498,63 @@ func (d *database) restore(source io.Reader) error {
 	timer := observe(databaseRestore)
 	defer timer.finish()
 
-	// TODO: Implement.
+	// TODO: Delete all current data?
 
-	return nil
+	// prepare buffers
+	lenBuf := make([]byte, 8)
+	keyBuf := make([]byte, 1<<14) // ~16KB
+	valBuf := make([]byte, 1<<24) // ~16MB
+
+	// read from source
+	for {
+		// read key length
+		_, err := io.ReadFull(source, lenBuf)
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return err
+		}
+
+		// decode key length
+		keyLen := int(binary.BigEndian.Uint64(lenBuf))
+
+		// grow slice if too small
+		if cap(keyBuf) < keyLen {
+			keyBuf = make([]byte, keyLen)
+		}
+
+		// read key
+		_, err = io.ReadFull(source, keyBuf[:keyLen])
+		if err != nil {
+			return err
+		}
+
+		// read value length
+		_, err = io.ReadFull(source, lenBuf)
+		if err != nil {
+			return err
+		}
+
+		// decode value length
+		valLen := int(binary.BigEndian.Uint64(lenBuf))
+
+		// grow slice if too small
+		if cap(valBuf) < valLen {
+			valBuf = make([]byte, valLen)
+		}
+
+		// read key
+		_, err = io.ReadFull(source, valBuf[:valLen])
+		if err != nil {
+			return err
+		}
+
+		// set key
+		err = d.pebble.Set(keyBuf[:keyLen], valBuf[:valLen], pebble.NoSync)
+		if err != nil {
+			return err
+		}
+	}
 }
 
 func (d *database) close() error {
