@@ -160,6 +160,9 @@ func TestComputerEval(t *testing.T) {
 			"op": {
 				Name: "op",
 				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
+					// clone value
+					value = Clone(value)
+
 					// concat operands
 					for _, op := range ops {
 						value = append(value, op...)
