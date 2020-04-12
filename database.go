@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/cockroachdb/pebble"
 	"github.com/lni/dragonboat/v3/logger"
@@ -18,6 +19,7 @@ import (
 var ErrDatabaseClosed = errors.New("turing: database closed")
 
 var stateKey = []byte("$state")
+var syncKey = []byte("$sync")
 
 type state struct {
 	Index uint64
@@ -392,8 +394,14 @@ func (d *database) lookup(list []Instruction) error {
 }
 
 func (d *database) sync() error {
-	d.pebble.Flush()
-	// TODO: Should we do something?
+	// get current time
+	now := []byte(time.Now().UTC().Format(time.RFC3339))
+
+	// write sync key to force sync
+	err := d.pebble.Set(syncKey, now, pebble.Sync)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
