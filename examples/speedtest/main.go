@@ -136,8 +136,8 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// prepare instruction
-		ins.Key = rng.Int63n(*keySpace)
-		ins.Value = rng.Int63n(*keySpace)
+		ins.Key = uint64(rng.Int63n(*keySpace))
+		ins.Value = uint64(rng.Int63n(*keySpace))
 		ins.Merge = rng.Intn(4) > 0 // 75%
 
 		// inc value
@@ -176,7 +176,7 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// prepare instruction
-		ins.Key = rng.Int63n(*keySpace)
+		ins.Key = uint64(rng.Int63n(*keySpace))
 
 		// prepare options
 		opts.StaleRead = rng.Intn(4) > 0 // 75%

@@ -13,7 +13,7 @@ var addCounter = god.NewCounter("add", nil)
 
 var incAdd = &turing.Operator{
 	Name: "add",
-	Zero: []byte("\x00"),
+	Zero: []byte("\x00\x00\x00\x00\x00\x00\x00\x00"),
 	Apply: func(value []byte, ops [][]byte) ([]byte, turing.Ref, error) {
 		addCounter.Add(1)
 
@@ -34,7 +34,7 @@ var incAdd = &turing.Operator{
 		addCounter.Add(1)
 
 		// combine operands
-		var count int64
+		var count uint64
 		for _, op := range ops {
 			count += decodeInt(op)
 		}
@@ -47,8 +47,8 @@ var incAdd = &turing.Operator{
 }
 
 type inc struct {
-	Key   int64
-	Value int64
+	Key   uint64
+	Value uint64
 	Merge bool
 }
 
@@ -96,7 +96,7 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 	}
 
 	// get count
-	var count int64
+	var count uint64
 	err := txn.Use(key, func(value []byte) error {
 		count = decodeInt(value)
 		return nil
@@ -122,8 +122,8 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 
 func (i *inc) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
-		enc.Int64(i.Key)
-		enc.Int64(i.Value)
+		enc.Uint64(i.Key)
+		enc.Uint64(i.Value)
 		enc.Bool(i.Merge)
 		return nil
 	})
@@ -131,8 +131,8 @@ func (i *inc) Encode() ([]byte, turing.Ref, error) {
 
 func (i *inc) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
-		dec.Int64(&i.Key)
-		dec.Int64(&i.Value)
+		dec.Uint64(&i.Key)
+		dec.Uint64(&i.Value)
 		dec.Bool(&i.Merge)
 		return nil
 	})

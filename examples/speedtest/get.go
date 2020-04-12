@@ -8,8 +8,8 @@ import (
 )
 
 type get struct {
-	Key   int64
-	Value int64
+	Key   uint64
+	Value uint64
 }
 
 var getDesc = &turing.Description{
@@ -46,16 +46,16 @@ func (g *get) Execute(txn *turing.Transaction) error {
 
 func (g *get) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
-		enc.Int64(g.Key)
-		enc.Int64(g.Value)
+		enc.Uint64(g.Key)
+		enc.Uint64(g.Value)
 		return nil
 	})
 }
 
 func (g *get) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
-		dec.Int64(&g.Key)
-		dec.Int64(&g.Value)
+		dec.Uint64(&g.Key)
+		dec.Uint64(&g.Value)
 		return nil
 	})
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type sum struct {
-	Total int64
+	Total uint64
 }
 
 var sumDesc = &turing.Description{
@@ -55,14 +55,14 @@ func (s *sum) Execute(txn *turing.Transaction) error {
 
 func (s *sum) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
-		enc.Int64(s.Total)
+		enc.Uint64(s.Total)
 		return nil
 	})
 }
 
 func (s *sum) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
-		dec.Int64(&s.Total)
+		dec.Uint64(&s.Total)
 		return nil
 	})
 }
