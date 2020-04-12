@@ -30,11 +30,11 @@ func (g *get) Execute(txn *turing.Transaction) error {
 	getCounter.Add(1)
 
 	// encode key
-	key := encodeInt(g.Key)
+	key := encodeNum(g.Key)
 
 	// get count
 	err := txn.Use(key, func(value []byte) error {
-		g.Value = decodeInt(value)
+		g.Value = decodeNum(value)
 		return nil
 	})
 	if err != nil {

@@ -44,7 +44,7 @@ func (s *sum) Execute(txn *turing.Transaction) error {
 		}
 
 		// increment
-		s.Total += decodeInt(val)
+		s.Total += decodeNum(val)
 
 		// release
 		ref.Release()

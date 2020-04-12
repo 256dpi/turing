@@ -18,15 +18,15 @@ var incAdd = &turing.Operator{
 		addCounter.Add(1)
 
 		// parse value
-		count := decodeInt(value)
+		count := decodeNum(value)
 
 		// apply operands
 		for _, op := range ops {
-			count += decodeInt(op)
+			count += decodeNum(op)
 		}
 
 		// encode value
-		value = encodeInt(count)
+		value = encodeNum(count)
 
 		return value, turing.NoopRef, nil
 	},
@@ -36,11 +36,11 @@ var incAdd = &turing.Operator{
 		// combine operands
 		var count uint64
 		for _, op := range ops {
-			count += decodeInt(op)
+			count += decodeNum(op)
 		}
 
 		// encode value
-		value := encodeInt(count)
+		value := encodeNum(count)
 
 		return value, turing.NoopRef, nil
 	},
@@ -88,17 +88,17 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 	incCounter.Add(1)
 
 	// encode key
-	key := encodeInt(i.Key)
+	key := encodeNum(i.Key)
 
 	// use merge operator if requested
 	if i.Merge {
-		return txn.Merge(key, encodeInt(i.Value), incAdd)
+		return txn.Merge(key, encodeNum(i.Value), incAdd)
 	}
 
 	// get count
 	var count uint64
 	err := txn.Use(key, func(value []byte) error {
-		count = decodeInt(value)
+		count = decodeNum(value)
 		return nil
 	})
 	if err != nil {
@@ -109,7 +109,7 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 	count += i.Value
 
 	// set value
-	err = txn.Set(key, encodeInt(count))
+	err = txn.Set(key, encodeNum(count))
 	if err != nil {
 		return err
 	}
