@@ -14,9 +14,10 @@ import (
 const clusterID uint64 = 1
 
 type coordinator struct {
-	node   *dragonboat.NodeHost
-	reads  *bundler
-	writes *bundler
+	node       *dragonboat.NodeHost
+	reads      *bundler
+	writes     *bundler
+	operations []Operation
 }
 
 func createCoordinator(cfg Config, registry *registry, manager *manager) (*coordinator, error) {
@@ -72,7 +73,8 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 
 	// create coordinator
 	coordinator := &coordinator{
-		node: node,
+		node:       node,
+		operations: make([]Operation, cfg.UpdateBatchSize),
 	}
 
 	// create read bundler
@@ -122,7 +124,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 
 	// prepare command
 	cmd := Command{
-		Operations: make([]Operation, 0, len(list)),
+		Operations: c.operations[:0],
 	}
 
 	// add operations
