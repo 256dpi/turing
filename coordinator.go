@@ -192,7 +192,7 @@ func (c *coordinator) lookup(ins Instruction, options Options) error {
 		return c.reads.process(ins)
 	}
 
-	// otherwise read for linear reads
+	// otherwise read index for linear reads
 
 	// read index
 	req, err := c.node.ReadIndex(clusterID, 10*time.Second)
