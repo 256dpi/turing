@@ -77,8 +77,13 @@ type Description struct {
 	Name string
 
 	// The builder can be set to implement a custom builder. If not set, the
-	// default reflect based builder will be used.
+	// default reflect based builder will be used. Note: Only write instructions
+	// are built dynamically.
 	Builder func() Instruction
+
+	// The recycler can be used in conjunction with the custom builder to
+	// recycle built instruction using a shared pool.
+	Recycler func(Instruction)
 
 	// The operators used by this instruction. Deprecated operators must be
 	// retained to ensure they can be used to compact older database levels.

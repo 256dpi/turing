@@ -99,6 +99,12 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 
 			// append reference
 			references = append(references, ref)
+
+			// recycle instruction if possible
+			recycler := ins.Describe().Recycler
+			if recycler != nil {
+				recycler(ins)
+			}
 		}
 
 		// prepare command

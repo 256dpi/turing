@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/256dpi/god"
 
 	"github.com/256dpi/turing"
@@ -50,9 +52,25 @@ type inc struct {
 	Merge bool
 }
 
+var incPool = sync.Pool{
+	New: func() interface{} {
+		return &inc{}
+	},
+}
+
 var incDesc = &turing.Description{
 	Name:      "inc",
 	Operators: []*turing.Operator{incAdd},
+	Builder: func() turing.Instruction {
+		return incPool.Get().(*inc)
+	},
+	Recycler: func(ins turing.Instruction) {
+		inc := ins.(*inc)
+		inc.Key = 0
+		inc.Value = 0
+		inc.Merge = false
+		incPool.Put(inc)
+	},
 }
 
 func (i *inc) Describe() *turing.Description {
