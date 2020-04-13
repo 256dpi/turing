@@ -6,12 +6,11 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sort"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
-
-	"github.com/256dpi/god"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/256dpi/turing"
 	"github.com/256dpi/turing/stdset"
@@ -24,12 +23,6 @@ var directory = flag.String("directory", "data", "the data directory")
 func main() {
 	// parse flags
 	flag.Parse()
-
-	// enable debugging
-	god.Init(god.Options{
-		Port:           6060 + int(*id),
-		MetricsHandler: promhttp.Handler().ServeHTTP,
-	})
 
 	// parse members
 	memberList, err := turing.ParseMembers(*members)
@@ -62,12 +55,6 @@ func main() {
 	// ensure stop
 	defer machine.Stop()
 
-	// subscribe observer
-	machine.Subscribe(&observer{})
-
-	// run printer
-	go printer(machine)
-
 	// prepare exit
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
@@ -91,7 +78,7 @@ func main() {
 			continue
 		}
 
-		// list values
+		// map values
 		mp := &stdset.Map{}
 		err = machine.Execute(mp)
 		if err != nil {
@@ -100,28 +87,16 @@ func main() {
 			continue
 		}
 
-		// print instruction
-		fmt.Printf("KEYS: %+v\n", mp)
-	}
-}
+		// collect keys
+		var keys []string
+		for key, value := range mp.Pairs {
+			keys = append(keys, fmt.Sprintf("%s:%s", key, value))
+		}
 
-type observer struct{}
-
-func (*observer) Init() {
-	fmt.Printf("==> Init\n")
-}
-
-func (*observer) Process(i turing.Instruction) bool {
-	fmt.Printf("==> %+v\n", i)
-	return true
-}
-
-func printer(machine *turing.Machine) {
-	for {
-		// wait some time
-		time.Sleep(time.Second)
+		// sort keys
+		sort.Strings(keys)
 
 		// print info
-		fmt.Printf("STATUS: %+v\n", machine.Status())
+		fmt.Printf("Keys: %s, %s", strings.Join(keys, " "), machine.Status().String())
 	}
 }
