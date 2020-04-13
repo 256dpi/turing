@@ -109,7 +109,7 @@ func TestComputerCombine(t *testing.T) {
 	}))
 }
 
-func TestComputerEval(t *testing.T) {
+func TestComputerApply(t *testing.T) {
 	cells := []tape.Cell{
 		{
 			Type:  tape.RawCell,
@@ -178,7 +178,7 @@ func TestComputerEval(t *testing.T) {
 	}
 
 	computer := newComputer(registry)
-	result, ref, err := computer.eval(cells)
+	result, ref, err := computer.apply(cells)
 	assert.NoError(t, err)
 	assert.Equal(t, tape.Cell{
 		Type:  tape.RawCell,
@@ -189,7 +189,7 @@ func TestComputerEval(t *testing.T) {
 	// allocs come from operator
 	assert.Equal(t, 2.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(registry)
-		_, ref, _ := computer.eval(cells)
+		_, ref, _ := computer.apply(cells)
 		ref.Release()
 	}))
 }
@@ -297,7 +297,7 @@ func BenchmarkComputerCombine(b *testing.B) {
 	}
 }
 
-func BenchmarkComputerEval(b *testing.B) {
+func BenchmarkComputerApply(b *testing.B) {
 	cells := []tape.Cell{
 		{
 			Type:  tape.RawCell,
@@ -362,7 +362,7 @@ func BenchmarkComputerEval(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		computer := newComputer(registry)
-		_, ref, err := computer.eval(cells)
+		_, ref, err := computer.apply(cells)
 		if err != nil {
 			panic(err)
 		}

@@ -123,18 +123,18 @@ func (c *computer) combine(cells []tape.Cell) (tape.Cell, Ref, error) {
 	return result, stackRef, nil
 }
 
-func (c *computer) eval(cells []tape.Cell) (tape.Cell, Ref, error) {
+func (c *computer) apply(cells []tape.Cell) (tape.Cell, Ref, error) {
 	// ensure recycle
 	defer c.recycle()
 
 	// check cells
 	if len(cells) < 2 {
-		return tape.Cell{}, nil, fmt.Errorf("turing: computer eval: need at least two cells")
+		return tape.Cell{}, nil, fmt.Errorf("turing: computer apply: need at least two cells")
 	}
 
 	// check first cell
 	if cells[0].Type != tape.RawCell {
-		return tape.Cell{}, nil, fmt.Errorf("turing: computer eval: expected raw cell, got: %d", cells[0].Type)
+		return tape.Cell{}, nil, fmt.Errorf("turing: computer apply: expected raw cell, got: %d", cells[0].Type)
 	}
 
 	// get base
@@ -146,7 +146,7 @@ func (c *computer) eval(cells []tape.Cell) (tape.Cell, Ref, error) {
 	for _, cell := range cells[1:] {
 		// check cell
 		if cell.Type != tape.StackCell {
-			return tape.Cell{}, nil, fmt.Errorf("turing: computer eval: expected stack cell, got: %d", cell.Type)
+			return tape.Cell{}, nil, fmt.Errorf("turing: computer apply: expected stack cell, got: %d", cell.Type)
 		}
 
 		// decode stack
@@ -231,8 +231,8 @@ func (c *computer) resolve(cell tape.Cell) (tape.Cell, Ref, error) {
 		cell,
 	}
 
-	// merge cells
-	cell, ref, err := c.eval(cells[:])
+	// apply cells
+	cell, ref, err := c.apply(cells[:])
 	if err != nil {
 		return tape.Cell{}, nil, err
 	}

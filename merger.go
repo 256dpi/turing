@@ -86,12 +86,12 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 	// TODO: Merge with zero value if the base cell is a stack.
 	//  => Improve pebble to provide the info.
 
-	// eval if first cell is a raw cell, otherwise combine if stack cell
+	// apply if first cell is a raw cell, otherwise combine if stack cell
 	switch m.cells[0].Type {
 	case tape.RawCell:
-		// eval cells
+		// apply cells
 		computer := newComputer(m.registry)
-		result, ref, err := computer.eval(m.cells)
+		result, ref, err := computer.apply(m.cells)
 		if err != nil {
 			return nil, nil, err
 		}
