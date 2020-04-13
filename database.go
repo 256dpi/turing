@@ -12,7 +12,7 @@ import (
 	"github.com/lni/dragonboat/v3/logger"
 	"github.com/lni/dragonboat/v3/statemachine"
 
-	"github.com/256dpi/turing/coding"
+	"github.com/256dpi/turing/tape"
 )
 
 // ErrDatabaseClosed is returned if the database has been closed.
@@ -20,44 +20,6 @@ var ErrDatabaseClosed = errors.New("turing: database closed")
 
 var stateKey = []byte("$state")
 var syncKey = []byte("$sync")
-
-type state struct {
-	Index uint64
-	Batch uint64
-	Last  uint16
-}
-
-func (s *state) Encode() ([]byte, Ref, error) {
-	return coding.Encode(true, func(enc *coding.Encoder) error {
-		// encode version
-		enc.Uint8(1)
-
-		// encode body
-		enc.Uint64(s.Index)
-		enc.Uint64(s.Batch)
-		enc.Uint16(s.Last)
-
-		return nil
-	})
-}
-
-func (s *state) Decode(data []byte) error {
-	return coding.Decode(data, func(dec *coding.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
-			return fmt.Errorf("turing: state decode: invalid version")
-		}
-
-		// decode body
-		dec.Uint64(&s.Index)
-		dec.Uint64(&s.Batch)
-		dec.Uint16(&s.Last)
-
-		return nil
-	})
-}
 
 var transactionPool = sync.Pool{
 	New: func() interface{} {
@@ -81,7 +43,7 @@ func recycleTransaction(txn *transaction) {
 }
 
 type database struct {
-	state    state
+	state    tape.State
 	registry *registry
 	manager  *manager
 	pebble   *pebble.DB
@@ -149,7 +111,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 	}
 
 	// parse state if available
-	var state state
+	var state tape.State
 	if len(value) > 0 {
 		// ensure close
 		defer closer.Close()
