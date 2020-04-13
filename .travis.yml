@@ -1,0 +1,21 @@
+language: go
+go:
+  - '1.14'
+  - tip
+before_install:
+  - go get github.com/modocache/gover
+  - go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
+install:
+  - go get -t ./...
+script:
+  - go test -coverprofile=turing.coverprofile
+  - go test -coverprofile=coding.coverprofile ./coding
+  - go test -coverprofile=stdset.coverprofile ./stdset
+  - go test -coverprofile=tape.coverprofile ./tape
+  - go test -coverprofile=wire.coverprofile ./wire
+  - $HOME/gopath/bin/gover
+  - $HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci
+matrix:
+  allow_failures:
+    - go: tip
