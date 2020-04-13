@@ -16,3 +16,9 @@ for reaching consensus among the nodes.
   [here](https://github.com/256dpi/turing/blob/master/examples/counter/main.go). 
 - The [`stdset`](https://github.com/256dpi/turing/tree/master/stdset)
   package implements a set of basic instructions.
+
+## License
+
+The MIT License (MIT)
+
+Copyright (c) 2020 Joël Gähwiler
