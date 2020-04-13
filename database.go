@@ -61,15 +61,15 @@ func (s *state) Decode(data []byte) error {
 
 var transactionPool = sync.Pool{
 	New: func() interface{} {
-		return &Transaction{}
+		return &transaction{}
 	},
 }
 
-func obtainTransaction() *Transaction {
-	return transactionPool.Get().(*Transaction)
+func obtainTransaction() *transaction {
+	return transactionPool.Get().(*transaction)
 }
 
-func recycleTransaction(txn *Transaction) {
+func recycleTransaction(txn *transaction) {
 	txn.registry = nil
 	txn.current = nil
 	txn.reader = nil

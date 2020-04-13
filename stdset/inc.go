@@ -82,7 +82,7 @@ func (i *Inc) Effect() int {
 }
 
 // Execute implements the turing.Instruction interface.
-func (i *Inc) Execute(txn *turing.Transaction) error {
+func (i *Inc) Execute(mem turing.Memory) error {
 	// borrow slice
 	buf, ref := coding.Borrow(int64Len)
 	defer ref.Release()
@@ -92,7 +92,7 @@ func (i *Inc) Execute(txn *turing.Transaction) error {
 	buf = strconv.AppendInt(buf, i.Value, 10)
 
 	// add value
-	err := txn.Merge(i.Key, buf, Add)
+	err := mem.Merge(i.Key, buf, Add)
 	if err != nil {
 		return err
 	}

@@ -28,12 +28,12 @@ func (m *Map) Effect() int {
 }
 
 // Execute implements the turing.Instruction interface.
-func (m *Map) Execute(txn *turing.Transaction) error {
+func (m *Map) Execute(mem turing.Memory) error {
 	// create map
 	m.Pairs = make(map[string][]byte)
 
 	// create iterator
-	iter := txn.Iterator(m.Prefix)
+	iter := mem.Iterate(m.Prefix)
 	defer iter.Close()
 
 	// iterate through all pairs

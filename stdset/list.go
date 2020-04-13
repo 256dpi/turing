@@ -28,12 +28,12 @@ func (l *List) Effect() int {
 }
 
 // Execute implements the turing.Instruction interface.
-func (l *List) Execute(txn *turing.Transaction) error {
+func (l *List) Execute(mem turing.Memory) error {
 	// reset Map
 	l.Keys = make([][]byte, 0, 512)
 
 	// create iterator
-	iter := txn.Iterator(l.Prefix)
+	iter := mem.Iterate(l.Prefix)
 	defer iter.Close()
 
 	// add all keys

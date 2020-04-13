@@ -26,7 +26,7 @@ func (s *sum) Effect() int {
 
 var sumCounter = god.NewCounter("sum", nil)
 
-func (s *sum) Execute(txn *turing.Transaction) error {
+func (s *sum) Execute(mem turing.Memory) error {
 	sumCounter.Add(1)
 
 	// reset
@@ -36,7 +36,7 @@ func (s *sum) Execute(txn *turing.Transaction) error {
 	start := encodeNum(s.Start)
 
 	// get iterator
-	iter := txn.Iterator(nil)
+	iter := mem.Iterate(nil)
 	defer iter.Close()
 
 	// iterate over key space

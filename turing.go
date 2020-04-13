@@ -3,6 +3,7 @@ package turing
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -21,23 +22,6 @@ type Ref interface {
 	Release()
 }
 
-// Operator describes a merge operator.
-type Operator struct {
-	// The name of the operator.
-	Name string
-
-	// The zero value used as the base value if there is no full value.
-	Zero []byte
-
-	// The function called to apply operands to a value.
-	Apply func(value []byte, ops [][]byte) ([]byte, Ref, error)
-
-	// An optional function called to combine operands.
-	Combine func(ops [][]byte) ([]byte, Ref, error)
-
-	counter prometheus.Counter
-}
-
 // Instruction is the interface that is implemented by instructions that are
 // executed by the machine.
 type Instruction interface {
@@ -54,8 +38,8 @@ type Instruction interface {
 	// may modify many keys.
 	Effect() int
 
-	// Execute should execute the instruction using the provided transaction.
-	Execute(*Transaction) error
+	// Execute should execute the instruction using the provided memory.
+	Execute(Memory) error
 
 	// Encode should encode the instruction.
 	Encode() ([]byte, Ref, error)
@@ -97,4 +81,97 @@ func (d Description) Validate() error {
 	}
 
 	return nil
+}
+
+// Operator describes a merge operator.
+type Operator struct {
+	// The name of the operator.
+	Name string
+
+	// The zero value used as the base value if there is none.
+	Zero []byte
+
+	// The function called to apply operands to a value.
+	Apply func(value []byte, ops [][]byte) ([]byte, Ref, error)
+
+	// An optional function called to combine operands.
+	Combine func(ops [][]byte) ([]byte, Ref, error)
+
+	counter prometheus.Counter
+}
+
+// Memory is interface used by instructions to read and write to the database.
+type Memory interface {
+	// Iterate will construct and return a new iterator. The iterator must be
+	// closed as soon as it is not used anymore.
+	Iterate(prefix []byte) Iterator
+
+	// Get will lookup the specified key. The returned slice must not be modified
+	// by the caller. A closer is returned that must be closed once the value is
+	// not used anymore. Consider using Use() if the value is only used temporarily.
+	Get(key []byte) ([]byte, bool, io.Closer, error)
+
+	// Use will lookup the specified key and yield it to the provided function if
+	// it exists.
+	Use(key []byte, fn func(value []byte) error) error
+
+	// Set will set the specified key to the new value. This operation will count
+	// as one towards the effect of the backing transaction.
+	Set(key, value []byte) error
+
+	// Unset will remove the specified key. This operation will count as one towards
+	// the effect of the backing transaction.
+	Unset(key []byte) error
+
+	// Delete deletes all of the keys in the range [start, end] (inclusive on start,
+	// exclusive on end). This operation will count as one towards the effect of the
+	// backing transaction.
+	Delete(start, end []byte) error
+
+	// Merge merges existing values with the provided value using the specified
+	// operator.
+	Merge(key, value []byte, operator *Operator) error
+
+	// Effect will return the current effect of the backing transaction.
+	Effect() int
+}
+
+// Iterator is used to iterate over the memory.
+type Iterator interface {
+	// SeekGE will seek to the exact key or the next greater key.
+	SeekGE(key []byte) bool
+
+	// SeekLT will seek to the exact key or the next smaller key.
+	SeekLT(key []byte) bool
+
+	// First will seek to the first key in the range.
+	First() bool
+
+	// Last will seek to the last key in the range.
+	Last() bool
+
+	// Valid will return whether a valid key/value pair is present.
+	Valid() bool
+
+	// Next will move on to the next key.
+	Next() bool
+
+	// Prev will go back to the previous key.
+	Prev() bool
+
+	// Key will return a buffered key that can be used until released.
+	Key() ([]byte, Ref)
+
+	// TempKey will return the temporary key which is only valid until the next
+	// iteration or until the iterator is closed.
+	TempKey() []byte
+
+	// Value will return a buffered value that can be used until released.
+	Value() ([]byte, Ref, error)
+
+	// Error will return the error.
+	Error() error
+
+	// Close will close the iterator.
+	Close() error
 }

@@ -26,14 +26,14 @@ func (g *get) Effect() int {
 
 var getCounter = god.NewCounter("get", nil)
 
-func (g *get) Execute(txn *turing.Transaction) error {
+func (g *get) Execute(mem turing.Memory) error {
 	getCounter.Add(1)
 
 	// encode key
 	key := encodeNum(g.Key)
 
 	// get count
-	err := txn.Use(key, func(value []byte) error {
+	err := mem.Use(key, func(value []byte) error {
 		g.Value = decodeNum(value)
 		return nil
 	})

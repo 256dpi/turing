@@ -34,8 +34,7 @@ var ErrReadOnly = errors.New("turing: read only")
 // changes persistent and be executed again to persist the remaining changes.
 var ErrMaxEffect = errors.New("turing: max effect")
 
-// Transaction is used by an instruction to perform changes to the database.
-type Transaction struct {
+type transaction struct {
 	registry  *registry
 	current   Instruction
 	reader    pebble.Reader
@@ -49,7 +48,7 @@ type Transaction struct {
 // It will return whether the instruction maxed the transaction effect. If so,
 // the calling instruction should return ErrMaxEffect and call the instruction
 // again in the following execution.
-func (t *Transaction) Execute(ins Instruction) (bool, error) {
+func (t *transaction) Execute(ins Instruction) (bool, error) {
 	// set instruction
 	t.current = ins
 
@@ -75,10 +74,7 @@ func (t *Transaction) Execute(ins Instruction) (bool, error) {
 	return effectMaxed, nil
 }
 
-// Get will lookup the specified key. The returned slice must not be modified by
-// the caller. A closer is returned that must be closed once the value is not
-// used anymore. Consider using Use() if the value is only used temporarily.
-func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
+func (t *transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	// prefix key
 	pk, pkr := prefixUserKey(key)
 	defer pkr.Release()
@@ -138,9 +134,7 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	return result.Value, true, refCloser, nil
 }
 
-// Use will lookup the specified key and yield it to the provided function if it
-// exists.
-func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
+func (t *transaction) Use(key []byte, fn func(value []byte) error) error {
 	// get value
 	value, found, closer, err := t.Get(key)
 	if err != nil {
@@ -165,9 +159,7 @@ func (t *Transaction) Use(key []byte, fn func(value []byte) error) error {
 	return err
 }
 
-// Set will set the specified key to the new value. This operation will count as
-// one towards the effect of the transaction.
-func (t *Transaction) Set(key, value []byte) error {
+func (t *transaction) Set(key, value []byte) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
@@ -209,9 +201,7 @@ func (t *Transaction) Set(key, value []byte) error {
 	return nil
 }
 
-// Unset will remove the specified key. This operation will count as one towards
-// the effect of the transaction.
-func (t *Transaction) Unset(key []byte) error {
+func (t *transaction) Unset(key []byte) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
@@ -238,10 +228,7 @@ func (t *Transaction) Unset(key []byte) error {
 	return nil
 }
 
-// Delete deletes all of the keys in the range [start, end] (inclusive on start,
-// exclusive on end). This operation will count as one towards the effect of the
-// transaction.
-func (t *Transaction) Delete(start, end []byte) error {
+func (t *transaction) Delete(start, end []byte) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
@@ -270,9 +257,7 @@ func (t *Transaction) Delete(start, end []byte) error {
 	return nil
 }
 
-// Merge merges existing values with the provided value using the specified
-// operator.
-func (t *Transaction) Merge(key, value []byte, operator *Operator) error {
+func (t *transaction) Merge(key, value []byte, operator *Operator) error {
 	// check writer
 	if t.writer == nil {
 		return ErrReadOnly
@@ -347,37 +332,31 @@ func (t *Transaction) Merge(key, value []byte, operator *Operator) error {
 	return nil
 }
 
-// Effect will return the current effect of the transaction.
-func (t *Transaction) Effect() int {
+func (t *transaction) Effect() int {
 	return t.effect
 }
 
-// Iterator will construct and return a new iterator. The iterator must be
-// closed as soon as it is not used anymore. There can be only one iterator
-// created at a time.
-func (t *Transaction) Iterator(prefix []byte) *Iterator {
+func (t *transaction) Iterate(prefix []byte) Iterator {
 	// increment iterators
 	t.iterators++
 
 	// prefix prefix
 	pk, pkr := prefixUserKey(prefix)
 
-	return &Iterator{
+	return &iterator{
 		txn:  t,
 		pkr:  pkr,
 		iter: t.reader.NewIter(prefixIterator(pk)),
 	}
 }
 
-// Iterator is used to iterate over the key space of the database.
-type Iterator struct {
-	txn  *Transaction
+type iterator struct {
+	txn  *transaction
 	pkr  Ref
 	iter *pebble.Iterator
 }
 
-// SeekGE will seek to the exact key or the next greater key.
-func (i *Iterator) SeekGE(key []byte) bool {
+func (i *iterator) SeekGE(key []byte) bool {
 	// prepare prefix
 	pKey, pKeyRef := prefixUserKey(key)
 	defer pKeyRef.Release()
@@ -385,8 +364,7 @@ func (i *Iterator) SeekGE(key []byte) bool {
 	return i.iter.SeekGE(pKey)
 }
 
-// SeekLT will seek to the exact key or the next smaller key.
-func (i *Iterator) SeekLT(key []byte) bool {
+func (i *iterator) SeekLT(key []byte) bool {
 	// prepare prefix
 	pKey, pKeyRef := prefixUserKey(key)
 	defer pKeyRef.Release()
@@ -394,39 +372,31 @@ func (i *Iterator) SeekLT(key []byte) bool {
 	return i.iter.SeekLT(pKey)
 }
 
-// First will seek to the first key in the range.
-func (i *Iterator) First() bool {
+func (i *iterator) First() bool {
 	return i.iter.First()
 }
 
-// Last will seek to the last key in the range.
-func (i *Iterator) Last() bool {
+func (i *iterator) Last() bool {
 	return i.iter.Last()
 }
 
-// Valid will return whether a valid key/value pair is present.
-func (i *Iterator) Valid() bool {
+func (i *iterator) Valid() bool {
 	return i.iter.Valid()
 }
 
-// Next will move on to the next key.
-func (i *Iterator) Next() bool {
+func (i *iterator) Next() bool {
 	return i.iter.Next()
 }
 
-// Prev will go back to the previous key.
-func (i *Iterator) Prev() bool {
+func (i *iterator) Prev() bool {
 	return i.iter.Prev()
 }
 
-// Key will return a buffered key that can be used until released.
-func (i *Iterator) Key() ([]byte, Ref) {
+func (i *iterator) Key() ([]byte, Ref) {
 	return coding.Clone(i.TempKey())
 }
 
-// TempKey will return the temporary key which is only valid until the next
-// iteration or the iterator is closed.
-func (i *Iterator) TempKey() []byte {
+func (i *iterator) TempKey() []byte {
 	// get key
 	key := trimUserKey(i.iter.Key())
 	if len(key) == 0 {
@@ -436,8 +406,7 @@ func (i *Iterator) TempKey() []byte {
 	return key
 }
 
-// Value will return a buffered value that can be used until released.
-func (i *Iterator) Value() ([]byte, Ref, error) {
+func (i *iterator) Value() ([]byte, Ref, error) {
 	// get value
 	bytes := i.iter.Value()
 	if len(bytes) == 0 {
@@ -467,13 +436,11 @@ func (i *Iterator) Value() ([]byte, Ref, error) {
 	return result.Value, ref, nil
 }
 
-// Error will return the error
-func (i *Iterator) Error() error {
+func (i *iterator) Error() error {
 	return i.iter.Error()
 }
 
-// Close will close the iterator.
-func (i *Iterator) Close() error {
+func (i *iterator) Close() error {
 	// decrement iterators
 	i.txn.iterators--
 

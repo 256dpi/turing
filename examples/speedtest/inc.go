@@ -84,7 +84,7 @@ func (i *inc) Effect() int {
 
 var incCounter = god.NewCounter("inc", nil)
 
-func (i *inc) Execute(txn *turing.Transaction) error {
+func (i *inc) Execute(mem turing.Memory) error {
 	incCounter.Add(1)
 
 	// encode key
@@ -92,12 +92,12 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 
 	// use merge operator if requested
 	if i.Merge {
-		return txn.Merge(key, encodeNum(i.Value), incAdd)
+		return mem.Merge(key, encodeNum(i.Value), incAdd)
 	}
 
 	// get count
 	var count uint64
-	err := txn.Use(key, func(value []byte) error {
+	err := mem.Use(key, func(value []byte) error {
 		count = decodeNum(value)
 		return nil
 	})
@@ -109,7 +109,7 @@ func (i *inc) Execute(txn *turing.Transaction) error {
 	count += i.Value
 
 	// set value
-	err = txn.Set(key, encodeNum(count))
+	err = mem.Set(key, encodeNum(count))
 	if err != nil {
 		return err
 	}

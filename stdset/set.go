@@ -28,9 +28,9 @@ func (s *Set) Effect() int {
 }
 
 // Execute implements the turing.Instruction interface.
-func (s *Set) Execute(txn *turing.Transaction) error {
+func (s *Set) Execute(mem turing.Memory) error {
 	// set pair
-	err := txn.Set(s.Key, s.Value)
+	err := mem.Set(s.Key, s.Value)
 	if err != nil {
 		return err
 	}
