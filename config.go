@@ -52,7 +52,7 @@ type Config struct {
 
 	// The maximum instruction batch sizes.
 	//
-	// Default: 600, 200, 200.
+	// Default: 200, 200, 200.
 	UpdateBatchSize   int
 	LookupBatchSize   int
 	ProposalBatchSize int
@@ -110,7 +110,7 @@ func (c *Config) Validate() error {
 
 	// check batch sizes
 	if c.UpdateBatchSize == 0 {
-		c.UpdateBatchSize = 600
+		c.UpdateBatchSize = 200
 	}
 	if c.LookupBatchSize == 0 {
 		c.LookupBatchSize = 200
