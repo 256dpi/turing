@@ -25,7 +25,7 @@ func TestDecode(t *testing.T) {
 	enc += "\x03bar"
 	enc += "baz"
 
-	data := []byte(enc)
+	bytes := []byte(enc)
 
 	var bol bool
 	var i8 int8
@@ -43,7 +43,7 @@ func TestDecode(t *testing.T) {
 	var fb []byte
 	var vb []byte
 	var tail []byte
-	err := Decode(data, func(dec *Decoder) error {
+	err := Decode(bytes, func(dec *Decoder) error {
 		dec.Bool(&bol)
 		dec.Int8(&i8)
 		dec.Int16(&i16)
@@ -97,7 +97,7 @@ func TestDecode(t *testing.T) {
 		var fb []byte
 		var vb []byte
 		var tail []byte
-		_ = Decode(data, func(dec *Decoder) error {
+		_ = Decode(bytes, func(dec *Decoder) error {
 			dec.Bool(&bol)
 			dec.Int8(&i8)
 			dec.Int16(&i16)
@@ -137,7 +137,7 @@ func BenchmarkDecode(b *testing.B) {
 	enc += "\x03bar"
 	enc += "baz"
 
-	data := []byte(enc)
+	bytes := []byte(enc)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -159,7 +159,7 @@ func BenchmarkDecode(b *testing.B) {
 		var fb []byte
 		var vb []byte
 		var tail []byte
-		err := Decode(data, func(dec *Decoder) error {
+		err := Decode(bytes, func(dec *Decoder) error {
 			dec.Bool(&bol)
 			dec.Int8(&i8)
 			dec.Int16(&i16)

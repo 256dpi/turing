@@ -80,14 +80,14 @@ func BenchmarkStackEncode(b *testing.B) {
 }
 
 func BenchmarkStackDecode(b *testing.B) {
-	data := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
+	bytes := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		var stack Stack
-		err := stack.Decode(data, false)
+		err := stack.Decode(bytes, false)
 		if err != nil {
 			panic(err)
 		}
@@ -95,13 +95,13 @@ func BenchmarkStackDecode(b *testing.B) {
 }
 
 func BenchmarkWalkStack(b *testing.B) {
-	data := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
+	bytes := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := WalkStack(data, func(i int, op Operand) (bool, error) {
+		err := WalkStack(bytes, func(i int, op Operand) (bool, error) {
 			return true, nil
 		})
 		if err != nil {

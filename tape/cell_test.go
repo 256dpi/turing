@@ -51,14 +51,14 @@ func BenchmarkCellEncode(b *testing.B) {
 }
 
 func BenchmarkCellDecode(b *testing.B) {
-	data := []byte("\x01\x01foo")
+	bytes := []byte("\x01\x01foo")
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		var cell Cell
-		err := cell.Decode(data, false)
+		err := cell.Decode(bytes, false)
 		if err != nil {
 			panic(err)
 		}

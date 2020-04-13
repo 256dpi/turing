@@ -80,14 +80,14 @@ func BenchmarkCommandEncode(b *testing.B) {
 }
 
 func BenchmarkCommandDecode(b *testing.B) {
-	data := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
+	bytes := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		var cmd Command
-		err := cmd.Decode(data, false)
+		err := cmd.Decode(bytes, false)
 		if err != nil {
 			panic(err)
 		}
@@ -95,13 +95,13 @@ func BenchmarkCommandDecode(b *testing.B) {
 }
 
 func BenchmarkWalkCommand(b *testing.B) {
-	data := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
+	bytes := []byte("\x01\x00\x02\x00\x03foo\x00\x00\x00\x03bar\x00\x03baz\x00\x00\x00\x03quz")
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := WalkCommand(data, func(i int, op Operation) (bool, error) {
+		err := WalkCommand(bytes, func(i int, op Operation) (bool, error) {
 			return true, nil
 		})
 		if err != nil {

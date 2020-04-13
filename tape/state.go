@@ -34,8 +34,8 @@ func (s *State) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 }
 
 // Decode will decode the state.
-func (s *State) Decode(data []byte) error {
-	return coding.Decode(data, func(dec *coding.Decoder) error {
+func (s *State) Decode(bytes []byte) error {
+	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)

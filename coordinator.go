@@ -170,13 +170,13 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	defer req.Release()
 
 	// await completion
-	data, err := awaitRequest(req)
+	result, err := awaitRequest(req)
 	if err != nil {
 		return err
 	}
 
 	// walk command and decode results
-	err = wire.WalkCommand(data, func(i int, op wire.Operation) (bool, error) {
+	err = wire.WalkCommand(result, func(i int, op wire.Operation) (bool, error) {
 		// decode result if available
 		if len(op.Code) > 0 {
 			return true, list[i].Decode(op.Code)
