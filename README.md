@@ -10,10 +10,9 @@ nodes. Under the hood, turing uses the [pebble](https://github.com/cockroachdb/p
 (alpha) for storing the data and [dragonboat](https://github.com/lni/dragonboat)
 for reaching consensus among the nodes.
 
-## Example
+## Examples
 
-An example implementing a simple counter can be found here:
-https://github.com/256dpi/turing/blob/master/examples/counter/main.go
-
-The used instructions are implement in the `stdset` package here:
-https://github.com/256dpi/turing/tree/master/stdset
+- An example implementing a simple counter can be found
+  [here](https://github.com/256dpi/turing/blob/master/examples/counter/main.go). 
+- The [`stdset`](https://github.com/256dpi/turing/tree/master/stdset)
+  package implements a set of basic instructions.
