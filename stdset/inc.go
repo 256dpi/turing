@@ -104,10 +104,10 @@ func (i *Inc) Execute(mem turing.Memory) error {
 func (i *Inc) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.VarUint(1)
+		enc.Uint8(1)
 
 		// encode body
-		enc.VarInt(i.Value)
+		enc.Int64(i.Value)
 		enc.Tail(i.Key)
 
 		return nil
@@ -118,14 +118,14 @@ func (i *Inc) Encode() ([]byte, turing.Ref, error) {
 func (i *Inc) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
-		var version uint64
-		dec.VarUint(&version)
+		var version uint8
+		dec.Uint8(&version)
 		if version != 1 {
 			return fmt.Errorf("stdset: decode inc: invalid version")
 		}
 
 		// decode body
-		dec.VarInt(&i.Value)
+		dec.Int64(&i.Value)
 		dec.Tail(&i.Key, true)
 
 		return nil

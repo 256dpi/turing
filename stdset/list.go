@@ -48,7 +48,7 @@ func (l *List) Execute(mem turing.Memory) error {
 func (l *List) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.VarUint(1)
+		enc.Uint8(1)
 
 		// encode prefix
 		enc.VarBytes(l.Prefix)
@@ -69,8 +69,8 @@ func (l *List) Encode() ([]byte, turing.Ref, error) {
 func (l *List) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
-		var version uint64
-		dec.VarUint(&version)
+		var version uint8
+		dec.Uint8(&version)
 		if version != 1 {
 			return fmt.Errorf("stdset: decode list: invalid version")
 		}

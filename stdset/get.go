@@ -47,7 +47,7 @@ func (g *Get) Execute(mem turing.Memory) error {
 func (g *Get) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
-		enc.VarUint(1)
+		enc.Uint8(1)
 
 		// encode body
 		enc.VarBytes(g.Key)
@@ -62,8 +62,8 @@ func (g *Get) Encode() ([]byte, turing.Ref, error) {
 func (g *Get) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
-		var version uint64
-		dec.VarUint(&version)
+		var version uint8
+		dec.Uint8(&version)
 		if version != 1 {
 			return fmt.Errorf("stdset: decode get: invalid version")
 		}
