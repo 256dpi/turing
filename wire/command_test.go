@@ -1,4 +1,4 @@
-package tape
+package wire
 
 import (
 	"testing"
@@ -11,11 +11,11 @@ func TestCommandCoding(t *testing.T) {
 		Operations: []Operation{
 			{
 				Name: "foo",
-				Data: []byte("bar"),
+				Code: []byte("bar"),
 			},
 			{
 				Name: "baz",
-				Data: []byte("quz"),
+				Code: []byte("quz"),
 			},
 		},
 	}
@@ -46,7 +46,7 @@ func TestCommandCoding(t *testing.T) {
 	}))
 
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
-		_ = WalkStack(bytes, func(op Operand) error {
+		_ = WalkCommand(bytes, func(i int, op Operation) error {
 			return nil
 		})
 	}))
@@ -57,11 +57,11 @@ func BenchmarkCommandEncode(b *testing.B) {
 		Operations: []Operation{
 			{
 				Name: "foo",
-				Data: []byte("bar"),
+				Code: []byte("bar"),
 			},
 			{
 				Name: "baz",
-				Data: []byte("quz"),
+				Code: []byte("quz"),
 			},
 		},
 	}

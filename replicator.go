@@ -6,7 +6,7 @@ import (
 	"github.com/cockroachdb/pebble"
 	"github.com/lni/dragonboat/v3/statemachine"
 
-	"github.com/256dpi/turing/tape"
+	"github.com/256dpi/turing/wire"
 )
 
 type replicator struct {
@@ -15,7 +15,7 @@ type replicator struct {
 	manager      *manager
 	database     *database
 	instructions []Instruction
-	operations   []tape.Operation
+	operations   []wire.Operation
 	references   []Ref
 }
 
@@ -25,7 +25,7 @@ func newReplicator(config Config, registry *registry, manager *manager) *replica
 		registry:     registry,
 		manager:      manager,
 		instructions: make([]Instruction, config.UpdateBatchSize),
-		operations:   make([]tape.Operation, config.UpdateBatchSize),
+		operations:   make([]wire.Operation, config.UpdateBatchSize),
 		references:   make([]Ref, config.UpdateBatchSize),
 	}
 }
@@ -58,7 +58,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		references := r.references[:0]
 
 		// decode command
-		err := tape.WalkCommand(entry.Cmd, func(i int, op tape.Operation) error {
+		err := wire.WalkCommand(entry.Cmd, func(i int, op wire.Operation) error {
 			// build instruction
 			ins, err := r.registry.build(op.Name)
 			if err != nil {
@@ -66,7 +66,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 			}
 
 			// decode instruction
-			err = ins.Decode(op.Data)
+			err = ins.Decode(op.Code)
 			if err != nil {
 				return err
 			}
@@ -90,7 +90,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		for _, ins := range instructions {
 			// append empty operation when no result
 			if ins.Describe().NoResult {
-				operations = append(operations, tape.Operation{
+				operations = append(operations, wire.Operation{
 					Name: ins.Describe().Name,
 				})
 
@@ -104,9 +104,9 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 			}
 
 			// set append operation
-			operations = append(operations, tape.Operation{
+			operations = append(operations, wire.Operation{
 				Name: ins.Describe().Name,
-				Data: bytes,
+				Code: bytes,
 			})
 
 			// append reference
@@ -120,7 +120,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		}
 
 		// prepare command
-		cmd := tape.Command{
+		cmd := wire.Command{
 			Operations: operations,
 		}
 

@@ -17,8 +17,8 @@ func (m *manager) subscribe(observer Observer) {
 
 func (m *manager) init() {
 	// call init on all registered observers
-	m.observers.Range(func(_, value interface{}) bool {
-		value.(Observer).Init()
+	m.observers.Range(func(_, v interface{}) bool {
+		v.(Observer).Init()
 		return true
 	})
 }
@@ -28,9 +28,9 @@ func (m *manager) process(ins Instruction) {
 	var cancelled []Observer
 
 	// call process on all subscribed observers
-	m.observers.Range(func(_, value interface{}) bool {
+	m.observers.Range(func(_, v interface{}) bool {
 		// get observer
-		observer := value.(Observer)
+		observer := v.(Observer)
 
 		// process instruction
 		if !observer.Process(ins) {

@@ -1,5 +1,5 @@
-// Package tape provides the internal types used for storage.
-package tape
+// Package wire provides the internal types used for transportation.
+package wire
 
 import "errors"
 

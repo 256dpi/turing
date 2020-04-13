@@ -9,9 +9,9 @@ import (
 )
 
 func TestComputerCombine(t *testing.T) {
-	values := []tape.Value{
+	cells := []tape.Cell{
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -26,7 +26,7 @@ func TestComputerCombine(t *testing.T) {
 			}),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -37,7 +37,7 @@ func TestComputerCombine(t *testing.T) {
 			}),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -74,10 +74,10 @@ func TestComputerCombine(t *testing.T) {
 	}
 
 	computer := newComputer(registry)
-	value, ref, err := computer.combine(values)
+	result, ref, err := computer.combine(cells)
 	assert.NoError(t, err)
-	assert.Equal(t, tape.Value{
-		Kind: tape.StackValue,
+	assert.Equal(t, tape.Cell{
+		Type: tape.StackCell,
 		Value: mustEncodeStack(tape.Stack{
 			Operands: []tape.Operand{
 				{
@@ -98,25 +98,25 @@ func TestComputerCombine(t *testing.T) {
 				},
 			},
 		}),
-	}, value)
+	}, result)
 	ref.Release()
 
 	// alloc comes from operator
 	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(registry)
-		_, ref, _ := computer.combine(values)
+		_, ref, _ := computer.combine(cells)
 		ref.Release()
 	}))
 }
 
 func TestComputerEval(t *testing.T) {
-	values := []tape.Value{
+	cells := []tape.Cell{
 		{
-			Kind:  tape.FullValue,
+			Type:  tape.RawCell,
 			Value: []byte("a"),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -131,7 +131,7 @@ func TestComputerEval(t *testing.T) {
 			}),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -142,7 +142,7 @@ func TestComputerEval(t *testing.T) {
 			}),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -178,25 +178,25 @@ func TestComputerEval(t *testing.T) {
 	}
 
 	computer := newComputer(registry)
-	value, ref, err := computer.eval(values)
+	result, ref, err := computer.eval(cells)
 	assert.NoError(t, err)
-	assert.Equal(t, tape.Value{
-		Kind:  tape.FullValue,
+	assert.Equal(t, tape.Cell{
+		Type:  tape.RawCell,
 		Value: []byte("abcdef"),
-	}, value)
+	}, result)
 	ref.Release()
 
 	// allocs come from operator
 	assert.Equal(t, 2.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(registry)
-		_, ref, _ := computer.eval(values)
+		_, ref, _ := computer.eval(cells)
 		ref.Release()
 	}))
 }
 
 func TestComputerResolve(t *testing.T) {
-	value := tape.Value{
-		Kind: tape.StackValue,
+	cell := tape.Cell{
+		Type: tape.StackCell,
 		Value: mustEncodeStack(tape.Stack{
 			Operands: []tape.Operand{
 				{
@@ -224,25 +224,25 @@ func TestComputerResolve(t *testing.T) {
 	}
 
 	computer := newComputer(registry)
-	val, ref, err := computer.resolve(value)
+	result, ref, err := computer.resolve(cell)
 	assert.NoError(t, err)
-	assert.Equal(t, tape.Value{
-		Kind:  tape.FullValue,
+	assert.Equal(t, tape.Cell{
+		Type:  tape.RawCell,
 		Value: []byte("bar"),
-	}, val)
+	}, result)
 	ref.Release()
 
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
 		computer := newComputer(registry)
-		_, ref, _ := computer.resolve(value)
+		_, ref, _ := computer.resolve(cell)
 		ref.Release()
 	}))
 }
 
 func BenchmarkComputerCombine(b *testing.B) {
-	values := []tape.Value{
+	cells := []tape.Cell{
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -257,7 +257,7 @@ func BenchmarkComputerCombine(b *testing.B) {
 			}),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -268,7 +268,7 @@ func BenchmarkComputerCombine(b *testing.B) {
 			}),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -289,24 +289,22 @@ func BenchmarkComputerCombine(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		computer := newComputer(nil)
-
-		_, ref, err := computer.combine(values)
+		_, ref, err := computer.combine(cells)
 		if err != nil {
 			panic(err)
 		}
-
 		ref.Release()
 	}
 }
 
 func BenchmarkComputerEval(b *testing.B) {
-	values := []tape.Value{
+	cells := []tape.Cell{
 		{
-			Kind:  tape.FullValue,
+			Type:  tape.RawCell,
 			Value: []byte("foo"),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -321,7 +319,7 @@ func BenchmarkComputerEval(b *testing.B) {
 			}),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -332,7 +330,7 @@ func BenchmarkComputerEval(b *testing.B) {
 			}),
 		},
 		{
-			Kind: tape.StackValue,
+			Type: tape.StackCell,
 			Value: mustEncodeStack(tape.Stack{
 				Operands: []tape.Operand{
 					{
@@ -364,19 +362,17 @@ func BenchmarkComputerEval(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		computer := newComputer(registry)
-
-		_, ref, err := computer.eval(values)
+		_, ref, err := computer.eval(cells)
 		if err != nil {
 			panic(err)
 		}
-
 		ref.Release()
 	}
 }
 
 func BenchmarkComputerResolve(b *testing.B) {
-	value := tape.Value{
-		Kind: tape.StackValue,
+	cell := tape.Cell{
+		Type: tape.StackCell,
 		Value: mustEncodeStack(tape.Stack{
 			Operands: []tape.Operand{
 				{
@@ -408,7 +404,7 @@ func BenchmarkComputerResolve(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		computer := newComputer(registry)
-		_, ref, err := computer.resolve(value)
+		_, ref, err := computer.resolve(cell)
 		if err != nil {
 			panic(err)
 		}

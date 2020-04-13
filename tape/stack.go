@@ -6,13 +6,13 @@ import (
 	"github.com/256dpi/turing/coding"
 )
 
-// Operand represents a single merge operand.
+// Operand represents a single operator operand.
 type Operand struct {
 	Name  string
 	Value []byte
 }
 
-// Stack represents a list of operands.
+// Stack represents a list of operator operands.
 type Stack struct {
 	Operands []Operand
 }
@@ -68,7 +68,8 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 	})
 }
 
-// WalkStack will walk the encoded stack and yield the operands.
+// WalkStack will walk the encoded stack and yield the operands. ErrBreak may
+// be returned to stop execution.
 func WalkStack(bytes []byte, fn func(op Operand) error) error {
 	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version

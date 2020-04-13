@@ -9,8 +9,8 @@ import (
 
 type computer struct {
 	registry *registry
-	strings  [1000]string
-	bytes    [1000][]byte
+	names    [1000]string
+	values   [1000][]byte
 	operands [1000]tape.Operand
 	refs     [1000]Ref
 }
@@ -29,27 +29,27 @@ func newComputer(registry *registry) *computer {
 	return computer
 }
 
-func (c *computer) combine(values []tape.Value) (tape.Value, Ref, error) {
+func (c *computer) combine(cells []tape.Cell) (tape.Cell, Ref, error) {
 	// ensure recycle
 	defer c.recycle()
 
 	// validate and collect operands
-	opNames := c.strings[:0]
-	opValues := c.bytes[:0]
-	for _, value := range values {
-		// check value
-		if value.Kind != tape.StackValue {
-			return tape.Value{}, nil, fmt.Errorf("turing: computer combine: expected stack value as operand, got: %d", value.Kind)
+	names := c.names[:0]
+	values := c.values[:0]
+	for _, cell := range cells {
+		// check cell
+		if cell.Type != tape.StackCell {
+			return tape.Cell{}, nil, fmt.Errorf("turing: computer combine: expected stack cell, got: %d", cell.Type)
 		}
 
 		// decode stack
-		err := tape.WalkStack(value.Value, func(op tape.Operand) error {
-			opNames = append(opNames, op.Name)
-			opValues = append(opValues, op.Value)
+		err := tape.WalkStack(cell.Value, func(op tape.Operand) error {
+			names = append(names, op.Name)
+			values = append(values, op.Value)
 			return nil
 		})
 		if err != nil {
-			return tape.Value{}, nil, err
+			return tape.Cell{}, nil, err
 		}
 	}
 
@@ -60,7 +60,7 @@ func (c *computer) combine(values []tape.Value) (tape.Value, Ref, error) {
 
 	// combine or append operands
 	refs := c.refs[:0]
-	err := c.pipeline(opNames, opValues, func(operator *Operator, ops [][]byte) error {
+	err := c.pipeline(names, values, func(operator *Operator, ops [][]byte) error {
 		// append if combine is missing
 		if operator.Combine == nil {
 			for _, op := range ops {
@@ -80,8 +80,8 @@ func (c *computer) combine(values []tape.Value) (tape.Value, Ref, error) {
 			operator.counter.Inc()
 		}
 
-		// merge base with operands
-		value, ref, err := operator.Combine(ops)
+		// combine operands
+		result, ref, err := operator.Combine(ops)
 		if err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func (c *computer) combine(values []tape.Value) (tape.Value, Ref, error) {
 		// append operand
 		stack.Operands = append(stack.Operands, tape.Operand{
 			Name:  operator.Name,
-			Value: value,
+			Value: result,
 		})
 
 		// append ref
@@ -98,13 +98,13 @@ func (c *computer) combine(values []tape.Value) (tape.Value, Ref, error) {
 		return nil
 	})
 	if err != nil {
-		return tape.Value{}, nil, err
+		return tape.Cell{}, nil, err
 	}
 
 	// encode stack
-	sv, svr, err := stack.Encode(true)
+	stackBytes, stackRef, err := stack.Encode(true)
 	if err != nil {
-		return tape.Value{}, nil, err
+		return tape.Cell{}, nil, err
 	}
 
 	// release refs
@@ -112,55 +112,55 @@ func (c *computer) combine(values []tape.Value) (tape.Value, Ref, error) {
 		ref.Release()
 	}
 
-	// create value
-	value := tape.Value{
-		Kind:  tape.StackValue,
-		Value: sv,
+	// prepare result
+	result := tape.Cell{
+		Type:  tape.StackCell,
+		Value: stackBytes,
 	}
 
-	return value, svr, nil
+	return result, stackRef, nil
 }
 
-func (c *computer) eval(values []tape.Value) (tape.Value, Ref, error) {
+func (c *computer) eval(cells []tape.Cell) (tape.Cell, Ref, error) {
 	// ensure recycle
 	defer c.recycle()
 
-	// check values
-	if len(values) < 2 {
-		return tape.Value{}, nil, fmt.Errorf("turing: computer eval: need at least two values")
+	// check cells
+	if len(cells) < 2 {
+		return tape.Cell{}, nil, fmt.Errorf("turing: computer eval: need at least two cells")
 	}
 
-	// check first value
-	if values[0].Kind != tape.FullValue {
-		return tape.Value{}, nil, fmt.Errorf("turing: computer eval: expected full value as base, got: %d", values[0].Kind)
+	// check first cell
+	if cells[0].Type != tape.RawCell {
+		return tape.Cell{}, nil, fmt.Errorf("turing: computer eval: expected raw cell, got: %d", cells[0].Type)
 	}
 
-	// get base value
-	base := values[0].Value
+	// get base
+	base := cells[0].Value
 
 	// validate and collect operands
-	opNames := c.strings[:0]
-	opValues := c.bytes[:0]
-	for _, value := range values[1:] {
-		// check value
-		if value.Kind != tape.StackValue {
-			return tape.Value{}, nil, fmt.Errorf("turing: computer eval: expected stack value as operand, got: %d", value.Kind)
+	names := c.names[:0]
+	values := c.values[:0]
+	for _, cell := range cells[1:] {
+		// check cell
+		if cell.Type != tape.StackCell {
+			return tape.Cell{}, nil, fmt.Errorf("turing: computer eval: expected stack cell, got: %d", cell.Type)
 		}
 
 		// decode stack
-		err := tape.WalkStack(value.Value, func(op tape.Operand) error {
-			opNames = append(opNames, op.Name)
-			opValues = append(opValues, op.Value)
+		err := tape.WalkStack(cell.Value, func(op tape.Operand) error {
+			names = append(names, op.Name)
+			values = append(values, op.Value)
 			return nil
 		})
 		if err != nil {
-			return tape.Value{}, nil, err
+			return tape.Cell{}, nil, err
 		}
 	}
 
 	// merge all operands with base
 	var ref Ref
-	err := c.pipeline(opNames, opValues, func(op *Operator, ops [][]byte) error {
+	err := c.pipeline(names, values, func(op *Operator, ops [][]byte) error {
 		// count execution if possible
 		if op.counter != nil {
 			op.counter.Inc()
@@ -185,27 +185,27 @@ func (c *computer) eval(values []tape.Value) (tape.Value, Ref, error) {
 		return nil
 	})
 	if err != nil {
-		return tape.Value{}, nil, err
+		return tape.Cell{}, nil, err
 	}
 
 	// prepare result
-	result := tape.Value{
-		Kind:  tape.FullValue,
+	result := tape.Cell{
+		Type:  tape.RawCell,
 		Value: base,
 	}
 
 	return result, ref, nil
 }
 
-func (c *computer) resolve(value tape.Value) (tape.Value, Ref, error) {
-	// check kind
-	if value.Kind != tape.StackValue {
-		return tape.Value{}, nil, fmt.Errorf("turing: computer resolve: expected stack value, got: %d", value.Kind)
+func (c *computer) resolve(cell tape.Cell) (tape.Cell, Ref, error) {
+	// check type
+	if cell.Type != tape.StackCell {
+		return tape.Cell{}, nil, fmt.Errorf("turing: computer resolve: expected stack cell, got: %d", cell.Type)
 	}
 
 	// get first operator
 	var operator *Operator
-	err := tape.WalkStack(value.Value, func(op tape.Operand) error {
+	err := tape.WalkStack(cell.Value, func(op tape.Operand) error {
 		// get first operator
 		operator = c.registry.ops[op.Name]
 		if operator == nil {
@@ -215,25 +215,25 @@ func (c *computer) resolve(value tape.Value) (tape.Value, Ref, error) {
 		return tape.ErrBreak
 	})
 	if err != nil {
-		return tape.Value{}, nil, err
+		return tape.Cell{}, nil, err
 	}
 
-	// prepare list
-	list := [2]tape.Value{
+	// prepare cells
+	cells := [2]tape.Cell{
 		{
-			Kind:  tape.FullValue,
+			Type:  tape.RawCell,
 			Value: operator.Zero,
 		},
-		value,
+		cell,
 	}
 
-	// merge values
-	value, ref, err := c.eval(list[:])
+	// merge cells
+	cell, ref, err := c.eval(cells[:])
 	if err != nil {
-		return tape.Value{}, NoopRef, err
+		return tape.Cell{}, nil, err
 	}
 
-	return value, ref, nil
+	return cell, ref, nil
 }
 
 func (c *computer) pipeline(names []string, values [][]byte, fn func(op *Operator, ops [][]byte) error) error {

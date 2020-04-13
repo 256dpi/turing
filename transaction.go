@@ -91,16 +91,16 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 		return nil, false, nil, err
 	}
 
-	// decode value (no need to clone as available until closed)
-	var value tape.Value
-	err = value.Decode(bytes, false)
+	// decode cell
+	var cell tape.Cell
+	err = cell.Decode(bytes, false)
 	if err != nil {
 		_ = closer.Close()
 		return nil, false, nil, err
 	}
 
-	// directly return full value
-	if value.Kind == tape.FullValue {
+	// directly return raw cell
+	if cell.Type == tape.RawCell {
 		// increment closers
 		t.closers++
 
@@ -110,17 +110,17 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 			return closer.Close()
 		})
 
-		return value.Value, true, wrappedCloser, nil
+		return cell.Value, true, wrappedCloser, nil
 	}
 
-	// value is a stack value
+	// cell is a stack cell
 
 	// ensure close
 	defer closer.Close()
 
-	// compute value
+	// resolve cell
 	computer := newComputer(t.registry)
-	value, ref, err := computer.resolve(value)
+	result, ref, err := computer.resolve(cell)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -135,7 +135,7 @@ func (t *Transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 		return nil
 	})
 
-	return value.Value, true, refCloser, nil
+	return result.Value, true, refCloser, nil
 }
 
 // Use will lookup the specified key and yield it to the provided function if it
@@ -178,27 +178,27 @@ func (t *Transaction) Set(key, value []byte) error {
 		return ErrMaxEffect
 	}
 
-	// prepare value
-	val := tape.Value{
-		Kind:  tape.FullValue,
+	// prepare cell
+	cell := tape.Cell{
+		Type:  tape.RawCell,
 		Value: value,
 	}
 
-	// encode value
-	ev, evr, err := val.Encode(true)
+	// encode cell
+	cellValue, cellRef, err := cell.Encode(true)
 	if err != nil {
 		return err
 	}
 
 	// ensure release
-	defer evr.Release()
+	defer cellRef.Release()
 
 	// prefix key
 	pk, pkr := prefixUserKey(key)
 	defer pkr.Release()
 
 	// set value
-	err = t.writer.Set(pk, ev, nil)
+	err = t.writer.Set(pk, cellValue, nil)
 	if err != nil {
 		return err
 	}
@@ -308,35 +308,35 @@ func (t *Transaction) Merge(key, value []byte, operator *Operator) error {
 	}
 
 	// encode stack
-	sv, svr, err := stack.Encode(true)
+	stackValue, stackRef, err := stack.Encode(true)
 	if err != nil {
 		return err
 	}
 
 	// ensure release
-	defer svr.Release()
+	defer stackRef.Release()
 
-	// prepare value
-	val := tape.Value{
-		Kind:  tape.StackValue,
-		Value: sv,
+	// prepare cell
+	cell := tape.Cell{
+		Type:  tape.StackCell,
+		Value: stackValue,
 	}
 
-	// encode value
-	ev, evr, err := val.Encode(true)
+	// encode cell
+	cellValue, cellRef, err := cell.Encode(true)
 	if err != nil {
 		return err
 	}
 
 	// ensure release
-	defer evr.Release()
+	defer cellRef.Release()
 
 	// prefix key
 	pk, pkr := prefixUserKey(key)
 	defer pkr.Release()
 
 	// merge value
-	err = t.writer.Merge(pk, ev, nil)
+	err = t.writer.Merge(pk, cellValue, nil)
 	if err != nil {
 		return err
 	}
@@ -444,27 +444,27 @@ func (i *Iterator) Value() ([]byte, Ref, error) {
 		return nil, NoopRef, nil
 	}
 
-	// decode value (no need to clone as copying is explicit)
-	var value tape.Value
-	err := value.Decode(bytes, false)
+	// decode cell (no need to clone as copying is explicit)
+	var cell tape.Cell
+	err := cell.Decode(bytes, false)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// copy and return full value
-	if value.Kind == tape.FullValue {
-		val, ref := coding.Clone(value.Value)
+	// copy and return raw cell
+	if cell.Type == tape.RawCell {
+		val, ref := coding.Clone(cell.Value)
 		return val, ref, nil
 	}
 
-	// compute value
+	// resolve cell
 	computer := newComputer(i.txn.registry)
-	value, ref, err := computer.resolve(value)
+	result, ref, err := computer.resolve(cell)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return value.Value, ref, nil
+	return result.Value, ref, nil
 }
 
 // Error will return the error

@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValueCoding(t *testing.T) {
-	in := Value{
-		Kind:  FullValue,
+func TestCellCoding(t *testing.T) {
+	in := Cell{
+		Type:  RawCell,
 		Value: []byte("foo bar"),
 	}
 
@@ -16,7 +16,7 @@ func TestValueCoding(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
 
-	var out Value
+	var out Cell
 	err = out.Decode(bytes, false)
 	assert.NoError(t, err)
 	assert.Equal(t, in, out)
@@ -31,9 +31,9 @@ func TestValueCoding(t *testing.T) {
 	}))
 }
 
-func BenchmarkValueEncode(b *testing.B) {
-	value := Value{
-		Kind:  FullValue,
+func BenchmarkCellEncode(b *testing.B) {
+	value := Cell{
+		Type:  RawCell,
 		Value: []byte("foo bar"),
 	}
 
@@ -50,15 +50,15 @@ func BenchmarkValueEncode(b *testing.B) {
 	}
 }
 
-func BenchmarkValueDecode(b *testing.B) {
+func BenchmarkCellDecode(b *testing.B) {
 	data := []byte("\x01\x01foo")
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		var value Value
-		err := value.Decode(data, false)
+		var cell Cell
+		err := cell.Decode(data, false)
 		if err != nil {
 			panic(err)
 		}

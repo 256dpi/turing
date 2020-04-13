@@ -10,7 +10,7 @@ import (
 	"github.com/lni/dragonboat/v3/plugin/pebble"
 	"github.com/lni/dragonboat/v3/statemachine"
 
-	"github.com/256dpi/turing/tape"
+	"github.com/256dpi/turing/wire"
 )
 
 const clusterID uint64 = 1
@@ -19,7 +19,7 @@ type coordinator struct {
 	node       *dragonboat.NodeHost
 	reads      *bundler
 	writes     *bundler
-	operations []tape.Operation
+	operations []wire.Operation
 }
 
 func createCoordinator(cfg Config, registry *registry, manager *manager) (*coordinator, error) {
@@ -76,7 +76,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// create coordinator
 	coordinator := &coordinator{
 		node:       node,
-		operations: make([]tape.Operation, cfg.UpdateBatchSize),
+		operations: make([]wire.Operation, cfg.UpdateBatchSize),
 	}
 
 	// create read bundler
@@ -125,7 +125,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	session := c.node.GetNoOPSession(clusterID)
 
 	// prepare command
-	cmd := tape.Command{
+	cmd := wire.Command{
 		Operations: c.operations[:0],
 	}
 
@@ -141,9 +141,9 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 		defer ref.Release()
 
 		// add operation
-		cmd.Operations = append(cmd.Operations, tape.Operation{
+		cmd.Operations = append(cmd.Operations, wire.Operation{
 			Name: ins.Describe().Name,
-			Data: encodedInstruction,
+			Code: encodedInstruction,
 		})
 	}
 
@@ -172,10 +172,10 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	}
 
 	// walk command and decode results
-	err = tape.WalkCommand(data, func(i int, op tape.Operation) error {
+	err = wire.WalkCommand(data, func(i int, op wire.Operation) error {
 		// decode result if available
-		if len(op.Data) > 0 {
-			return list[i].Decode(op.Data)
+		if len(op.Code) > 0 {
+			return list[i].Decode(op.Code)
 		}
 
 		return nil

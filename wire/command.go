@@ -1,4 +1,4 @@
-package tape
+package wire
 
 import (
 	"fmt"
@@ -6,18 +6,18 @@ import (
 	"github.com/256dpi/turing/coding"
 )
 
-// Operation is a single instruction executed as part of a command.
+// Operation represents an encoded instruction.
 type Operation struct {
 	Name string
-	Data []byte
+	Code []byte
 }
 
-// Command represents a set of operations to be executed.
+// Command represents a list of operations.
 type Command struct {
 	Operations []Operation
 }
 
-// Encode will encode the command into a byte slice.
+// Encode will encode the command.
 func (c *Command) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 	// check operations
 	for _, op := range c.Operations {
@@ -36,15 +36,14 @@ func (c *Command) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 		// encode operations
 		for _, op := range c.Operations {
 			enc.String(op.Name, 2) // ~65KB
-			enc.Bytes(op.Data, 4)  // ~4.3GB
+			enc.Bytes(op.Code, 4)  // ~4.3GB
 		}
 
 		return nil
 	})
 }
 
-// Decode will decode a command from the provided byte slice. If clone is
-// not set, the command may change if the decoded byte slice changes.
+// Decode will decode the command.
 func (c *Command) Decode(bytes []byte, clone bool) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
@@ -62,7 +61,7 @@ func (c *Command) Decode(bytes []byte, clone bool) error {
 		c.Operations = make([]Operation, length)
 		for i := 0; i < int(length); i++ {
 			dec.String(&c.Operations[i].Name, 2, clone)
-			dec.Bytes(&c.Operations[i].Data, 4, clone)
+			dec.Bytes(&c.Operations[i].Code, 4, clone)
 		}
 
 		return nil
@@ -88,7 +87,7 @@ func WalkCommand(bytes []byte, fn func(i int, op Operation) error) error {
 		var err error
 		for i := 0; i < int(length); i++ {
 			dec.String(&op.Name, 2, false)
-			dec.Bytes(&op.Data, 4, false)
+			dec.Bytes(&op.Code, 4, false)
 			if err = fn(i, op); err != nil {
 				return err
 			}

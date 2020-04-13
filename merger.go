@@ -10,20 +10,20 @@ import (
 
 type merger struct {
 	registry *registry
-	operands [][]byte
-	opRefs   []Ref
-	values   []tape.Value
+	values   [][]byte
+	refs     []Ref
+	cells    []tape.Cell
 	order    bool
 	retained bool
-	resRef   Ref
+	result   Ref
 }
 
 var mergerPool = sync.Pool{
 	New: func() interface{} {
 		return &merger{
-			operands: make([][]byte, 0, 1000),
-			opRefs:   make([]Ref, 0, 1000),
-			values:   make([]tape.Value, 0, 1000),
+			values: make([][]byte, 0, 1000),
+			refs:   make([]Ref, 0, 1000),
+			cells:  make([]tape.Cell, 0, 1000),
 		}
 	},
 }
@@ -34,10 +34,10 @@ func newMerger(registry *registry, value []byte) *merger {
 	merger.registry = registry
 	merger.order = true
 
-	// add operand
+	// add value
 	op, ref := coding.Clone(value)
-	merger.operands = append(merger.operands, op)
-	merger.opRefs = append(merger.opRefs, ref)
+	merger.values = append(merger.values, op)
+	merger.refs = append(merger.refs, ref)
 
 	return merger
 }
@@ -46,10 +46,10 @@ func (m *merger) MergeNewer(value []byte) error {
 	// sort stack
 	m.sort(true)
 
-	// add operand
+	// add value
 	op, ref := coding.Clone(value)
-	m.operands = append(m.operands, op)
-	m.opRefs = append(m.opRefs, ref)
+	m.values = append(m.values, op)
+	m.refs = append(m.refs, ref)
 
 	return nil
 }
@@ -58,10 +58,10 @@ func (m *merger) MergeOlder(value []byte) error {
 	// sort stack
 	m.sort(false)
 
-	// add operand
+	// add value
 	op, ref := coding.Clone(value)
-	m.operands = append(m.operands, op)
-	m.opRefs = append(m.opRefs, ref)
+	m.values = append(m.values, op)
+	m.refs = append(m.refs, ref)
 
 	return nil
 }
@@ -70,28 +70,28 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 	// recycle merger
 	defer m.recycle()
 
-	// sort stack
+	// sort values
 	m.sort(true)
 
-	// decode values (no need to clone as only used temporary)
-	for _, op := range m.operands {
-		var value tape.Value
-		err := value.Decode(op, false)
+	// decode cells
+	for _, value := range m.values {
+		var cell tape.Cell
+		err := cell.Decode(value, false)
 		if err != nil {
 			return nil, nil, err
 		}
-		m.values = append(m.values, value)
+		m.cells = append(m.cells, cell)
 	}
 
-	// TODO: Merge with zero value if the base value is a stack.
+	// TODO: Merge with zero value if the base cell is a stack.
 	//  => Improve pebble to provide the info.
 
-	// merge values if first value is a full value, otherwise stack all values
-	switch m.values[0].Kind {
-	case tape.FullValue:
-		// merge values
+	// eval if first cell is a raw cell, otherwise combine if stack cell
+	switch m.cells[0].Type {
+	case tape.RawCell:
+		// eval cells
 		computer := newComputer(m.registry)
-		value, ref, err := computer.eval(m.values)
+		result, ref, err := computer.eval(m.cells)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -100,20 +100,20 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 		defer ref.Release()
 
 		// encode result
-		res, resRef, err := value.Encode(true)
+		res, resRef, err := result.Encode(true)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		// retain for closing
 		m.retained = true
-		m.resRef = resRef
+		m.result = resRef
 
 		return res, m, nil
-	case tape.StackValue:
-		// stack values
+	case tape.StackCell:
+		// combine cells
 		computer := newComputer(m.registry)
-		value, ref, err := computer.combine(m.values)
+		result, ref, err := computer.combine(m.cells)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -121,15 +121,15 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 		// ensure release
 		defer ref.Release()
 
-		// encode value
-		res, resRef, err := value.Encode(true)
+		// encode result
+		res, resRef, err := result.Encode(true)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		// retain for closing
 		m.retained = true
-		m.resRef = resRef
+		m.result = resRef
 
 		return res, m, nil
 	default:
@@ -138,8 +138,8 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 }
 
 func (m *merger) Close() error {
-	// release ref
-	m.resRef.Release()
+	// release result
+	m.result.Release()
 
 	// clear flag
 	m.retained = false
@@ -155,14 +155,14 @@ func (m *merger) recycle() {
 	m.registry = nil
 
 	// release refs
-	for _, ref := range m.opRefs {
+	for _, ref := range m.refs {
 		ref.Release()
 	}
 
-	// reset slices
-	m.operands = m.operands[:0]
-	m.opRefs = m.opRefs[:0]
+	// reset lists
 	m.values = m.values[:0]
+	m.refs = m.refs[:0]
+	m.cells = m.cells[:0]
 
 	// return if not retained
 	if !m.retained {
@@ -176,10 +176,10 @@ func (m *merger) sort(fwd bool) {
 		return
 	}
 
-	// reverse stack
-	for i := 0; i < len(m.operands)/2; i++ {
-		j := len(m.operands) - 1 - i
-		m.operands[i], m.operands[j] = m.operands[j], m.operands[i]
+	// otherwise reverse values
+	for i := 0; i < len(m.values)/2; i++ {
+		j := len(m.values) - 1 - i
+		m.values[i], m.values[j] = m.values[j], m.values[i]
 	}
 
 	// set order
