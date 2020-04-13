@@ -58,23 +58,23 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		references := r.references[:0]
 
 		// decode command
-		err := wire.WalkCommand(entry.Cmd, func(i int, op wire.Operation) error {
+		err := wire.WalkCommand(entry.Cmd, func(i int, op wire.Operation) (bool, error) {
 			// build instruction
 			ins, err := r.registry.build(op.Name)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			// decode instruction
 			err = ins.Decode(op.Code)
 			if err != nil {
-				return err
+				return false, err
 			}
 
 			// add instruction
 			instructions = append(instructions, ins)
 
-			return nil
+			return true, nil
 		})
 		if err != nil {
 			return nil, err

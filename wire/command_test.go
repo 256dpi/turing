@@ -30,9 +30,9 @@ func TestCommandCoding(t *testing.T) {
 	assert.Equal(t, in, out)
 
 	var ops []Operation
-	err = WalkCommand(bytes, func(i int, op Operation) error {
+	err = WalkCommand(bytes, func(i int, op Operation) (bool, error) {
 		ops = append(ops, op)
-		return nil
+		return true, nil
 	})
 	assert.Equal(t, in.Operations, ops)
 
@@ -46,8 +46,8 @@ func TestCommandCoding(t *testing.T) {
 	}))
 
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
-		_ = WalkCommand(bytes, func(i int, op Operation) error {
-			return nil
+		_ = WalkCommand(bytes, func(i int, op Operation) (bool, error) {
+			return true, nil
 		})
 	}))
 }
@@ -101,8 +101,8 @@ func BenchmarkWalkCommand(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := WalkCommand(data, func(i int, op Operation) error {
-			return nil
+		err := WalkCommand(data, func(i int, op Operation) (bool, error) {
+			return true, nil
 		})
 		if err != nil {
 			panic(err)

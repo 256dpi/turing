@@ -176,13 +176,13 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	}
 
 	// walk command and decode results
-	err = wire.WalkCommand(data, func(i int, op wire.Operation) error {
+	err = wire.WalkCommand(data, func(i int, op wire.Operation) (bool, error) {
 		// decode result if available
 		if len(op.Code) > 0 {
-			return list[i].Decode(op.Code)
+			return true, list[i].Decode(op.Code)
 		}
 
-		return nil
+		return true, nil
 	})
 	if err != nil {
 		return err

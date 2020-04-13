@@ -43,10 +43,10 @@ func (c *computer) combine(cells []tape.Cell) (tape.Cell, Ref, error) {
 		}
 
 		// decode stack
-		err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) error {
+		err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) (bool, error) {
 			names = append(names, op.Name)
 			values = append(values, op.Value)
-			return nil
+			return true, nil
 		})
 		if err != nil {
 			return tape.Cell{}, nil, err
@@ -150,10 +150,10 @@ func (c *computer) apply(cells []tape.Cell) (tape.Cell, Ref, error) {
 		}
 
 		// decode stack
-		err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) error {
+		err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) (bool, error) {
 			names = append(names, op.Name)
 			values = append(values, op.Value)
-			return nil
+			return true, nil
 		})
 		if err != nil {
 			return tape.Cell{}, nil, err
@@ -209,14 +209,14 @@ func (c *computer) resolve(cell tape.Cell) (tape.Cell, Ref, error) {
 
 	// get first operator
 	var operator *Operator
-	err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) error {
+	err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) (bool, error) {
 		// get first operator
 		operator = c.registry.ops[op.Name]
 		if operator == nil {
-			return fmt.Errorf("turing: computer resolve: missing operator: %s", op.Name)
+			return false, fmt.Errorf("turing: computer resolve: missing operator: %s", op.Name)
 		}
 
-		return tape.ErrBreak
+		return false, nil
 	})
 	if err != nil {
 		return tape.Cell{}, nil, err

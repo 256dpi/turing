@@ -30,9 +30,9 @@ func TestStackCoding(t *testing.T) {
 	assert.Equal(t, in, out)
 
 	var ops []Operand
-	err = WalkStack(bytes, func(i int, op Operand) error {
+	err = WalkStack(bytes, func(i int, op Operand) (bool, error) {
 		ops = append(ops, op)
-		return nil
+		return true, nil
 	})
 	assert.Equal(t, in.Operands, ops)
 
@@ -46,8 +46,8 @@ func TestStackCoding(t *testing.T) {
 	}))
 
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
-		_ = WalkStack(bytes, func(i int, op Operand) error {
-			return nil
+		_ = WalkStack(bytes, func(i int, op Operand) (bool, error) {
+			return true, nil
 		})
 	}))
 }
@@ -101,8 +101,8 @@ func BenchmarkWalkStack(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := WalkStack(data, func(i int, op Operand) error {
-			return nil
+		err := WalkStack(data, func(i int, op Operand) (bool, error) {
+			return true, nil
 		})
 		if err != nil {
 			panic(err)
