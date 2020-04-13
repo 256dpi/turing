@@ -6,6 +6,16 @@ func (*zeroRef) Release() {}
 
 var noopRef = &zeroRef{}
 
+type closerFunc func() error
+
+func (f closerFunc) Close() error {
+	return f()
+}
+
+var noopCloser = closerFunc(func() error {
+	return nil
+})
+
 // Clone will make a copy of the provided slice.
 func Clone(src []byte) []byte {
 	// make copy

@@ -15,16 +15,6 @@ import (
 
 var userPrefix = []byte("#")
 
-type closerFunc func() error
-
-func (f closerFunc) Close() error {
-	return f()
-}
-
-var noopCloser = closerFunc(func() error {
-	return nil
-})
-
 // ErrReadOnly is returned by by a transaction on write operations if the
 // instruction has been flagged as read only.
 var ErrReadOnly = errors.New("turing: read only")
