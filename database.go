@@ -197,7 +197,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 		for {
 			// execute transaction
-			effectMaxed, err := txn.Execute(ins)
+			effectMaxed, err := txn.execute(ins)
 			if err != nil {
 				return err
 			}
@@ -320,7 +320,7 @@ func (d *database) lookup(list []Instruction) error {
 		timer := observe(ins.Describe().observer)
 
 		// execute transaction
-		_, err := txn.Execute(ins)
+		_, err := txn.execute(ins)
 		if err != nil {
 			return err
 		}

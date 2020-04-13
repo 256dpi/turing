@@ -56,11 +56,7 @@ func recycleTransaction(txn *transaction) {
 	transactionPool.Put(txn)
 }
 
-// Execute will execute the specified instruction as part of this transaction.
-// It will return whether the instruction maxed the transaction effect. If so,
-// the calling instruction should return ErrMaxEffect and call the instruction
-// again in the following execution.
-func (t *transaction) Execute(ins Instruction) (bool, error) {
+func (t *transaction) execute(ins Instruction) (bool, error) {
 	// set instruction
 	t.current = ins
 
