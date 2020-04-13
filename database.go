@@ -21,27 +21,6 @@ var ErrDatabaseClosed = errors.New("turing: database closed")
 var stateKey = []byte("$state")
 var syncKey = []byte("$sync")
 
-var transactionPool = sync.Pool{
-	New: func() interface{} {
-		return &transaction{}
-	},
-}
-
-func obtainTransaction() *transaction {
-	return transactionPool.Get().(*transaction)
-}
-
-func recycleTransaction(txn *transaction) {
-	txn.registry = nil
-	txn.current = nil
-	txn.reader = nil
-	txn.writer = nil
-	txn.closers = 0
-	txn.iterators = 0
-	txn.effect = 0
-	transactionPool.Put(txn)
-}
-
 type database struct {
 	state    tape.State
 	registry *registry
@@ -167,7 +146,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 		return ErrDatabaseClosed
 	}
 
-	// check index
+	// verify state
 	if index != 0 && d.state.Index >= index {
 		return fmt.Errorf("turing: database update: already applied index: %d", index)
 	}
@@ -179,8 +158,8 @@ func (d *database) update(list []Instruction, index uint64) error {
 	// create initial batch
 	batch := d.pebble.NewIndexedBatch()
 
-	// create initial transaction
-	txn := obtainTransaction()
+	// prepare transaction
+	txn := newTransaction()
 	txn.registry = d.registry
 	txn.reader = batch
 	txn.writer = batch
@@ -271,8 +250,6 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 	// update state
 	d.state.Index = index
-	d.state.Batch = 0
-	d.state.Last = 0
 
 	// encode state
 	encodedState, ref, err := d.state.Encode()
@@ -330,7 +307,7 @@ func (d *database) lookup(list []Instruction) error {
 	defer snapshot.Close()
 
 	// prepare transaction
-	txn := obtainTransaction()
+	txn := newTransaction()
 	txn.registry = d.registry
 	txn.reader = snapshot
 

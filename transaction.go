@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/cockroachdb/pebble"
 
@@ -32,6 +33,27 @@ type transaction struct {
 	closers   int
 	iterators int
 	effect    int
+}
+
+var transactionPool = sync.Pool{
+	New: func() interface{} {
+		return &transaction{}
+	},
+}
+
+func newTransaction() *transaction {
+	return transactionPool.Get().(*transaction)
+}
+
+func recycleTransaction(txn *transaction) {
+	txn.registry = nil
+	txn.current = nil
+	txn.reader = nil
+	txn.writer = nil
+	txn.closers = 0
+	txn.iterators = 0
+	txn.effect = 0
+	transactionPool.Put(txn)
 }
 
 // Execute will execute the specified instruction as part of this transaction.
