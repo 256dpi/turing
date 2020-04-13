@@ -24,7 +24,7 @@ func buildRegistry(config Config) (*registry, error) {
 
 		// check existence
 		if reg.ins[desc.Name] != nil {
-			return nil, fmt.Errorf("turing: duplicate instruction: %s", desc.Name)
+			return nil, fmt.Errorf("turing: build registry: duplicate instruction: %s", desc.Name)
 		}
 
 		// set observer
@@ -43,7 +43,7 @@ func buildRegistry(config Config) (*registry, error) {
 			if ok {
 				// check equality
 				if eop != op {
-					return nil, fmt.Errorf("turing: different operator for same name: %s", name)
+					return nil, fmt.Errorf("turing: build registry: different operator for same name: %s", name)
 				}
 
 				continue
@@ -64,7 +64,7 @@ func (r *registry) build(name string) (Instruction, error) {
 	// get factory instruction
 	factory, ok := r.ins[name]
 	if !ok {
-		return nil, fmt.Errorf("turing: missing instruction: " + name)
+		return nil, fmt.Errorf("turing: registry build: missing instruction: " + name)
 	}
 
 	// use builder if available

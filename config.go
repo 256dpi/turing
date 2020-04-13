@@ -23,14 +23,13 @@ type Config struct {
 	// All cluster members.
 	Members []Member
 
-	// The storage directory. If empty an in-memory filesystem is used.
+	// The storage directory. If empty, an in-memory filesystem is used.
 	Directory string
 
 	// The used instructions.
 	Instructions []Instruction
 
-	// Whether standalone mode should be enabled. In this mode the database
-	// state is not replicated and
+	// In standalone mode the database is not replicated.
 	Standalone bool
 
 	/* Performance Tuning */
@@ -74,12 +73,12 @@ func (c *Config) Local() *Member {
 func (c *Config) Validate() error {
 	// check id
 	if c.ID == 0 && !c.Standalone {
-		return fmt.Errorf("turing: missing id")
+		return fmt.Errorf("turing: config validate: missing id")
 	}
 
 	// check local member
 	if c.Local() == nil && !c.Standalone {
-		return fmt.Errorf("turing: missing local member")
+		return fmt.Errorf("turing: config validate: missing local member")
 	}
 
 	// check members
@@ -224,12 +223,12 @@ func ParseMembers(str string) ([]Member, error) {
 func (m Member) Validate() error {
 	// check host
 	if m.Host == "" {
-		return fmt.Errorf("turing: missing host")
+		return fmt.Errorf("turing: member validate: missing host")
 	}
 
 	// check port
-	if m.Port <= 0 {
-		return fmt.Errorf("turing: invalid port")
+	if m.Port <= 0 || m.Port >= 1<<16 {
+		return fmt.Errorf("turing: member validate: invalid port")
 	}
 
 	return nil

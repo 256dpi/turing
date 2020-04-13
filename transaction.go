@@ -1,7 +1,6 @@
 package turing
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -15,15 +14,6 @@ import (
 // TODO: Can a transaction be used concurrently?
 
 var userPrefix = []byte("#")
-
-// ErrReadOnly is returned by by a transaction on write operations if the
-// instruction has been flagged as read only.
-var ErrReadOnly = errors.New("turing: read only")
-
-// ErrMaxEffect is returned by a transaction if the effect limit has been
-// reached. The instruction should return with this error to have the current
-// changes persistent and be executed again to persist the remaining changes.
-var ErrMaxEffect = errors.New("turing: max effect")
 
 type transaction struct {
 	registry  *registry

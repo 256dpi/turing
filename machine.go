@@ -7,13 +7,14 @@ import (
 // Options define options used during instruction execution.
 type Options struct {
 	// StaleRead can be set to execute a stale read. While this is much faster
-	// the instruction might not yet see the changes of previously executed
-	// instructions.
+	// the instruction might read stale data in relationship to the current
+	// state of the cluster. In other words, settings this value will reduce
+	// the default linearizable guarantee to a serializable guarantee.
 	StaleRead bool
 }
 
-// Machine maintains a raft cluster with members and maintains consensus about the
-// execute instructions on the distributed database.
+// Machine maintains a raft cluster with members and maintains consensus about
+// the executed instructions on the replicated database.
 type Machine struct {
 	config      Config
 	registry    *registry
@@ -71,9 +72,7 @@ func Start(config Config) (*Machine, error) {
 
 var machineExecute = systemMetrics.WithLabelValues("Machine.Execute")
 
-// Execute will execute the specified instruction. NonLinear may be set to true
-// to allow read only instructions to query data without linearizability
-// guarantees. This may be substantially faster but return stale data.
+// Execute will execute the specified instruction.
 func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	// observe
 	timer := observe(machineExecute)

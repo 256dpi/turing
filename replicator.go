@@ -127,6 +127,7 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 		}
 
 		// TODO: Borrow slice.
+		//  Improve dragonboat to provide a release mechanism
 
 		// encode command
 		bytes, _, err := cmd.Encode(false)

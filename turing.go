@@ -2,6 +2,7 @@
 package turing
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -16,6 +17,15 @@ const MaxEffect = 10000
 // modifies more keys than MaxEffect allows. These instructions may be applied
 // using multiple transactions.
 const UnboundedEffect = -1
+
+// ErrReadOnly is returned by a transaction on write operations if the
+// instruction has been flagged as read only.
+var ErrReadOnly = errors.New("turing: read only")
+
+// ErrMaxEffect is returned by a transaction if the effect limit has been
+// reached. The instruction should return with this error to have the current
+// changes persistent and be executed again to persist the remaining changes.
+var ErrMaxEffect = errors.New("turing: max effect")
 
 // Ref manages the reference to buffer that can be released.
 type Ref interface {
@@ -174,4 +184,19 @@ type Iterator interface {
 
 	// Close will close the iterator.
 	Close() error
+}
+
+// Observer is the interface implemented by observers that want to observe the
+// stream of instructions processed by the machine.
+type Observer interface {
+	// Init is called when the source instruction stream has been (re)opened.
+	// This happens when the machine starts and whenever the node fails and
+	// restarts.
+	Init()
+
+	// Process is called repeatedly with every instruction processed by the
+	// machine. The implementation must ensure that the function returns as fast
+	// as possible as it blocks the execution of other instructions. If false is
+	// returned, the observer will be unsubscribed.
+	Process(Instruction) bool
 }
