@@ -70,7 +70,7 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 
 // WalkStack will walk the encoded stack and yield the operands. ErrBreak may
 // be returned to stop execution.
-func WalkStack(bytes []byte, fn func(op Operand) error) error {
+func WalkStack(bytes []byte, fn func(i int, op Operand) error) error {
 	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint8
@@ -89,7 +89,7 @@ func WalkStack(bytes []byte, fn func(op Operand) error) error {
 		for i := 0; i < int(length); i++ {
 			dec.String(&op.Name, 2, false)
 			dec.Bytes(&op.Value, 4, false)
-			if err = fn(op); err != nil {
+			if err = fn(i, op); err != nil {
 				return err
 			}
 		}

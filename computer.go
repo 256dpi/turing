@@ -43,7 +43,7 @@ func (c *computer) combine(cells []tape.Cell) (tape.Cell, Ref, error) {
 		}
 
 		// decode stack
-		err := tape.WalkStack(cell.Value, func(op tape.Operand) error {
+		err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) error {
 			names = append(names, op.Name)
 			values = append(values, op.Value)
 			return nil
@@ -148,7 +148,7 @@ func (c *computer) eval(cells []tape.Cell) (tape.Cell, Ref, error) {
 		}
 
 		// decode stack
-		err := tape.WalkStack(cell.Value, func(op tape.Operand) error {
+		err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) error {
 			names = append(names, op.Name)
 			values = append(values, op.Value)
 			return nil
@@ -205,7 +205,7 @@ func (c *computer) resolve(cell tape.Cell) (tape.Cell, Ref, error) {
 
 	// get first operator
 	var operator *Operator
-	err := tape.WalkStack(cell.Value, func(op tape.Operand) error {
+	err := tape.WalkStack(cell.Value, func(i int, op tape.Operand) error {
 		// get first operator
 		operator = c.registry.ops[op.Name]
 		if operator == nil {

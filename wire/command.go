@@ -68,7 +68,8 @@ func (c *Command) Decode(bytes []byte, clone bool) error {
 	})
 }
 
-// WalkCommand will walk the encoded command and yield the operations.
+// WalkCommand will walk the encoded command and yield the operations. ErrBreak
+// may be returned to stop execution.
 func WalkCommand(bytes []byte, fn func(i int, op Operation) error) error {
 	err := coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
