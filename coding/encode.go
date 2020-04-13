@@ -280,6 +280,7 @@ func Encode(borrow bool, fn func(enc *Encoder) error) ([]byte, *Ref, error) {
 		buf = buf[:enc.len]
 	} else {
 		buf = make([]byte, length)
+		ref = noop
 	}
 
 	// reset encoder
