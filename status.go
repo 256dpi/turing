@@ -1,5 +1,7 @@
 package turing
 
+import "fmt"
+
 // Status contains information about the cluster.
 type Status struct {
 	// The id of this member.
@@ -13,6 +15,11 @@ type Status struct {
 
 	// The cluster members.
 	Members []Member
+}
+
+// String returns the status formatted as a string.
+func (s Status) String() string {
+	return fmt.Sprintf("ID: %d, Role: %s, Members: %d", s.ID, s.Role, len(s.Members))
 }
 
 // Role specifies the role of a cluster member.
@@ -31,7 +38,7 @@ const (
 	RoleObserver
 )
 
-// String implements the name of the role.
+// String returns the name of the role.
 func (r Role) String() string {
 	switch r {
 	case RoleLeader:
