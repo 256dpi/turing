@@ -76,7 +76,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// create coordinator
 	coordinator := &coordinator{
 		node:       node,
-		operations: make([]wire.Operation, cfg.UpdateBatchSize),
+		operations: make([]wire.Operation, cfg.ProposalBatchSize),
 	}
 
 	// create read bundler

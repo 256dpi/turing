@@ -6,19 +6,6 @@ import (
 	"time"
 )
 
-type item struct {
-	ins Instruction
-	ch  chan error
-}
-
-type bundler struct {
-	opts   bundlerOptions
-	queue  chan item
-	mutex  sync.RWMutex
-	group  sync.WaitGroup
-	closed bool
-}
-
 type bundlerOptions struct {
 	queueSize   int
 	batchSize   int
@@ -26,11 +13,24 @@ type bundlerOptions struct {
 	handler     func([]Instruction) error
 }
 
+type bundlerItem struct {
+	ins Instruction
+	err chan error
+}
+
+type bundler struct {
+	opts   bundlerOptions
+	queue  chan bundlerItem
+	mutex  sync.RWMutex
+	group  sync.WaitGroup
+	closed bool
+}
+
 func newBundler(opts bundlerOptions) *bundler {
 	// prepare bundler
 	c := &bundler{
 		opts:  opts,
-		queue: make(chan item, opts.queueSize),
+		queue: make(chan bundlerItem, opts.queueSize),
 	}
 
 	// run processors
@@ -42,7 +42,7 @@ func newBundler(opts bundlerOptions) *bundler {
 	return c
 }
 
-var chanPool = sync.Pool{
+var bundlerChanPool = sync.Pool{
 	New: func() interface{} {
 		return make(chan error, 1)
 	},
@@ -59,13 +59,13 @@ func (b *bundler) process(ins Instruction) error {
 	}
 
 	// get result channel
-	ch := chanPool.Get().(chan error)
-	defer chanPool.Put(ch)
+	ch := bundlerChanPool.Get().(chan error)
+	defer bundlerChanPool.Put(ch)
 
 	// queue instruction
-	b.queue <- item{
+	b.queue <- bundlerItem{
 		ins: ins,
-		ch:  ch,
+		err: ch,
 	}
 
 	return <-ch
@@ -85,7 +85,7 @@ func (b *bundler) processor() {
 			time.Sleep(time.Millisecond / 10)
 		}
 
-		// await next instruction
+		// await next item
 		item, ok := <-b.queue
 		if !ok {
 			return
@@ -93,14 +93,14 @@ func (b *bundler) processor() {
 
 		// add to list
 		list = append(list, item.ins)
-		chs = append(chs, item.ch)
+		chs = append(chs, item.err)
 
-		// add buffered instructions if list has room
-		for len(b.queue) > 0 && len(list) < b.opts.batchSize {
+		// add buffered instructions while list has room
+		for len(b.queue) > 0 && len(list) < cap(list) {
 			item, ok := <-b.queue
 			if ok {
 				list = append(list, item.ins)
-				chs = append(chs, item.ch)
+				chs = append(chs, item.err)
 			}
 		}
 

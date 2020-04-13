@@ -24,9 +24,9 @@ func newReplicator(config Config, registry *registry, manager *manager) *replica
 		config:       config,
 		registry:     registry,
 		manager:      manager,
-		instructions: make([]Instruction, config.UpdateBatchSize),
-		operations:   make([]wire.Operation, config.UpdateBatchSize),
-		references:   make([]Ref, config.UpdateBatchSize),
+		instructions: make([]Instruction, config.ProposalBatchSize),
+		operations:   make([]wire.Operation, config.ProposalBatchSize),
+		references:   make([]Ref, config.ProposalBatchSize),
 	}
 }
 
