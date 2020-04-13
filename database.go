@@ -226,7 +226,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 			d.state.Last = uint16(i)
 
 			// encode state
-			encodedState, ref, err := d.state.Encode()
+			encodedState, ref, err := d.state.Encode(true)
 			if err != nil {
 				return err
 			}
@@ -252,7 +252,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 	d.state.Index = index
 
 	// encode state
-	encodedState, ref, err := d.state.Encode()
+	encodedState, ref, err := d.state.Encode(true)
 	if err != nil {
 		return err
 	}

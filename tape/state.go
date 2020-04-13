@@ -19,8 +19,8 @@ type State struct {
 }
 
 // Encode will encode the state.
-func (s *State) Encode() ([]byte, *coding.Ref, error) {
-	return coding.Encode(true, func(enc *coding.Encoder) error {
+func (s *State) Encode(borrow bool) ([]byte, *coding.Ref, error) {
+	return coding.Encode(borrow, func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint8(1)
 
