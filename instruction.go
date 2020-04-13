@@ -20,13 +20,6 @@ type Ref interface {
 	Release()
 }
 
-type noopRef struct{}
-
-func (*noopRef) Release() {}
-
-// NoopRef can be return instead of nil.
-var NoopRef = &noopRef{}
-
 // Operator describes a merge operator.
 type Operator struct {
 	// The name of the operator.

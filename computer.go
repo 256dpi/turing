@@ -92,8 +92,10 @@ func (c *computer) combine(cells []tape.Cell) (tape.Cell, Ref, error) {
 			Value: result,
 		})
 
-		// append ref
-		refs = append(refs, ref)
+		// append ref if existing
+		if ref != nil {
+			refs = append(refs, ref)
+		}
 
 		return nil
 	})
@@ -159,7 +161,7 @@ func (c *computer) eval(cells []tape.Cell) (tape.Cell, Ref, error) {
 	}
 
 	// merge all operands with base
-	var ref Ref
+	var ref Ref = noopRef
 	err := c.pipeline(names, values, func(op *Operator, ops [][]byte) error {
 		// count execution if possible
 		if op.counter != nil {
@@ -180,7 +182,9 @@ func (c *computer) eval(cells []tape.Cell) (tape.Cell, Ref, error) {
 		}
 
 		// set new ref
-		ref = newRef
+		if newRef != nil {
+			ref = newRef
+		}
 
 		return nil
 	})

@@ -441,7 +441,7 @@ func (i *Iterator) Value() ([]byte, Ref, error) {
 	// get value
 	bytes := i.iter.Value()
 	if len(bytes) == 0 {
-		return nil, NoopRef, nil
+		return nil, noopRef, nil
 	}
 
 	// decode cell (no need to clone as copying is explicit)

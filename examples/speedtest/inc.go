@@ -28,7 +28,7 @@ var incAdd = &turing.Operator{
 		// encode value
 		value = encodeNum(count)
 
-		return value, turing.NoopRef, nil
+		return value, nil, nil
 	},
 	Combine: func(ops [][]byte) ([]byte, turing.Ref, error) {
 		addCounter.Add(1)
@@ -42,7 +42,7 @@ var incAdd = &turing.Operator{
 		// encode value
 		value := encodeNum(count)
 
-		return value, turing.NoopRef, nil
+		return value, nil, nil
 	},
 }
 

@@ -138,7 +138,9 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 		}
 
 		// ensure release
-		defer ref.Release()
+		if ref != nil {
+			defer ref.Release()
+		}
 
 		// add operation
 		cmd.Operations = append(cmd.Operations, wire.Operation{

@@ -1,5 +1,11 @@
 package turing
 
+type zeroRef struct{}
+
+func (*zeroRef) Release() {}
+
+var noopRef = &zeroRef{}
+
 // Clone will make a copy of the provided slice.
 func Clone(src []byte) []byte {
 	// make copy

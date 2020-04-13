@@ -67,7 +67,7 @@ func TestComputerCombine(t *testing.T) {
 						value = append(value, op...)
 					}
 
-					return value, NoopRef, nil
+					return value, nil, nil
 				},
 			},
 		},
@@ -171,7 +171,7 @@ func TestComputerEval(t *testing.T) {
 						value = append(value, op...)
 					}
 
-					return value, NoopRef, nil
+					return value, nil, nil
 				},
 			},
 		},
@@ -217,7 +217,7 @@ func TestComputerResolve(t *testing.T) {
 				Name: "op",
 				Zero: []byte(""),
 				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
-					return ops[len(ops)-1], NoopRef, nil
+					return ops[len(ops)-1], nil, nil
 				},
 			},
 		},
@@ -351,7 +351,7 @@ func BenchmarkComputerEval(b *testing.B) {
 			"op": {
 				Name: "op",
 				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
-					return value, NoopRef, nil
+					return value, nil, nil
 				},
 			},
 		},
@@ -393,7 +393,7 @@ func BenchmarkComputerResolve(b *testing.B) {
 				Name: "op",
 				Zero: []byte(""),
 				Apply: func(value []byte, ops [][]byte) ([]byte, Ref, error) {
-					return value, NoopRef, nil
+					return value, nil, nil
 				},
 			},
 		},

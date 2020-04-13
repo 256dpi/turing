@@ -110,7 +110,9 @@ func (r *replicator) Update(entries []statemachine.Entry) ([]statemachine.Entry,
 			})
 
 			// append reference
-			references = append(references, ref)
+			if ref != nil {
+				references = append(references, ref)
+			}
 
 			// recycle instruction if possible
 			recycler := ins.Describe().Recycler
