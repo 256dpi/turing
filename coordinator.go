@@ -121,6 +121,8 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	timer := observe(coordinatorPerformUpdates)
 	defer timer.finish()
 
+	// TODO: Clarify the handling of proposal failures, retries and idempotency.
+
 	// get session
 	session := c.node.GetNoOPSession(clusterID)
 
