@@ -1,3 +1,4 @@
+// Package turing provides a framework to build domain specific databases.
 package turing
 
 import (
