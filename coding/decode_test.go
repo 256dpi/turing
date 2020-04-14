@@ -17,6 +17,8 @@ func TestDecode(t *testing.T) {
 	enc += "\xFF\xFF"
 	enc += "\xFF\xFF\xFF\xFF"
 	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+	enc += "\x7F\x7F\xFF\xFF"
+	enc += "\x7F\xEF\xFF\xFF\xFF\xFF\xFF\xFF"
 	enc += "\x0e"
 	enc += "\x80\x04"
 	enc += "\x03foo"
@@ -36,6 +38,8 @@ func TestDecode(t *testing.T) {
 	var u16 uint16
 	var u32 uint32
 	var u64 uint64
+	var f32 float32
+	var f64 float64
 	var vi int64
 	var vu uint64
 	var fs string
@@ -53,6 +57,8 @@ func TestDecode(t *testing.T) {
 		dec.Uint16(&u16)
 		dec.Uint32(&u32)
 		dec.Uint64(&u64)
+		dec.Float32(&f32)
+		dec.Float64(&f64)
 		dec.VarInt(&vi)
 		dec.VarUint(&vu)
 		dec.String(&fs, 1, false)
@@ -90,6 +96,8 @@ func TestDecode(t *testing.T) {
 		var u16 uint16
 		var u32 uint32
 		var u64 uint64
+		var f32 float32
+		var f64 float64
 		var vi int64
 		var vu uint64
 		var fs string
@@ -107,6 +115,8 @@ func TestDecode(t *testing.T) {
 			dec.Uint16(&u16)
 			dec.Uint32(&u32)
 			dec.Uint64(&u64)
+			dec.Float32(&f32)
+			dec.Float64(&f64)
 			dec.VarInt(&vi)
 			dec.VarUint(&vu)
 			dec.String(&fs, 1, false)
@@ -129,6 +139,8 @@ func BenchmarkDecode(b *testing.B) {
 	enc += "\xFF\xFF"
 	enc += "\xFF\xFF\xFF\xFF"
 	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+	enc += "\x7F\x7F\xFF\xFF"
+	enc += "\x7F\xEF\xFF\xFF\xFF\xFF\xFF\xFF"
 	enc += "\x0e"
 	enc += "\x80\x04"
 	enc += "\x03foo"
@@ -152,6 +164,8 @@ func BenchmarkDecode(b *testing.B) {
 		var u16 uint16
 		var u32 uint32
 		var u64 uint64
+		var f32 float32
+		var f64 float64
 		var vi int64
 		var vu uint64
 		var fs string
@@ -169,6 +183,8 @@ func BenchmarkDecode(b *testing.B) {
 			dec.Uint16(&u16)
 			dec.Uint32(&u32)
 			dec.Uint64(&u64)
+			dec.Float32(&f32)
+			dec.Float64(&f64)
 			dec.VarInt(&vi)
 			dec.VarUint(&vu)
 			dec.String(&fs, 1, false)

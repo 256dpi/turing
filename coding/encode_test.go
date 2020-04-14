@@ -17,6 +17,8 @@ func TestEncode(t *testing.T) {
 	enc += "\xFF\xFF"
 	enc += "\xFF\xFF\xFF\xFF"
 	enc += "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+	enc += "\x7F\x7F\xFF\xFF"
+	enc += "\x7F\xEF\xFF\xFF\xFF\xFF\xFF\xFF"
 	enc += "\x0e"
 	enc += "\x80\x04"
 	enc += "\x03foo"
@@ -35,6 +37,8 @@ func TestEncode(t *testing.T) {
 		enc.Uint16(math.MaxUint16)
 		enc.Uint32(math.MaxUint32)
 		enc.Uint64(math.MaxUint64)
+		enc.Float32(math.MaxFloat32)
+		enc.Float64(math.MaxFloat64)
 		enc.VarInt(7)
 		enc.VarUint(512)
 		enc.String("foo", 1)
@@ -58,6 +62,8 @@ func TestEncode(t *testing.T) {
 			enc.Uint16(math.MaxUint16)
 			enc.Uint32(math.MaxUint32)
 			enc.Uint64(math.MaxUint64)
+			enc.Float32(math.MaxFloat32)
+			enc.Float64(math.MaxFloat64)
 			enc.VarInt(7)
 			enc.VarUint(512)
 			enc.String("foo", 1)
@@ -86,6 +92,8 @@ func BenchmarkEncode(b *testing.B) {
 			enc.Uint16(math.MaxUint16)
 			enc.Uint32(math.MaxUint32)
 			enc.Uint64(math.MaxUint64)
+			enc.Float32(math.MaxFloat32)
+			enc.Float64(math.MaxFloat64)
 			enc.VarInt(7)
 			enc.VarUint(512)
 			enc.String("foo", 1)

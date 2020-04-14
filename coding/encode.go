@@ -2,6 +2,7 @@ package coding
 
 import (
 	"encoding/binary"
+	"math"
 	"sync"
 )
 
@@ -129,6 +130,16 @@ func (e *Encoder) Uint(num uint64, size int) {
 
 	// slice
 	e.buf = e.buf[size:]
+}
+
+// Float32 writes a four byte float.
+func (e *Encoder) Float32(num float32) {
+	e.Uint32(math.Float32bits(num))
+}
+
+// Float64 writes a eight byte float.
+func (e *Encoder) Float64(num float64) {
+	e.Uint64(math.Float64bits(num))
 }
 
 // VarInt writes a variable signed integer.

@@ -3,6 +3,7 @@ package coding
 import (
 	"encoding/binary"
 	"errors"
+	"math"
 	"sync"
 
 	"github.com/tidwall/cast"
@@ -151,6 +152,20 @@ func (d *Decoder) Uint(num *uint64, size int) {
 
 	// slice
 	d.buf = d.buf[size:]
+}
+
+// Float32 reads a four byte float.
+func (d *Decoder) Float32(num *float32) {
+	var u32 uint32
+	d.Uint32(&u32)
+	*num = math.Float32frombits(u32)
+}
+
+// Float64 reads an eight byte float.
+func (d *Decoder) Float64(num *float64) {
+	var u64 uint64
+	d.Uint64(&u64)
+	*num = math.Float64frombits(u64)
 }
 
 // VarUint reads a variable unsigned integer.
