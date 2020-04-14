@@ -386,16 +386,29 @@ func (i *iterator) TempKey() []byte {
 
 func (i *iterator) Value() ([]byte, Ref, error) {
 	// get value
+	value, err := i.TempValue()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// clone value
+	value, ref := coding.Clone(value)
+
+	return value, ref, nil
+}
+
+func (i *iterator) TempValue() ([]byte, error) {
+	// get value
 	bytes := i.iter.Value()
 	if len(bytes) == 0 {
-		return nil, noopRef, nil
+		return nil, nil
 	}
 
 	// decode cell (no need to clone as copying is explicit)
 	var cell tape.Cell
 	err := cell.Decode(bytes, false)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// check type
@@ -404,10 +417,7 @@ func (i *iterator) Value() ([]byte, Ref, error) {
 		panic("turing: expected raw cell")
 	}
 
-	// clone value
-	val, ref := coding.Clone(cell.Value)
-
-	return val, ref, nil
+	return cell.Value, nil
 }
 
 func (i *iterator) Use(fn func(value []byte) error) error {

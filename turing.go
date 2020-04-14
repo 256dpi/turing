@@ -182,6 +182,10 @@ type Iterator interface {
 	// Use will yield the temporary value to the provided function.
 	Use(fn func(value []byte) error) error
 
+	// TempValue will return the temporary value which is only valid until the
+	// next iteration or the iterator is closed.
+	TempValue() ([]byte, error)
+
 	// Error will return the error.
 	Error() error
 
