@@ -49,7 +49,7 @@ type Instruction interface {
 	Effect() int
 
 	// Execute should execute the instruction using the provided memory.
-	Execute(Memory) error
+	Execute(mem Memory) error
 
 	// Encode should encode the instruction.
 	Encode() ([]byte, Ref, error)
