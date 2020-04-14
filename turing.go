@@ -70,7 +70,7 @@ type Description struct {
 
 	// The recycler can be used in conjunction with the custom builder to
 	// recycle built instructions.
-	Recycler func(Instruction)
+	Recycler func(ins Instruction)
 
 	// The operators used by this instruction. Deprecated operators must be
 	// retained to ensure they can be used to compact older database levels.
@@ -198,5 +198,5 @@ type Observer interface {
 	// machine. The implementation must ensure that the function returns as fast
 	// as possible as it blocks the execution of other instructions. If false is
 	// returned, the observer will be unsubscribed.
-	Process(Instruction) bool
+	Process(ins Instruction) bool
 }
