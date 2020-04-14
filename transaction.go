@@ -93,46 +93,22 @@ func (t *transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 		return nil, false, nil, err
 	}
 
-	// directly return raw cell
-	if cell.Type == tape.RawCell {
-		// increment closers
-		t.closers++
-
-		// wrap closer
-		wrappedCloser := closerFunc(func() error {
-			t.closers--
-			return closer.Close()
-		})
-
-		return cell.Value, true, wrappedCloser, nil
-	}
-
-	// cell is a stack cell
-
-	// ensure close
-	defer closer.Close()
-
-	// get computer
-	computer := newComputer(t.registry)
-	defer computer.recycle()
-
-	// resolve cell
-	result, ref, err := computer.resolve(cell)
-	if err != nil {
-		return nil, false, nil, err
+	// check type
+	if cell.Type != tape.RawCell {
+		// we never see stack cells as they are resolved by the merge operator
+		panic("turing: expected raw cell")
 	}
 
 	// increment closers
 	t.closers++
 
-	// prepare ref closer
-	refCloser := closerFunc(func() error {
+	// wrap closer
+	wrappedCloser := closerFunc(func() error {
 		t.closers--
-		ref.Release()
-		return nil
+		return closer.Close()
 	})
 
-	return result.Value, true, refCloser, nil
+	return cell.Value, true, wrappedCloser, nil
 }
 
 func (t *transaction) Use(key []byte, fn func(value []byte) error) error {
@@ -422,23 +398,16 @@ func (i *iterator) Value() ([]byte, Ref, error) {
 		return nil, nil, err
 	}
 
-	// copy and return raw cell
-	if cell.Type == tape.RawCell {
-		val, ref := coding.Clone(cell.Value)
-		return val, ref, nil
+	// check type
+	if cell.Type != tape.RawCell {
+		// we never see stack cells as they are resolved by the merge operator
+		panic("turing: expected raw cell")
 	}
 
-	// get computer
-	computer := newComputer(i.txn.registry)
-	defer computer.recycle()
+	// clone value
+	val, ref := coding.Clone(cell.Value)
 
-	// resolve cell
-	result, ref, err := computer.resolve(cell)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return result.Value, ref, nil
+	return val, ref, nil
 }
 
 func (i *iterator) Use(fn func(value []byte) error) error {

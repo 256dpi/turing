@@ -1,7 +1,7 @@
 github.com/256dpi/god v0.4.2 h1:H1GZLlBgb9eVJGeCvh/f+DGx8x7JK/d+H9ez+KBD6WU=
 github.com/256dpi/god v0.4.2/go.mod h1:pBGbFAvJlk8fOwwjFyCjq6Xy+HMv0ayN/bcg7tIHWxQ=
-github.com/256dpi/pebble v0.0.0-20200412075638-40cf26bb0e73 h1:NV10UqoovZGEYMWJFPeL3IcDkY0CZDoBPBAZYr4Geio=
-github.com/256dpi/pebble v0.0.0-20200412075638-40cf26bb0e73/go.mod h1:4htqGJZBuuX7YR/S8KKD6GBBC0Ibl+wvy6VEuiGAb6c=
+github.com/256dpi/pebble v0.0.0-20200414073916-7b64097a81ce h1:eban4TLp0RUHWj0OPX2WV/xDetZvx87M54sU861l95I=
+github.com/256dpi/pebble v0.0.0-20200414073916-7b64097a81ce/go.mod h1:4htqGJZBuuX7YR/S8KKD6GBBC0Ibl+wvy6VEuiGAb6c=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/VictoriaMetrics/metrics v1.6.2 h1:VMe8c8ZBPgNVZkPoT06LsoU2nb+8e7iPaOWbVRNhxjo=
 github.com/VictoriaMetrics/metrics v1.6.2/go.mod h1:LU2j9qq7xqZYXz8tF3/RQnB2z2MbZms5TDiIg9/NHiQ=

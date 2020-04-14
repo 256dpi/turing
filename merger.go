@@ -66,7 +66,7 @@ func (m *merger) MergeOlder(value []byte) error {
 	return nil
 }
 
-func (m *merger) Finish() ([]byte, io.Closer, error) {
+func (m *merger) Finish(includesBase bool) ([]byte, io.Closer, error) {
 	// recycle merger
 	defer m.recycle()
 
@@ -86,9 +86,6 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 	// get computer computer
 	computer := newComputer(m.registry)
 	defer computer.recycle()
-
-	// TODO: Merge with zero value if the base cell is a stack.
-	//  => Improve pebble to provide the info.
 
 	// apply if first cell is a raw cell, otherwise combine if stack cell
 	switch m.cells[0].Type {
@@ -122,6 +119,16 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 
 		// ensure release
 		defer ref.Release()
+
+		// resolve if base is included
+		if includesBase {
+			newResult, newRef, err := computer.resolve(result)
+			if err != nil {
+				return nil, nil, err
+			}
+			defer newRef.Release()
+			result = newResult
+		}
 
 		// encode result
 		res, resRef, err := result.Encode(true)
