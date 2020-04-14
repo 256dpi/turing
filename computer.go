@@ -30,9 +30,6 @@ func newComputer(registry *registry) *computer {
 }
 
 func (c *computer) combine(cells []tape.Cell) (tape.Cell, Ref, error) {
-	// ensure recycle
-	defer c.recycle()
-
 	// validate and collect operands
 	names := c.names[:0]
 	values := c.values[:0]
@@ -124,9 +121,6 @@ func (c *computer) combine(cells []tape.Cell) (tape.Cell, Ref, error) {
 }
 
 func (c *computer) apply(cells []tape.Cell) (tape.Cell, Ref, error) {
-	// ensure recycle
-	defer c.recycle()
-
 	// check cells
 	if len(cells) < 2 {
 		return tape.Cell{}, nil, fmt.Errorf("turing: computer apply: need at least two cells")

@@ -112,8 +112,11 @@ func (t *transaction) Get(key []byte) ([]byte, bool, io.Closer, error) {
 	// ensure close
 	defer closer.Close()
 
-	// resolve cell
+	// get computer
 	computer := newComputer(t.registry)
+	defer computer.recycle()
+
+	// resolve cell
 	result, ref, err := computer.resolve(cell)
 	if err != nil {
 		return nil, false, nil, err
@@ -425,8 +428,11 @@ func (i *iterator) Value() ([]byte, Ref, error) {
 		return val, ref, nil
 	}
 
-	// resolve cell
+	// get computer
 	computer := newComputer(i.txn.registry)
+	defer computer.recycle()
+
+	// resolve cell
 	result, ref, err := computer.resolve(cell)
 	if err != nil {
 		return nil, nil, err

@@ -102,8 +102,8 @@ func TestComputerCombine(t *testing.T) {
 	ref.Release()
 
 	// alloc comes from operator
+	computer = newComputer(registry)
 	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
-		computer := newComputer(registry)
 		_, ref, _ := computer.combine(cells)
 		ref.Release()
 	}))
@@ -187,8 +187,8 @@ func TestComputerApply(t *testing.T) {
 	ref.Release()
 
 	// allocs come from operator
+	computer = newComputer(registry)
 	assert.Equal(t, 2.0, testing.AllocsPerRun(10, func() {
-		computer := newComputer(registry)
 		_, ref, _ := computer.apply(cells)
 		ref.Release()
 	}))
@@ -232,8 +232,8 @@ func TestComputerResolve(t *testing.T) {
 	}, result)
 	ref.Release()
 
+	computer = newComputer(registry)
 	assert.Equal(t, 0.0, testing.AllocsPerRun(10, func() {
-		computer := newComputer(registry)
 		_, ref, _ := computer.resolve(cell)
 		ref.Release()
 	}))
@@ -284,11 +284,12 @@ func BenchmarkComputerCombine(b *testing.B) {
 		},
 	}
 
+	computer := newComputer(nil)
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		computer := newComputer(nil)
 		_, ref, err := computer.combine(cells)
 		if err != nil {
 			panic(err)
@@ -357,11 +358,12 @@ func BenchmarkComputerApply(b *testing.B) {
 		},
 	}
 
+	computer := newComputer(registry)
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		computer := newComputer(registry)
 		_, ref, err := computer.apply(cells)
 		if err != nil {
 			panic(err)
@@ -399,11 +401,12 @@ func BenchmarkComputerResolve(b *testing.B) {
 		},
 	}
 
+	computer := newComputer(registry)
+
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		computer := newComputer(registry)
 		_, ref, err := computer.resolve(cell)
 		if err != nil {
 			panic(err)

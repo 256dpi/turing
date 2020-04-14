@@ -83,6 +83,10 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 		m.cells = append(m.cells, cell)
 	}
 
+	// get computer computer
+	computer := newComputer(m.registry)
+	defer computer.recycle()
+
 	// TODO: Merge with zero value if the base cell is a stack.
 	//  => Improve pebble to provide the info.
 
@@ -90,7 +94,6 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 	switch m.cells[0].Type {
 	case tape.RawCell:
 		// apply cells
-		computer := newComputer(m.registry)
 		result, ref, err := computer.apply(m.cells)
 		if err != nil {
 			return nil, nil, err
@@ -112,7 +115,6 @@ func (m *merger) Finish() ([]byte, io.Closer, error) {
 		return res, m, nil
 	case tape.StackCell:
 		// combine cells
-		computer := newComputer(m.registry)
 		result, ref, err := computer.combine(m.cells)
 		if err != nil {
 			return nil, nil, err
