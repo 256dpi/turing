@@ -43,7 +43,7 @@ func (s *sum) Execute(mem turing.Memory) error {
 	i := 0
 	for iter.SeekGE(start); iter.Valid(); iter.Next() {
 		// increment
-		err := iter.Use(func(value []byte) error {
+		err := iter.Use(func(key, value []byte) error {
 			s.Total += decodeNum(value)
 			return nil
 		})

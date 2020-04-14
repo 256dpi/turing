@@ -38,8 +38,8 @@ func (d *Dump) Execute(mem turing.Memory) error {
 
 	// iterate through all pairs
 	for iter.First(); iter.Valid(); iter.Next() {
-		err := iter.Use(func(value []byte) error {
-			d.Map[string(iter.TempKey())] = string(value)
+		err := iter.Use(func(key, value []byte) error {
+			d.Map[string(key)] = string(value)
 			return nil
 		})
 		if err != nil {

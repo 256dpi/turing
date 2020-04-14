@@ -420,18 +420,18 @@ func (i *iterator) TempValue() ([]byte, error) {
 	return cell.Value, nil
 }
 
-func (i *iterator) Use(fn func(value []byte) error) error {
+func (i *iterator) Use(fn func(key, value []byte) error) error {
+	// get key
+	key := i.TempKey()
+
 	// get value
-	value, ref, err := i.Value()
+	value, err := i.TempValue()
 	if err != nil {
 		return err
 	}
 
-	// ensure release
-	defer ref.Release()
-
 	// yield value
-	err = fn(value)
+	err = fn(key, value)
 	if err != nil {
 		return err
 	}
