@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lni/dragonboat/v3"
+	"github.com/lni/dragonboat/v3/client"
 	"github.com/lni/dragonboat/v3/config"
 	"github.com/lni/dragonboat/v3/plugin/pebble"
 	"github.com/lni/dragonboat/v3/statemachine"
@@ -19,6 +20,7 @@ type coordinator struct {
 	node       *dragonboat.NodeHost
 	reads      *bundler
 	writes     *bundler
+	session    *client.Session
 	operations []wire.Operation
 }
 
@@ -76,6 +78,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// create coordinator
 	coordinator := &coordinator{
 		node:       node,
+		session:    node.GetNoOPSession(clusterID),
 		operations: make([]wire.Operation, cfg.ProposalBatchSize),
 	}
 
@@ -123,9 +126,6 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 
 	// TODO: Clarify the handling of proposal failures, retries and idempotency.
 
-	// get session
-	session := c.node.GetNoOPSession(clusterID)
-
 	// prepare command
 	cmd := wire.Command{
 		Operations: c.operations[:0],
@@ -161,7 +161,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	defer ref.Release()
 
 	// propose change
-	req, err := c.node.Propose(session, encodedCommand, 10*time.Second)
+	req, err := c.node.Propose(c.session, encodedCommand, 10*time.Second)
 	if err != nil {
 		return err
 	}
