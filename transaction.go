@@ -349,9 +349,10 @@ func (t *transaction) Iterate(prefix []byte) Iterator {
 }
 
 type iterator struct {
-	txn  *transaction
-	pkr  Ref
-	iter *pebble.Iterator
+	txn    *transaction
+	pkr    Ref
+	iter   *pebble.Iterator
+	closed bool
 }
 
 func (i *iterator) SeekGE(key []byte) bool {
@@ -453,6 +454,14 @@ func (i *iterator) Error() error {
 }
 
 func (i *iterator) Close() error {
+	// skip if already closed
+	if i.closed {
+		return nil
+	}
+
+	// set flag
+	i.closed = true
+
 	// decrement iterators
 	i.txn.iterators--
 
