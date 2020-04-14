@@ -38,17 +38,13 @@ func (m *Map) Execute(mem turing.Memory) error {
 
 	// iterate through all pairs
 	for iter.First(); iter.Valid(); iter.Next() {
-		// get value
-		value, ref, err := iter.Value()
+		err := iter.Use(func(value []byte) error {
+			m.Pairs[string(iter.TempKey())] = turing.Clone(value)
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-
-		// add pair
-		m.Pairs[string(iter.TempKey())] = turing.Clone(value)
-
-		// release value
-		ref.Release()
 	}
 
 	return nil

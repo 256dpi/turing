@@ -434,6 +434,20 @@ func (i *iterator) Value() ([]byte, Ref, error) {
 	return result.Value, ref, nil
 }
 
+func (i *iterator) Use(fn func(value []byte) error) error {
+	// get value
+	value, ref, err := i.Value()
+	defer ref.Release()
+
+	// yield value
+	err = fn(value)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (i *iterator) Error() error {
 	return i.iter.Error()
 }

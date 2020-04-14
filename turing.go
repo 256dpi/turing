@@ -179,6 +179,9 @@ type Iterator interface {
 	// Value will return a buffered value that can be used until released.
 	Value() ([]byte, Ref, error)
 
+	// Use will yield the temporary value to the provided function.
+	Use(fn func(value []byte) error) error
+
 	// Error will return the error.
 	Error() error
 

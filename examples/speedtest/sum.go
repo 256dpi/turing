@@ -42,17 +42,14 @@ func (s *sum) Execute(mem turing.Memory) error {
 	// iterate over key space
 	i := 0
 	for iter.SeekGE(start); iter.Valid(); iter.Next() {
-		// get value
-		val, ref, err := iter.Value()
+		// increment
+		err := iter.Use(func(value []byte) error {
+			s.Total += decodeNum(value)
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-
-		// increment
-		s.Total += decodeNum(val)
-
-		// release
-		ref.Release()
 
 		// increment
 		i++
