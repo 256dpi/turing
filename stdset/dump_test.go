@@ -8,17 +8,17 @@ import (
 	"github.com/256dpi/turing"
 )
 
-func TestMap(t *testing.T) {
-	machine := turing.Test(&Map{}, &Set{})
+func TestDump(t *testing.T) {
+	machine := turing.Test(&Dump{}, &Set{})
 	defer machine.Stop()
 
-	mp := &Map{
+	mp := &Dump{
 		Prefix: []byte("b"),
 	}
 
 	err := machine.Execute(mp)
 	assert.NoError(t, err)
-	assert.Empty(t, mp.Pairs)
+	assert.Empty(t, mp.Map)
 
 	err = machine.Execute(&Set{
 		Key:   []byte("bar"),
@@ -28,13 +28,13 @@ func TestMap(t *testing.T) {
 
 	err = machine.Execute(mp)
 	assert.NoError(t, err)
-	assert.Equal(t, map[string][]byte{
-		"bar": []byte("foo"),
-	}, mp.Pairs)
+	assert.Equal(t, map[string]string{
+		"bar": "foo",
+	}, mp.Map)
 }
 
-func BenchmarkMap(b *testing.B) {
-	machine := turing.Test(&Map{}, &Set{})
+func BenchmarkDump(b *testing.B) {
+	machine := turing.Test(&Dump{}, &Set{})
 	defer machine.Stop()
 
 	err := machine.Execute(&Set{
@@ -45,7 +45,7 @@ func BenchmarkMap(b *testing.B) {
 		panic(err)
 	}
 
-	mp := &Map{
+	dump := &Dump{
 		Prefix: []byte("b"),
 	}
 
@@ -53,11 +53,11 @@ func BenchmarkMap(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := machine.Execute(mp)
+		err := machine.Execute(dump)
 		if err != nil {
 			panic(err)
 		}
 
-		mp.Pairs = nil
+		dump.Map = nil
 	}
 }

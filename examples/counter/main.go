@@ -45,7 +45,7 @@ func main() {
 		Members:   memberList,
 		Directory: directory,
 		Instructions: []turing.Instruction{
-			&stdset.Inc{}, &stdset.Map{},
+			&stdset.Inc{}, &stdset.Dump{},
 		},
 	})
 	if err != nil {
@@ -78,9 +78,9 @@ func main() {
 			continue
 		}
 
-		// map values
-		mp := &stdset.Map{}
-		err = machine.Execute(mp)
+		// dump values
+		dump := &stdset.Dump{}
+		err = machine.Execute(dump)
 		if err != nil {
 			println(err.Error())
 			time.Sleep(time.Second)
@@ -89,7 +89,7 @@ func main() {
 
 		// collect keys
 		var keys []string
-		for key, value := range mp.Pairs {
+		for key, value := range dump.Map {
 			keys = append(keys, fmt.Sprintf("%s:%s", key, value))
 		}
 

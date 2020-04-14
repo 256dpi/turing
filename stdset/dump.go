@@ -7,39 +7,39 @@ import (
 	"github.com/256dpi/turing/coding"
 )
 
-// Map will map all key value pairs.
-type Map struct {
+// Dump will dump all key value pairs.
+type Dump struct {
 	Prefix []byte
-	Pairs  map[string][]byte
+	Map    map[string]string
 }
 
-var mapDesc = &turing.Description{
-	Name: "turing/Map",
+var dumpDesc = &turing.Description{
+	Name: "turing/Dump",
 }
 
 // Describe implements the turing.Instruction interface.
-func (m *Map) Describe() *turing.Description {
-	return mapDesc
+func (d *Dump) Describe() *turing.Description {
+	return dumpDesc
 }
 
 // Effect implements the turing.Instruction interface.
-func (m *Map) Effect() int {
+func (d *Dump) Effect() int {
 	return 0
 }
 
 // Execute implements the turing.Instruction interface.
-func (m *Map) Execute(mem turing.Memory) error {
-	// create map
-	m.Pairs = make(map[string][]byte)
+func (d *Dump) Execute(mem turing.Memory) error {
+	// prepare map
+	d.Map = map[string]string{}
 
 	// create iterator
-	iter := mem.Iterate(m.Prefix)
+	iter := mem.Iterate(d.Prefix)
 	defer iter.Close()
 
 	// iterate through all pairs
 	for iter.First(); iter.Valid(); iter.Next() {
 		err := iter.Use(func(value []byte) error {
-			m.Pairs[string(iter.TempKey())] = turing.Clone(value)
+			d.Map[string(iter.TempKey())] = string(value)
 			return nil
 		})
 		if err != nil {
@@ -47,25 +47,31 @@ func (m *Map) Execute(mem turing.Memory) error {
 		}
 	}
 
+	// close iterator
+	err := iter.Close()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Encode implements the turing.Instruction interface.
-func (m *Map) Encode() ([]byte, turing.Ref, error) {
+func (d *Dump) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		// encode version
 		enc.Uint8(1)
 
 		// encode prefix
-		enc.VarBytes(m.Prefix)
+		enc.VarBytes(d.Prefix)
 
 		// encode length
-		enc.VarUint(uint64(len(m.Pairs)))
+		enc.VarUint(uint64(len(d.Map)))
 
 		// encode pairs
-		for key, value := range m.Pairs {
+		for key, value := range d.Map {
 			enc.VarString(key)
-			enc.VarBytes(value)
+			enc.VarString(value)
 		}
 
 		return nil
@@ -73,35 +79,37 @@ func (m *Map) Encode() ([]byte, turing.Ref, error) {
 }
 
 // Decode implements the turing.Instruction interface.
-func (m *Map) Decode(bytes []byte) error {
+func (d *Dump) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)
 		if version != 1 {
-			return fmt.Errorf("stdset: decode map: invalid version")
+			return fmt.Errorf("stdset: decode dump: invalid version")
 		}
 
 		// decode prefix
-		dec.VarBytes(&m.Prefix, true)
+		dec.VarBytes(&d.Prefix, true)
 
 		// decode length
 		var length uint64
 		dec.VarUint(&length)
 
+		// prepare map
+		d.Map = make(map[string]string, length)
+
 		// decode pairs
-		m.Pairs = map[string][]byte{}
 		for i := 0; i < int(length); i++ {
 			// decode key
 			var key string
 			dec.VarString(&key, true)
 
 			// decode value
-			var value []byte
-			dec.VarBytes(&value, true)
+			var value string
+			dec.VarString(&value, true)
 
 			// set pair
-			m.Pairs[key] = value
+			d.Map[key] = value
 		}
 
 		return nil
