@@ -169,14 +169,16 @@ type Iterator interface {
 	// Prev will go back to the previous key.
 	Prev() bool
 
-	// Key will return a buffered key that can be used until released.
+	// Key will return a buffered key that can be used until released. Leaking
+	// the buffer brings a performance penalty. Use Clone and TempKey instead.
 	Key() ([]byte, Ref)
 
 	// TempKey will return the temporary key which is only valid until the next
 	// iteration or until the iterator is closed.
 	TempKey() []byte
 
-	// Value will return a buffered value that can be used until released.
+	// Value will return a buffered value that can be used until released. Leaking
+	// the buffer brings a performance penalty. Use Clone and TempValue instead.
 	Value() ([]byte, Ref, error)
 
 	// TempValue will return the temporary value which is only valid until the
