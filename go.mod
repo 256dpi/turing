@@ -3,7 +3,7 @@ module github.com/256dpi/turing
 go 1.14
 
 require (
-	github.com/256dpi/god v0.4.2
+	github.com/256dpi/god v0.4.3
 	github.com/cockroachdb/pebble v0.0.0-20200219202912-046831eaec09
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/lni/dragonboat/v3 v3.2.0
