@@ -26,7 +26,7 @@ func (g *get) Effect() int {
 
 var getCounter = god.NewCounter("get", nil)
 
-func (g *get) Execute(mem turing.Memory) error {
+func (g *get) Execute(mem turing.Memory, _ turing.Cache) error {
 	getCounter.Add(1)
 
 	// encode key

@@ -28,7 +28,7 @@ func (l *List) Effect() int {
 }
 
 // Execute implements the turing.Instruction interface.
-func (l *List) Execute(mem turing.Memory) error {
+func (l *List) Execute(mem turing.Memory, _ turing.Cache) error {
 	// reset map
 	l.Keys = make([][]byte, 0, 512)
 

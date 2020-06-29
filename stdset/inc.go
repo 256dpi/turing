@@ -82,7 +82,7 @@ func (i *Inc) Effect() int {
 }
 
 // Execute implements the turing.Instruction interface.
-func (i *Inc) Execute(mem turing.Memory) error {
+func (i *Inc) Execute(mem turing.Memory, _ turing.Cache) error {
 	// borrow slice
 	buf, ref := coding.Borrow(int64Len)
 	defer ref.Release()

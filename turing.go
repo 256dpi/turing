@@ -49,7 +49,7 @@ type Instruction interface {
 	Effect() int
 
 	// Execute should execute the instruction using the provided memory.
-	Execute(mem Memory) error
+	Execute(mem Memory, cache Cache) error
 
 	// Encode should encode the instruction.
 	Encode() ([]byte, Ref, error)
@@ -110,7 +110,7 @@ type Operator struct {
 	counter prometheus.Counter
 }
 
-// Memory is interface used by instructions to read and write to the database.
+// Memory is used by instructions to read and write to the database.
 type Memory interface {
 	// Iterate will construct and return a new iterator. The iterator must be
 	// closed as soon as it is not used anymore.
@@ -193,6 +193,16 @@ type Iterator interface {
 
 	// Close will close the iterator.
 	Close() error
+}
+
+// Cache is used by instructions to cache concrete values.
+type Cache interface {
+	// Set will set the specified key to the new value.
+	Set(key, value interface{})
+
+	// Get will lookup the the specified key and return the value and whether
+	// it has been found.
+	Get(key interface{}) (interface{}, bool)
 }
 
 // Observer is the interface implemented by observers that want to observe the

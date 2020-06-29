@@ -46,13 +46,13 @@ func recycleTransaction(txn *transaction) {
 	transactionPool.Put(txn)
 }
 
-func (t *transaction) execute(ins Instruction) (bool, error) {
+func (t *transaction) execute(ins Instruction, cache Cache) (bool, error) {
 	// set instruction
 	t.current = ins
 
 	// execute transaction
 	var effectMaxed bool
-	err := ins.Execute(t)
+	err := ins.Execute(t, cache)
 	if err == ErrMaxEffect {
 		effectMaxed = true
 	} else if err != nil {

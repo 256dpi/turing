@@ -26,7 +26,7 @@ func (s *sum) Effect() int {
 
 var sumCounter = god.NewCounter("sum", nil)
 
-func (s *sum) Execute(mem turing.Memory) error {
+func (s *sum) Execute(mem turing.Memory, _ turing.Cache) error {
 	sumCounter.Add(1)
 
 	// reset

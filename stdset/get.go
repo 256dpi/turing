@@ -29,7 +29,7 @@ func (g *Get) Effect() int {
 }
 
 // Execute implements the turing.Instruction interface.
-func (g *Get) Execute(mem turing.Memory) error {
+func (g *Get) Execute(mem turing.Memory, _ turing.Cache) error {
 	// get value
 	err := mem.Use(g.Key, func(value []byte) error {
 		g.Value = turing.Clone(value)

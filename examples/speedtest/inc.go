@@ -84,7 +84,7 @@ func (i *inc) Effect() int {
 
 var incCounter = god.NewCounter("inc", nil)
 
-func (i *inc) Execute(mem turing.Memory) error {
+func (i *inc) Execute(mem turing.Memory, _ turing.Cache) error {
 	incCounter.Add(1)
 
 	// encode key

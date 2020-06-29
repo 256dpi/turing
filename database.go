@@ -21,6 +21,22 @@ var ErrDatabaseClosed = errors.New("turing: database closed")
 var stateKey = []byte("$state")
 var syncKey = []byte("$sync")
 
+type cache struct {
+	m sync.Map
+}
+
+func newCache() *cache {
+	return &cache{}
+}
+
+func (c *cache) Set(key, value interface{}) {
+	c.m.Store(key, value)
+}
+
+func (c *cache) Get(key interface{}) (interface{}, bool) {
+	return c.m.Load(key)
+}
+
 type database struct {
 	state    tape.State
 	registry *registry
@@ -155,6 +171,9 @@ func (d *database) update(list []Instruction, index uint64) error {
 	timer := observe(databaseUpdate)
 	defer timer.finish()
 
+	// prepare cache
+	cache := newCache()
+
 	// create initial batch
 	batch := d.pebble.NewIndexedBatch()
 
@@ -197,7 +216,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 		for {
 			// execute transaction
-			effectMaxed, err := txn.execute(ins)
+			effectMaxed, err := txn.execute(ins, cache)
 			if err != nil {
 				return err
 			}
@@ -302,6 +321,9 @@ func (d *database) lookup(list []Instruction) error {
 	timer1 := observe(databaseLookup)
 	defer timer1.finish()
 
+	// prepare cache
+	cache := newCache()
+
 	// get snapshot
 	snapshot := d.pebble.NewSnapshot()
 	defer snapshot.Close()
@@ -314,13 +336,13 @@ func (d *database) lookup(list []Instruction) error {
 	// ensure recycle
 	defer recycleTransaction(txn)
 
-	// execute instruction
+	// execute instructions
 	for _, ins := range list {
 		// begin observation
 		timer := observe(ins.Describe().observer)
 
 		// execute transaction
-		_, err := txn.execute(ins)
+		_, err := txn.execute(ins, cache)
 		if err != nil {
 			return err
 		}

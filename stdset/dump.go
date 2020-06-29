@@ -28,7 +28,7 @@ func (d *Dump) Effect() int {
 }
 
 // Execute implements the turing.Instruction interface.
-func (d *Dump) Execute(mem turing.Memory) error {
+func (d *Dump) Execute(mem turing.Memory, _ turing.Cache) error {
 	// prepare map
 	d.Map = map[string]string{}
 
