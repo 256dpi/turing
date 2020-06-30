@@ -38,6 +38,7 @@ func (c *cache) Get(key interface{}) (interface{}, bool) {
 }
 
 type database struct {
+	config   Config
 	state    tape.State
 	registry *registry
 	manager  *manager
@@ -131,6 +132,7 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 
 	// create database
 	db := &database{
+		config:   config,
 		state:    state,
 		registry: registry,
 		manager:  manager,
@@ -179,6 +181,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 	// prepare transaction
 	txn := newTransaction()
+	txn.config = d.config
 	txn.registry = d.registry
 	txn.reader = batch
 	txn.writer = batch
@@ -198,7 +201,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 
 		// check if new transaction is needed for bounded transaction
 		effect := ins.Effect()
-		if effect > 0 && txn.effect+effect >= MaxEffect {
+		if effect > 0 && txn.effect+effect >= d.config.MaxEffect {
 			// commit current batch
 			err := batch.Commit(d.options)
 			if err != nil {
@@ -330,6 +333,7 @@ func (d *database) lookup(list []Instruction) error {
 
 	// prepare transaction
 	txn := newTransaction()
+	txn.config = d.config
 	txn.registry = d.registry
 	txn.reader = snapshot
 

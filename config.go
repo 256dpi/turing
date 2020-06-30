@@ -34,6 +34,14 @@ type Config struct {
 
 	/* Performance Tuning */
 
+	// The maximum effect that can be reported by an instruction. Instructions
+	// with a bigger effect must report an unbounded effect. Increasing the
+	// value will allow more throughput as more instructions are executed using
+	// the same transaction.
+	//
+	// Default: 10_000.
+	MaxEffect int
+
 	// The average round trip time.
 	//
 	// Default: 1ms.
@@ -87,6 +95,11 @@ func (c *Config) Validate() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// check max effect
+	if c.MaxEffect == 0 {
+		c.MaxEffect = 10_000
 	}
 
 	// check round trip time

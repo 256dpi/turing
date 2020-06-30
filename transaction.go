@@ -16,6 +16,7 @@ import (
 var userPrefix = []byte("#")
 
 type transaction struct {
+	config    Config
 	registry  *registry
 	current   Instruction
 	reader    pebble.Reader
@@ -143,7 +144,7 @@ func (t *transaction) Set(key, value []byte) error {
 	}
 
 	// check effect
-	if t.effect >= MaxEffect {
+	if t.effect >= t.config.MaxEffect {
 		return ErrMaxEffect
 	}
 
@@ -185,7 +186,7 @@ func (t *transaction) Unset(key []byte) error {
 	}
 
 	// check effect
-	if t.effect >= MaxEffect {
+	if t.effect >= t.config.MaxEffect {
 		return ErrMaxEffect
 	}
 
@@ -212,7 +213,7 @@ func (t *transaction) Delete(start, end []byte) error {
 	}
 
 	// check effect
-	if t.effect >= MaxEffect {
+	if t.effect >= t.config.MaxEffect {
 		return ErrMaxEffect
 	}
 
@@ -241,7 +242,7 @@ func (t *transaction) Merge(key, value []byte, operator *Operator) error {
 	}
 
 	// check effect
-	if t.effect >= MaxEffect {
+	if t.effect >= t.config.MaxEffect {
 		return ErrMaxEffect
 	}
 

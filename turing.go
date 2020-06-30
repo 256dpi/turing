@@ -9,10 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// MaxEffect is maximum effect that can be reported by an instruction.
-// Instructions with a bigger effect must report an unbounded effect.
-const MaxEffect = 10000
-
 // UnboundedEffect can be used as an effect if the instruction potentially
 // modifies more keys than MaxEffect allows. These instructions may be applied
 // using multiple transactions.

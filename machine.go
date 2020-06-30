@@ -95,7 +95,7 @@ func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 
 	// get effect
 	effect := ins.Effect()
-	if effect > MaxEffect {
+	if effect > m.config.MaxEffect {
 		return fmt.Errorf("turing: instruction effect too high")
 	} else if effect < 0 && effect != UnboundedEffect {
 		return fmt.Errorf("turing: invalid instruction effect")
