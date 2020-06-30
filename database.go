@@ -43,7 +43,6 @@ type database struct {
 	registry *registry
 	manager  *manager
 	pebble   *pebble.DB
-	options  *pebble.WriteOptions
 	write    sync.Mutex
 	read     sync.RWMutex
 	readers  chan struct{}
@@ -125,11 +124,6 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		}
 	}
 
-	// prepare options
-	options := &pebble.WriteOptions{
-		Sync: config.Standalone,
-	}
-
 	// create database
 	db := &database{
 		config:   config,
@@ -137,7 +131,6 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		registry: registry,
 		manager:  manager,
 		pebble:   pdb,
-		options:  options,
 		readers:  make(chan struct{}, config.ConcurrentReaders),
 	}
 
@@ -203,7 +196,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 		effect := ins.Effect()
 		if effect > 0 && txn.effect+effect >= d.config.MaxEffect {
 			// commit current batch
-			err := batch.Commit(d.options)
+			err := batch.Commit(pebble.NoSync)
 			if err != nil {
 				return err
 			}
@@ -227,7 +220,7 @@ func (d *database) update(list []Instruction, index uint64) error {
 			// commit batch if effect is maxed and start over
 			if effectMaxed {
 				// commit current batch
-				err := batch.Commit(d.options)
+				err := batch.Commit(pebble.NoSync)
 				if err != nil {
 					return err
 				}
@@ -289,9 +282,17 @@ func (d *database) update(list []Instruction, index uint64) error {
 	}
 
 	// commit final batch
-	err = batch.Commit(d.options)
+	err = batch.Commit(pebble.NoSync)
 	if err != nil {
 		return err
+	}
+
+	// sync if required
+	if d.config.Standalone {
+		err = d.sync()
+		if err != nil {
+			return err
+		}
 	}
 
 	// yield to manager

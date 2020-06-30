@@ -6,6 +6,8 @@ type controller struct {
 	lookups  *bundler
 }
 
+// TODO: Provide index to prevent double processing in standalone mode.
+
 func createController(config Config, registry *registry, manager *manager) (*controller, error) {
 	// open database
 	database, _, err := openDatabase(config, registry, manager)
