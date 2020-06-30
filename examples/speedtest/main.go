@@ -77,6 +77,9 @@ func main() {
 		Instructions: []turing.Instruction{
 			&inc{}, &get{}, &sum{},
 		},
+		UpdateBatchSize:   *writers,
+		LookupBatchSize:   *readers + *scanners,
+		ProposalBatchSize: *writers,
 	})
 	if err != nil {
 		panic(err)
