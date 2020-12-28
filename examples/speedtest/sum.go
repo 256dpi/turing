@@ -9,6 +9,7 @@ import (
 
 type sum struct {
 	Start uint64
+	Count uint64
 	Total uint64
 }
 
@@ -40,7 +41,7 @@ func (s *sum) Execute(mem turing.Memory, _ turing.Cache) error {
 	defer iter.Close()
 
 	// iterate over key space
-	i := 0
+	var i uint64
 	for iter.SeekGE(start); iter.Valid(); iter.Next() {
 		// increment
 		err := iter.Use(func(key, value []byte) error {
@@ -52,8 +53,7 @@ func (s *sum) Execute(mem turing.Memory, _ turing.Cache) error {
 		}
 
 		// increment
-		i++
-		if i >= int(*scanLength) {
+		if i++; i >= s.Count {
 			break
 		}
 	}
@@ -64,6 +64,7 @@ func (s *sum) Execute(mem turing.Memory, _ turing.Cache) error {
 func (s *sum) Encode() ([]byte, turing.Ref, error) {
 	return coding.Encode(true, func(enc *coding.Encoder) error {
 		enc.Uint64(s.Start)
+		enc.Uint64(s.Count)
 		enc.Uint64(s.Total)
 		return nil
 	})
@@ -72,6 +73,7 @@ func (s *sum) Encode() ([]byte, turing.Ref, error) {
 func (s *sum) Decode(bytes []byte) error {
 	return coding.Decode(bytes, func(dec *coding.Decoder) error {
 		dec.Uint64(&s.Start)
+		dec.Uint64(&s.Count)
 		dec.Uint64(&s.Total)
 		return nil
 	})

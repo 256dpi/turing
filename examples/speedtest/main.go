@@ -25,8 +25,8 @@ var standalone = flag.Bool("standalone", false, "enable standalone mode")
 var memory = flag.Bool("memory", false, "enable in-memory mode")
 var writeBatchSize = flag.Int("writeBatchSize", 1000, "the write batch size")
 var readBatchSize = flag.Int("readBatchSize", 1000, "the read batch size")
-var keySpace = flag.Int64("keySpace", 100000, "the size of the key space")
-var scanLength = flag.Int64("scanLength", 100, "the length of the scan")
+var keySpace = flag.Int64("keySpace", 100000, "the maximum size of the key space")
+var scanLength = flag.Int64("scanLength", 100, "the maximum length of the scan")
 
 var wg sync.WaitGroup
 
@@ -199,7 +199,8 @@ func scanner(machine *turing.Machine, done <-chan struct{}) {
 
 		// prepare instruction
 		ins := &sum{}
-		ins.Start = uint64(rng.Int63n(*keySpace - *scanLength))
+		ins.Count = uint64(rng.Int63n(*scanLength))
+		ins.Start = uint64(rng.Int63n(*keySpace - int64(ins.Count)))
 
 		// prepare options
 		opts := turing.Options{}
