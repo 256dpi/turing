@@ -80,8 +80,8 @@ func main() {
 		UpdateBatchSize:   *writeBatchSize,
 		LookupBatchSize:   *readBatchSize,
 		ProposalBatchSize: *writeBatchSize,
-		ProposalTimeout:   time.Second,
-		LinearReadTimeout: time.Second,
+		ProposalTimeout:   5 * time.Second,
+		LinearReadTimeout: 5 * time.Second,
 	})
 	if err != nil {
 		panic(err)

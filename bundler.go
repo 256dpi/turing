@@ -93,9 +93,9 @@ func (b *bundler) processor() {
 	fns := make([]func(error), 0, b.opts.batchSize)
 
 	for {
-		// wait 0.1ms if no full batch is available yet
-		if len(b.queue) < b.opts.batchSize {
-			time.Sleep(time.Millisecond / 10)
+		// wait up to 5ms until a full batch is available
+		for i := 0; i < 5 && len(b.queue) < b.opts.batchSize; i++ {
+			time.Sleep(time.Millisecond)
 		}
 
 		// await next item
