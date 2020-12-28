@@ -18,6 +18,7 @@ import (
 const clusterID uint64 = 1
 
 type coordinator struct {
+	config      Config
 	node        *dragonboat.NodeHost
 	staleReads  *bundler
 	linearReads *bundler
@@ -79,6 +80,7 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 
 	// create coordinator
 	coordinator := &coordinator{
+		config:     cfg,
 		node:       node,
 		session:    node.GetNoOPSession(clusterID),
 		operations: make([]wire.Operation, cfg.ProposalBatchSize),
@@ -171,7 +173,7 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	defer ref.Release()
 
 	// propose change
-	req, err := c.node.Propose(c.session, encodedCommand, 10*time.Second)
+	req, err := c.node.Propose(c.session, encodedCommand, c.config.ProposalTimeout)
 	if err != nil {
 		return err
 	}
@@ -211,9 +213,9 @@ func (c *coordinator) lookup(ins Instruction, fn func(error), options Options) e
 	// queue read
 	if options.StaleRead {
 		return c.staleReads.process(ins, fn)
-	} else {
-		return c.linearReads.process(ins, fn)
 	}
+
+	return c.linearReads.process(ins, fn)
 }
 
 var coordinatorPerformStaleLookup = systemMetrics.WithLabelValues("coordinator.performStaleLookup")
@@ -240,7 +242,7 @@ func (c *coordinator) performLinearLookup(list []Instruction) error {
 	defer timer.finish()
 
 	// prepare context
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), c.config.LinearReadTimeout)
 	defer cancel()
 
 	// perform linear read

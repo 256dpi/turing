@@ -44,7 +44,7 @@ type Config struct {
 
 	// The average round trip time.
 	//
-	// Default: 1ms.
+	// Default: 10ms.
 	RoundTripTime time.Duration
 
 	// The number of concurrent database readers.
@@ -63,6 +63,16 @@ type Config struct {
 	UpdateBatchSize   int
 	LookupBatchSize   int
 	ProposalBatchSize int
+
+	// The time after a proposal times out.
+	//
+	// Default: 10s.
+	ProposalTimeout time.Duration
+
+	// The time after a linear read times out.
+	//
+	// Default: 10s.
+	LinearReadTimeout time.Duration
 }
 
 // Local will return the local member.
@@ -104,7 +114,7 @@ func (c *Config) Validate() error {
 
 	// check round trip time
 	if c.RoundTripTime == 0 {
-		c.RoundTripTime = time.Millisecond
+		c.RoundTripTime = 10 * time.Millisecond
 	}
 
 	// check concurrent readers
@@ -129,6 +139,14 @@ func (c *Config) Validate() error {
 	}
 	if c.ProposalBatchSize == 0 {
 		c.ProposalBatchSize = 200
+	}
+
+	// check timeouts
+	if c.ProposalTimeout == 0 {
+		c.ProposalTimeout = 10 * time.Second
+	}
+	if c.LinearReadTimeout == 0 {
+		c.LinearReadTimeout = 10 * time.Second
 	}
 
 	return nil

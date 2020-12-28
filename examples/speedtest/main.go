@@ -76,9 +76,12 @@ func main() {
 		Instructions: []turing.Instruction{
 			&inc{}, &get{}, &sum{},
 		},
+		RoundTripTime:     time.Millisecond,
 		UpdateBatchSize:   *writeBatchSize,
 		LookupBatchSize:   *readBatchSize,
 		ProposalBatchSize: *writeBatchSize,
+		ProposalTimeout:   time.Second,
+		LinearReadTimeout: time.Second,
 	})
 	if err != nil {
 		panic(err)
