@@ -23,8 +23,8 @@ var members = flag.String("members", "", "the cluster members")
 var directory = flag.String("directory", "data", "the data directory")
 var standalone = flag.Bool("standalone", false, "enable standalone mode")
 var memory = flag.Bool("memory", false, "enable in-memory mode")
-var writeBatchSize = flag.Int("writeBatchSize", 1000, "the write batch size")
-var readBatchSize = flag.Int("readBatchSize", 1000, "the read batch size")
+var writeBatchSize = flag.Int("writeBatchSize", 200, "the write batch size")
+var readBatchSize = flag.Int("readBatchSize", 200, "the read batch size")
 var keySpace = flag.Int64("keySpace", 100000, "the maximum size of the key space")
 var scanLength = flag.Int64("scanLength", 100, "the maximum length of the scan")
 
@@ -131,7 +131,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		// check if done
 		select {
 		case <-done:
-			iwg.Done()
+			iwg.Wait()
 			return
 		default:
 		}
