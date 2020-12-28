@@ -172,23 +172,18 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 	// release
 	defer ref.Release()
 
-	// propose change
-	req, err := c.node.Propose(c.session, encodedCommand, c.config.ProposalTimeout)
-	if err != nil {
-		return err
-	}
+	// prepare context
+	ctx, cancel := context.WithTimeout(context.Background(), c.config.ProposalTimeout)
+	defer cancel()
 
-	// ensure release
-	defer req.Release()
-
-	// await completion
-	result, err := awaitRequest(req)
+	// propose
+	result, err := c.node.SyncPropose(ctx, c.session, encodedCommand)
 	if err != nil {
 		return err
 	}
 
 	// walk command and decode results
-	err = wire.WalkCommand(result, func(i int, op wire.Operation) (bool, error) {
+	err = wire.WalkCommand(result.Data, func(i int, op wire.Operation) (bool, error) {
 		// decode result if available
 		if len(op.Code) > 0 {
 			return true, list[i].Decode(op.Code)
@@ -327,21 +322,4 @@ func (c *coordinator) status() Status {
 func (c *coordinator) close() {
 	// stop node
 	c.node.Stop()
-}
-
-func awaitRequest(rs *dragonboat.RequestState) ([]byte, error) {
-	r := <-rs.CompletedC
-	if r.Completed() {
-		return r.GetResult().Data, nil
-	} else if r.Rejected() {
-		return nil, dragonboat.ErrRejected
-	} else if r.Timeout() {
-		return nil, dragonboat.ErrTimeout
-	} else if r.Terminated() {
-		return nil, dragonboat.ErrClusterClosed
-	} else if r.Dropped() {
-		return nil, dragonboat.ErrClusterNotReady
-	}
-
-	panic("unknown result")
 }
