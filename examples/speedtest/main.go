@@ -218,16 +218,19 @@ func scanner(machine *turing.Machine, done <-chan struct{}) {
 	}
 }
 
-var unreadyCounter = god.NewCounter("x-unready", nil)
-var busyCounter = god.NewCounter("x-busy", nil)
+var notInitCounter = god.NewCounter("x-not-init", nil)
+var notReadyCounter = god.NewCounter("x-not-ready", nil)
+var sysBusyCounter = god.NewCounter("x-sys-busy", nil)
 var timeoutCounter = god.NewCounter("x-timeout", nil)
 var errorCounter = god.NewCounter("x-error", nil)
 
 func handle(err error) {
-	if err == dragonboat.ErrClusterNotReady {
-		unreadyCounter.Add(1)
+	if err == dragonboat.ErrClusterNotInitialized {
+		notInitCounter.Add(1)
+	} else if err == dragonboat.ErrClusterNotReady {
+		notReadyCounter.Add(1)
 	} else if err == dragonboat.ErrSystemBusy {
-		busyCounter.Add(1)
+		sysBusyCounter.Add(1)
 	} else if err == dragonboat.ErrTimeout {
 		timeoutCounter.Add(1)
 	} else if err != nil {
