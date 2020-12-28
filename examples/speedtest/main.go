@@ -84,6 +84,11 @@ func main() {
 		panic(err)
 	}
 
+	// track machine role
+	god.Track("role", func() string {
+		return machine.Status().Role.String()
+	})
+
 	// ensure stop
 	defer machine.Stop()
 
