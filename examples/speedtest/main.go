@@ -147,11 +147,11 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		err := machine.ExecuteAsync(ins, func(err error) {
 			iwg.Done()
 			if err != nil {
-				handle(err)
+				handle("writer", err, ins, turing.Options{})
 			}
 		})
 		if err != nil {
-			handle(err)
+			handle("writer", err, ins, turing.Options{})
 		}
 	}
 }
@@ -188,11 +188,11 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		err := machine.ExecuteAsync(ins, func(err error) {
 			iwg.Done()
 			if err != nil {
-				handle(err)
+				handle("reader", err, ins, opts)
 			}
 		}, opts)
 		if err != nil {
-			handle(err)
+			handle("reader", err, ins, opts)
 		}
 	}
 }
@@ -230,11 +230,11 @@ func scanner(machine *turing.Machine, done <-chan struct{}) {
 		err := machine.ExecuteAsync(ins, func(err error) {
 			iwg.Done()
 			if err != nil {
-				handle(err)
+				handle("scanner", err, ins, opts)
 			}
 		}, opts)
 		if err != nil {
-			handle(err)
+			handle("scanner", err, ins, opts)
 		}
 	}
 }
@@ -245,7 +245,7 @@ var sysBusyCounter = god.NewCounter("x-sys-busy", nil)
 var timeoutCounter = god.NewCounter("x-timeout", nil)
 var errorCounter = god.NewCounter("x-error", nil)
 
-func handle(err error) {
+func handle(com string, err error, ins turing.Instruction, opts turing.Options) {
 	if err == dragonboat.ErrClusterNotInitialized {
 		notInitCounter.Add(1)
 	} else if err == dragonboat.ErrClusterNotReady {
