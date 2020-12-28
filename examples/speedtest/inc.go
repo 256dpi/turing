@@ -9,13 +9,14 @@ import (
 	"github.com/256dpi/turing/coding"
 )
 
-var addCounter = god.NewCounter("add", nil)
+var addApplyCounter = god.NewCounter("add-a", nil)
+var addCombineCounter = god.NewCounter("add-c", nil)
 
 var incAdd = &turing.Operator{
 	Name: "add",
 	Zero: []byte("\x00\x00\x00\x00\x00\x00\x00\x00"),
 	Apply: func(value []byte, ops [][]byte) ([]byte, turing.Ref, error) {
-		addCounter.Add(1)
+		addApplyCounter.Add(1)
 
 		// parse value
 		count := decodeNum(value)
@@ -31,7 +32,7 @@ var incAdd = &turing.Operator{
 		return value, nil, nil
 	},
 	Combine: func(ops [][]byte) ([]byte, turing.Ref, error) {
-		addCounter.Add(1)
+		addCombineCounter.Add(1)
 
 		// combine operands
 		var count uint64
