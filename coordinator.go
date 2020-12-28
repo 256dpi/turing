@@ -1,6 +1,7 @@
 package turing
 
 import (
+	"context"
 	"net"
 	"strconv"
 	"time"
@@ -17,11 +18,12 @@ import (
 const clusterID uint64 = 1
 
 type coordinator struct {
-	node       *dragonboat.NodeHost
-	reads      *bundler
-	writes     *bundler
-	session    *client.Session
-	operations []wire.Operation
+	node        *dragonboat.NodeHost
+	staleReads  *bundler
+	linearReads *bundler
+	writes      *bundler
+	session     *client.Session
+	operations  []wire.Operation
 }
 
 func createCoordinator(cfg Config, registry *registry, manager *manager) (*coordinator, error) {
@@ -82,12 +84,20 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 		operations: make([]wire.Operation, cfg.ProposalBatchSize),
 	}
 
-	// create read bundler
-	coordinator.reads = newBundler(bundlerOptions{
+	// create stale read bundler
+	coordinator.staleReads = newBundler(bundlerOptions{
 		queueSize:   (cfg.ConcurrentReaders + 1) * cfg.LookupBatchSize,
 		batchSize:   cfg.LookupBatchSize,
 		concurrency: cfg.ConcurrentReaders,
-		handler:     coordinator.performLookup,
+		handler:     coordinator.performStaleLookup,
+	})
+
+	// create liner read bundler
+	coordinator.linearReads = newBundler(bundlerOptions{
+		queueSize:   (cfg.ConcurrentReaders + 1) * cfg.LookupBatchSize,
+		batchSize:   cfg.LookupBatchSize,
+		concurrency: cfg.ConcurrentReaders,
+		handler:     coordinator.performLinearLookup,
 	})
 
 	// create write bundler
@@ -198,30 +208,23 @@ func (c *coordinator) lookup(ins Instruction, fn func(error), options Options) e
 	timer := observe(coordinatorLookup)
 	defer timer.finish()
 
-	// immediately queue stale reads
+	// queue read
 	if options.StaleRead {
-		return c.reads.process(ins, fn)
+		return c.staleReads.process(ins, fn)
+	} else {
+		return c.linearReads.process(ins, fn)
 	}
+}
 
-	// otherwise read index for linear reads
+var coordinatorPerformStaleLookup = systemMetrics.WithLabelValues("coordinator.performStaleLookup")
 
-	// read index
-	req, err := c.node.ReadIndex(clusterID, 10*time.Second)
-	if err != nil {
-		return err
-	}
+func (c *coordinator) performStaleLookup(list []Instruction) error {
+	// observe
+	timer := observe(coordinatorPerformStaleLookup)
+	defer timer.finish()
 
-	// ensure release
-	defer req.Release()
-
-	// await completion
-	_, err = awaitRequest(req)
-	if err != nil {
-		return err
-	}
-
-	// queue lookup
-	err = c.reads.process(ins, fn)
+	// perform stale read
+	_, err := c.node.StaleRead(clusterID, list)
 	if err != nil {
 		return err
 	}
@@ -229,16 +232,19 @@ func (c *coordinator) lookup(ins Instruction, fn func(error), options Options) e
 	return nil
 }
 
-var coordinatorPerformLookup = systemMetrics.WithLabelValues("coordinator.performLookup")
+var coordinatorPerformLinearLookup = systemMetrics.WithLabelValues("coordinator.performLinearLookup")
 
-func (c *coordinator) performLookup(list []Instruction) error {
+func (c *coordinator) performLinearLookup(list []Instruction) error {
 	// observe
-	timer := observe(coordinatorPerformLookup)
+	timer := observe(coordinatorPerformLinearLookup)
 	defer timer.finish()
 
-	// perform read as all instructions ar queued after their respective read
-	// index request has completed
-	_, err := c.node.StaleRead(clusterID, list)
+	// prepare context
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// perform linear read
+	_, err := c.node.SyncRead(ctx, clusterID, list)
 	if err != nil {
 		return err
 	}
