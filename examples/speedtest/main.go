@@ -123,11 +123,15 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
+	// prepare counter
+	var iwg sync.WaitGroup
+
 	// write entries forever
 	for {
 		// check if done
 		select {
 		case <-done:
+			iwg.Done()
 			return
 		default:
 		}
@@ -139,7 +143,9 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		ins.Merge = rng.Intn(4) > 0 // 75%
 
 		// inc value
+		iwg.Add(1)
 		err := machine.ExecuteAsync(ins, func(err error) {
+			iwg.Done()
 			if err != nil {
 				handle(err)
 			}
@@ -156,14 +162,15 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
-	// prepare options
-	opts := turing.Options{}
+	// prepare counter
+	var iwg sync.WaitGroup
 
 	// write entries forever
 	for {
 		// check if done
 		select {
 		case <-done:
+			iwg.Wait()
 			return
 		default:
 		}
@@ -173,10 +180,13 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		ins.Key = uint64(rng.Int63n(*keySpace))
 
 		// prepare options
+		opts := turing.Options{}
 		opts.StaleRead = rng.Intn(4) > 0 // 75%
 
 		// get value
+		iwg.Add(1)
 		err := machine.ExecuteAsync(ins, func(err error) {
+			iwg.Done()
 			if err != nil {
 				handle(err)
 			}
@@ -193,11 +203,15 @@ func scanner(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
+	// prepare counter
+	var iwg sync.WaitGroup
+
 	// write entries forever
 	for {
 		// check if done
 		select {
 		case <-done:
+			iwg.Wait()
 			return
 		default:
 		}
@@ -212,7 +226,9 @@ func scanner(machine *turing.Machine, done <-chan struct{}) {
 		opts.StaleRead = rng.Intn(4) > 0 // 75%
 
 		// get value
+		iwg.Add(1)
 		err := machine.ExecuteAsync(ins, func(err error) {
+			iwg.Done()
 			if err != nil {
 				handle(err)
 			}
