@@ -142,7 +142,7 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		// prepare instruction
 		ins := &inc{}
 		ins.Key = uint64(rng.Int63n(*keySpace))
-		ins.Value = uint64(rng.Int63n(*keySpace))
+		ins.Value = uint64(rng.Int63n(10))
 		ins.Merge = rng.Intn(4) > 0 // 75%
 
 		// inc value
