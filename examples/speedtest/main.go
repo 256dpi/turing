@@ -23,9 +23,8 @@ var members = flag.String("members", "", "the cluster members")
 var directory = flag.String("directory", "data", "the data directory")
 var standalone = flag.Bool("standalone", false, "enable standalone mode")
 var memory = flag.Bool("memory", false, "enable in-memory mode")
-var writers = flag.Int("writers", 1000, "the number of parallel writers")
-var readers = flag.Int("readers", 1000, "the number of parallel readers")
-var scanners = flag.Int("scanners", 50, "the number of parallel scanners")
+var writeBatchSize = flag.Int("writeBatchSize", 1000, "the write batch size")
+var readBatchSize = flag.Int("readBatchSize", 1000, "the read batch size")
 var keySpace = flag.Int64("keySpace", 100000, "the size of the key space")
 var scanLength = flag.Int64("scanLength", 100, "the length of the scan")
 
@@ -77,9 +76,9 @@ func main() {
 		Instructions: []turing.Instruction{
 			&inc{}, &get{}, &sum{},
 		},
-		UpdateBatchSize:   *writers,
-		LookupBatchSize:   *readers + *scanners,
-		ProposalBatchSize: *writers,
+		UpdateBatchSize:   *writeBatchSize,
+		LookupBatchSize:   *readBatchSize,
+		ProposalBatchSize: *writeBatchSize,
 	})
 	if err != nil {
 		panic(err)
@@ -91,23 +90,17 @@ func main() {
 	// create control channel
 	done := make(chan struct{})
 
-	// run writers
-	wg.Add(*writers)
-	for i := 0; i < *writers; i++ {
-		go writer(machine, done)
-	}
+	// run writeBatchSize
+	wg.Add(1)
+	go writer(machine, done)
 
-	// run readers
-	wg.Add(*readers)
-	for i := 0; i < *readers; i++ {
-		go reader(machine, done)
-	}
+	// run readBatchSize
+	wg.Add(1)
+	go reader(machine, done)
 
 	// run scanners
-	wg.Add(*scanners)
-	for i := 0; i < *scanners; i++ {
-		go scanner(machine, done)
-	}
+	wg.Add(1)
+	go scanner(machine, done)
 
 	// prepare exit
 	exit := make(chan os.Signal, 1)
@@ -119,16 +112,11 @@ func main() {
 	wg.Wait()
 }
 
-var writeCounter = god.NewCounter("write", nil)
-
 func writer(machine *turing.Machine, done <-chan struct{}) {
 	defer wg.Done()
 
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
-
-	// prepare instruction
-	ins := &inc{}
 
 	// write entries forever
 	for {
@@ -140,23 +128,22 @@ func writer(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// prepare instruction
+		ins := &inc{}
 		ins.Key = uint64(rng.Int63n(*keySpace))
 		ins.Value = uint64(rng.Int63n(*keySpace))
 		ins.Merge = rng.Intn(4) > 0 // 75%
 
 		// inc value
-		err := machine.Execute(ins)
+		err := machine.ExecuteAsync(ins, func(err error) {
+			if err != nil {
+				handle(err)
+			}
+		})
 		if err != nil {
 			handle(err)
-			continue
 		}
-
-		// increment
-		writeCounter.Add(1)
 	}
 }
-
-var readCounter = god.NewCounter("read", nil)
 
 func reader(machine *turing.Machine, done <-chan struct{}) {
 	defer wg.Done()
@@ -164,9 +151,6 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
-	// prepare instruction
-	ins := &get{}
-
 	// prepare options
 	opts := turing.Options{}
 
@@ -180,24 +164,23 @@ func reader(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// prepare instruction
+		ins := &get{}
 		ins.Key = uint64(rng.Int63n(*keySpace))
 
 		// prepare options
 		opts.StaleRead = rng.Intn(4) > 0 // 75%
 
 		// get value
-		err := machine.Execute(ins, opts)
+		err := machine.ExecuteAsync(ins, func(err error) {
+			if err != nil {
+				handle(err)
+			}
+		}, opts)
 		if err != nil {
 			handle(err)
-			continue
 		}
-
-		// increment
-		readCounter.Add(1)
 	}
 }
-
-var scanCounter = god.NewCounter("scan", nil)
 
 func scanner(machine *turing.Machine, done <-chan struct{}) {
 	defer wg.Done()
@@ -205,12 +188,6 @@ func scanner(machine *turing.Machine, done <-chan struct{}) {
 	// create rng
 	rng := rand.New(rand.NewSource(rand.Int63()))
 
-	// prepare instruction
-	ins := &sum{}
-
-	// prepare options
-	opts := turing.Options{}
-
 	// write entries forever
 	for {
 		// check if done
@@ -221,20 +198,22 @@ func scanner(machine *turing.Machine, done <-chan struct{}) {
 		}
 
 		// prepare instruction
+		ins := &sum{}
 		ins.Start = uint64(rng.Int63n(*keySpace - *scanLength))
 
 		// prepare options
+		opts := turing.Options{}
 		opts.StaleRead = rng.Intn(4) > 0 // 75%
 
 		// get value
-		err := machine.Execute(ins, opts)
+		err := machine.ExecuteAsync(ins, func(err error) {
+			if err != nil {
+				handle(err)
+			}
+		}, opts)
 		if err != nil {
 			handle(err)
-			continue
 		}
-
-		// increment
-		scanCounter.Add(1)
 	}
 }
 

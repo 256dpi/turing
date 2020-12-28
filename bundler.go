@@ -15,7 +15,8 @@ type bundlerOptions struct {
 
 type bundlerItem struct {
 	ins Instruction
-	err chan error
+	ch  chan error
+	fn  func(error)
 }
 
 type bundler struct {
@@ -48,7 +49,7 @@ var bundlerChanPool = sync.Pool{
 	},
 }
 
-func (b *bundler) process(ins Instruction) error {
+func (b *bundler) process(ins Instruction, fn func(error)) error {
 	// acquire mutex
 	b.mutex.RLock()
 	defer b.mutex.RUnlock()
@@ -58,6 +59,17 @@ func (b *bundler) process(ins Instruction) error {
 		return fmt.Errorf("turing: bundler closed")
 	}
 
+	// handle async
+	if fn != nil {
+		// queue instruction
+		b.queue <- bundlerItem{
+			ins: ins,
+			fn:  fn,
+		}
+
+		return nil
+	}
+
 	// get result channel
 	ch := bundlerChanPool.Get().(chan error)
 	defer bundlerChanPool.Put(ch)
@@ -65,7 +77,7 @@ func (b *bundler) process(ins Instruction) error {
 	// queue instruction
 	b.queue <- bundlerItem{
 		ins: ins,
-		err: ch,
+		ch:  ch,
 	}
 
 	return <-ch
@@ -78,6 +90,7 @@ func (b *bundler) processor() {
 	// prepare list
 	list := make([]Instruction, 0, b.opts.batchSize)
 	chs := make([]chan error, 0, b.opts.batchSize)
+	fns := make([]func(error), 0, b.opts.batchSize)
 
 	for {
 		// wait 0.1ms if no full batch is available yet
@@ -93,26 +106,44 @@ func (b *bundler) processor() {
 
 		// add to list
 		list = append(list, item.ins)
-		chs = append(chs, item.err)
+		if item.ch != nil {
+			chs = append(chs, item.ch)
+		}
+		if item.fn != nil {
+			fns = append(fns, item.fn)
+		}
 
 		// add buffered instructions while list has room
 		for len(b.queue) > 0 && len(list) < cap(list) {
 			item, ok := <-b.queue
 			if ok {
 				list = append(list, item.ins)
-				chs = append(chs, item.err)
+				if item.ch != nil {
+					chs = append(chs, item.ch)
+				}
+				if item.fn != nil {
+					fns = append(fns, item.fn)
+				}
 			}
 		}
 
-		// call handler and forward result
+		// call handler
 		err := b.opts.handler(list)
+
+		// forward on channels
 		for _, ch := range chs {
 			ch <- err
+		}
+
+		// forward with callbacks
+		for _, fn := range fns {
+			fn(err)
 		}
 
 		// reset lists
 		list = list[:0]
 		chs = chs[:0]
+		fns = fns[:0]
 	}
 }
 

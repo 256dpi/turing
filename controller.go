@@ -36,12 +36,12 @@ func createController(config Config, registry *registry, manager *manager) (*con
 	}, nil
 }
 
-func (c *controller) update(ins Instruction) error {
-	return c.updates.process(ins)
+func (c *controller) update(ins Instruction, fn func(error)) error {
+	return c.updates.process(ins, fn)
 }
 
-func (c *controller) lookup(ins Instruction) error {
-	return c.lookups.process(ins)
+func (c *controller) lookup(ins Instruction, fn func(error)) error {
+	return c.lookups.process(ins, fn)
 }
 
 func (c *controller) close() error {

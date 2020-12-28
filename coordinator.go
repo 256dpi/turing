@@ -103,13 +103,13 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 
 var coordinatorUpdate = systemMetrics.WithLabelValues("coordinator.update")
 
-func (c *coordinator) update(ins Instruction) error {
+func (c *coordinator) update(ins Instruction, fn func(error)) error {
 	// observe
 	timer := observe(coordinatorUpdate)
 	defer timer.finish()
 
 	// queue update
-	err := c.writes.process(ins)
+	err := c.writes.process(ins, fn)
 	if err != nil {
 		return err
 	}
@@ -193,14 +193,14 @@ func (c *coordinator) performUpdates(list []Instruction) error {
 
 var coordinatorLookup = systemMetrics.WithLabelValues("coordinator.lookup")
 
-func (c *coordinator) lookup(ins Instruction, options Options) error {
+func (c *coordinator) lookup(ins Instruction, fn func(error), options Options) error {
 	// observe
 	timer := observe(coordinatorLookup)
 	defer timer.finish()
 
 	// immediately queue stale reads
 	if options.StaleRead {
-		return c.reads.process(ins)
+		return c.reads.process(ins, fn)
 	}
 
 	// otherwise read index for linear reads
@@ -221,7 +221,7 @@ func (c *coordinator) lookup(ins Instruction, options Options) error {
 	}
 
 	// queue lookup
-	err = c.reads.process(ins)
+	err = c.reads.process(ins, fn)
 	if err != nil {
 		return err
 	}

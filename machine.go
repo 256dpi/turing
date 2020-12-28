@@ -74,6 +74,16 @@ var machineExecute = systemMetrics.WithLabelValues("Machine.Execute")
 
 // Execute will execute the specified instruction.
 func (m *Machine) Execute(ins Instruction, opts ...Options) error {
+	return m.execute(ins, nil, opts...)
+}
+
+// ExecuteAsync will execute the specified instruction asynchronously. The
+// specified function is called once the instruction has been executed.
+func (m *Machine) ExecuteAsync(ins Instruction, fn func(error), opts ...Options) error {
+	return m.execute(ins, fn, opts...)
+}
+
+func (m *Machine) execute(ins Instruction, fn func(error), opts ...Options) error {
 	// observe
 	timer := observe(machineExecute)
 	defer timer.finish()
@@ -110,16 +120,16 @@ func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	if m.config.Standalone {
 		// perform lookup
 		if effect == 0 {
-			return m.controller.lookup(ins)
+			return m.controller.lookup(ins, fn)
 		}
 
 		// perform update
-		return m.controller.update(ins)
+		return m.controller.update(ins, fn)
 	}
 
 	// immediately perform read
 	if effect == 0 {
-		err = m.coordinator.lookup(ins, options)
+		err = m.coordinator.lookup(ins, fn, options)
 		if err != nil {
 			return err
 		}
@@ -128,7 +138,7 @@ func (m *Machine) Execute(ins Instruction, opts ...Options) error {
 	}
 
 	// perform update
-	err = m.coordinator.update(ins)
+	err = m.coordinator.update(ins, fn)
 	if err != nil {
 		return err
 	}
