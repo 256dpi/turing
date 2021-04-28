@@ -82,7 +82,6 @@ func openDatabase(config Config, registry *registry, manager *manager) (*databas
 		Merger:                      merger,
 		MemTableSize:                16 << 20, // 16MB
 		MemTableStopWritesThreshold: 4,
-		MinFlushRate:                4 << 20, // 4MB
 		L0CompactionThreshold:       2,
 		L0StopWritesThreshold:       16,
 		LBaseMaxBytes:               16 << 20, // 16MB

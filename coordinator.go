@@ -9,7 +9,6 @@ import (
 	"github.com/lni/dragonboat/v3"
 	"github.com/lni/dragonboat/v3/client"
 	"github.com/lni/dragonboat/v3/config"
-	"github.com/lni/dragonboat/v3/plugin/pebble"
 	"github.com/lni/dragonboat/v3/statemachine"
 
 	"github.com/256dpi/turing/wire"
@@ -53,12 +52,13 @@ func createCoordinator(cfg Config, registry *registry, manager *manager) (*coord
 	// prepare node host config
 	hostConfig := config.NodeHostConfig{
 		DeploymentID:   clusterID,
-		FS:             cfg.RaftFS(),
 		WALDir:         cfg.RaftDir(),
 		NodeHostDir:    cfg.RaftDir(),
-		LogDBFactory:   pebble.NewBatchedLogDB,
 		RTTMillisecond: rttMS,
 		RaftAddress:    cfg.Local().Address(),
+		Expert: config.ExpertConfig{
+			FS: cfg.RaftFS(),
+		},
 	}
 
 	// create node host
