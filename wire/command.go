@@ -3,7 +3,7 @@ package wire
 import (
 	"fmt"
 
-	"github.com/256dpi/turing/coding"
+	"github.com/256dpi/fpack"
 )
 
 // Operation represents an encoded instruction.
@@ -18,7 +18,7 @@ type Command struct {
 }
 
 // Encode will encode the command.
-func (c *Command) Encode(borrow bool) ([]byte, *coding.Ref, error) {
+func (c *Command) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
 	// check operations
 	for _, op := range c.Operations {
 		if op.Name == "" {
@@ -26,7 +26,7 @@ func (c *Command) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 		}
 	}
 
-	return coding.Encode(borrow, func(enc *coding.Encoder) error {
+	return fpack.Encode(borrow, func(enc *fpack.Encoder) error {
 		// encode version
 		enc.Uint8(1)
 
@@ -45,7 +45,7 @@ func (c *Command) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 
 // Decode will decode the command.
 func (c *Command) Decode(bytes []byte, clone bool) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)
@@ -71,7 +71,7 @@ func (c *Command) Decode(bytes []byte, clone bool) error {
 // WalkCommand will walk the encoded command and yield the operations. ErrBreak
 // may be returned to stop execution.
 func WalkCommand(bytes []byte, fn func(i int, op Operation) (bool, error)) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/256dpi/fpack"
 	"github.com/tidwall/cast"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/coding"
 )
 
 const int64Len = 24
@@ -30,7 +30,7 @@ var Add = &turing.Operator{
 		}
 
 		// borrow slice
-		buf, ref := coding.Borrow(int64Len)
+		buf, ref := fpack.Borrow(int64Len)
 
 		// encode count
 		buf = buf[:0]
@@ -50,7 +50,7 @@ var Add = &turing.Operator{
 		}
 
 		// borrow slice
-		buf, ref := coding.Borrow(int64Len)
+		buf, ref := fpack.Borrow(int64Len)
 
 		// encode count
 		buf = buf[:0]
@@ -84,7 +84,7 @@ func (i *Inc) Effect() int {
 // Execute implements the turing.Instruction interface.
 func (i *Inc) Execute(mem turing.Memory, _ turing.Cache) error {
 	// borrow slice
-	buf, ref := coding.Borrow(int64Len)
+	buf, ref := fpack.Borrow(int64Len)
 	defer ref.Release()
 
 	// encode count
@@ -102,7 +102,7 @@ func (i *Inc) Execute(mem turing.Memory, _ turing.Cache) error {
 
 // Encode implements the turing.Instruction interface.
 func (i *Inc) Encode() ([]byte, turing.Ref, error) {
-	return coding.Encode(true, func(enc *coding.Encoder) error {
+	return fpack.Encode(true, func(enc *fpack.Encoder) error {
 		// encode version
 		enc.Uint8(1)
 
@@ -116,7 +116,7 @@ func (i *Inc) Encode() ([]byte, turing.Ref, error) {
 
 // Decode implements the turing.Instruction interface.
 func (i *Inc) Decode(bytes []byte) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)

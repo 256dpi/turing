@@ -3,7 +3,7 @@ package tape
 import (
 	"fmt"
 
-	"github.com/256dpi/turing/coding"
+	"github.com/256dpi/fpack"
 )
 
 // CellType represents the type of cell.
@@ -35,13 +35,13 @@ type Cell struct {
 }
 
 // Encode will encode the cell.
-func (v *Cell) Encode(borrow bool) ([]byte, *coding.Ref, error) {
+func (v *Cell) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
 	// check type
 	if !v.Type.Valid() {
 		return nil, nil, fmt.Errorf("turing: encode cell: invalid type: %c", v.Type)
 	}
 
-	return coding.Encode(borrow, func(enc *coding.Encoder) error {
+	return fpack.Encode(borrow, func(enc *fpack.Encoder) error {
 		// write version
 		enc.Uint8(1)
 
@@ -57,7 +57,7 @@ func (v *Cell) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 
 // Decode will decode the cell.
 func (v *Cell) Decode(bytes []byte, clone bool) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)

@@ -3,7 +3,7 @@ package tape
 import (
 	"fmt"
 
-	"github.com/256dpi/turing/coding"
+	"github.com/256dpi/fpack"
 )
 
 // Operand represents a single operator operand.
@@ -18,7 +18,7 @@ type Stack struct {
 }
 
 // Encode will encode the stack.
-func (s *Stack) Encode(borrow bool) ([]byte, *coding.Ref, error) {
+func (s *Stack) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
 	// check operands
 	for _, op := range s.Operands {
 		if op.Name == "" {
@@ -26,7 +26,7 @@ func (s *Stack) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 		}
 	}
 
-	return coding.Encode(borrow, func(enc *coding.Encoder) error {
+	return fpack.Encode(borrow, func(enc *fpack.Encoder) error {
 		// write version
 		enc.Uint8(1)
 
@@ -45,7 +45,7 @@ func (s *Stack) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 
 // Decode will decode the stack.
 func (s *Stack) Decode(bytes []byte, clone bool) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)
@@ -71,7 +71,7 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 // WalkStack will walk the encoded stack and yield the operands. ErrBreak may
 // be returned to stop execution.
 func WalkStack(bytes []byte, fn func(i int, op Operand) (bool, error)) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)

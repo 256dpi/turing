@@ -3,10 +3,10 @@ package main
 import (
 	"sync"
 
+	"github.com/256dpi/fpack"
 	"github.com/256dpi/god"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/coding"
 )
 
 var addApplyCounter = god.NewCounter("add-a", nil)
@@ -122,7 +122,7 @@ func (i *inc) Execute(mem turing.Memory, _ turing.Cache) error {
 }
 
 func (i *inc) Encode() ([]byte, turing.Ref, error) {
-	return coding.Encode(true, func(enc *coding.Encoder) error {
+	return fpack.Encode(true, func(enc *fpack.Encoder) error {
 		enc.Uint64(i.Key)
 		enc.Uint64(i.Value)
 		enc.Bool(i.Merge)
@@ -131,7 +131,7 @@ func (i *inc) Encode() ([]byte, turing.Ref, error) {
 }
 
 func (i *inc) Decode(bytes []byte) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		dec.Uint64(&i.Key)
 		dec.Uint64(&i.Value)
 		dec.Bool(&i.Merge)

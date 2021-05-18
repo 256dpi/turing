@@ -4,7 +4,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/256dpi/turing/coding"
+	"github.com/256dpi/fpack"
 	"github.com/256dpi/turing/tape"
 )
 
@@ -35,7 +35,7 @@ func newMerger(registry *registry, value []byte) *merger {
 	merger.order = true
 
 	// add value
-	op, ref := coding.Clone(value)
+	op, ref := fpack.Clone(value)
 	merger.values = append(merger.values, op)
 	merger.refs = append(merger.refs, ref)
 
@@ -47,7 +47,7 @@ func (m *merger) MergeNewer(value []byte) error {
 	m.sort(true)
 
 	// add value
-	op, ref := coding.Clone(value)
+	op, ref := fpack.Clone(value)
 	m.values = append(m.values, op)
 	m.refs = append(m.refs, ref)
 
@@ -59,7 +59,7 @@ func (m *merger) MergeOlder(value []byte) error {
 	m.sort(false)
 
 	// add value
-	op, ref := coding.Clone(value)
+	op, ref := fpack.Clone(value)
 	m.values = append(m.values, op)
 	m.refs = append(m.refs, ref)
 

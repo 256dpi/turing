@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/256dpi/fpack"
 	"github.com/256dpi/god"
 
 	"github.com/256dpi/turing"
-	"github.com/256dpi/turing/coding"
 )
 
 type sum struct {
@@ -62,7 +62,7 @@ func (s *sum) Execute(mem turing.Memory, _ turing.Cache) error {
 }
 
 func (s *sum) Encode() ([]byte, turing.Ref, error) {
-	return coding.Encode(true, func(enc *coding.Encoder) error {
+	return fpack.Encode(true, func(enc *fpack.Encoder) error {
 		enc.Uint64(s.Start)
 		enc.Uint64(s.Count)
 		enc.Uint64(s.Total)
@@ -71,7 +71,7 @@ func (s *sum) Encode() ([]byte, turing.Ref, error) {
 }
 
 func (s *sum) Decode(bytes []byte) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		dec.Uint64(&s.Start)
 		dec.Uint64(&s.Count)
 		dec.Uint64(&s.Total)

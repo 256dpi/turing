@@ -5,9 +5,9 @@ import (
 	"io"
 	"sync"
 
+	"github.com/256dpi/fpack"
 	"github.com/cockroachdb/pebble"
 
-	"github.com/256dpi/turing/coding"
 	"github.com/256dpi/turing/tape"
 )
 
@@ -372,7 +372,7 @@ func (i *iterator) Prev() bool {
 }
 
 func (i *iterator) Key() ([]byte, Ref) {
-	return coding.Clone(i.TempKey())
+	return fpack.Clone(i.TempKey())
 }
 
 func (i *iterator) TempKey() []byte {
@@ -393,7 +393,7 @@ func (i *iterator) Value() ([]byte, Ref, error) {
 	}
 
 	// clone value
-	value, ref := coding.Clone(value)
+	value, ref := fpack.Clone(value)
 
 	return value, ref, nil
 }
@@ -469,7 +469,7 @@ func (i *iterator) Close() error {
 }
 
 func prefixUserKey(key []byte) ([]byte, Ref) {
-	return coding.Concat(userPrefix, key)
+	return fpack.Concat(userPrefix, key)
 }
 
 func trimUserKey(key []byte) []byte {

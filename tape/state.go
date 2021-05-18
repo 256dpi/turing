@@ -3,7 +3,7 @@ package tape
 import (
 	"fmt"
 
-	"github.com/256dpi/turing/coding"
+	"github.com/256dpi/fpack"
 )
 
 // State represents the current state of a database.
@@ -19,8 +19,8 @@ type State struct {
 }
 
 // Encode will encode the state.
-func (s *State) Encode(borrow bool) ([]byte, *coding.Ref, error) {
-	return coding.Encode(borrow, func(enc *coding.Encoder) error {
+func (s *State) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
+	return fpack.Encode(borrow, func(enc *fpack.Encoder) error {
 		// encode version
 		enc.Uint8(1)
 
@@ -35,7 +35,7 @@ func (s *State) Encode(borrow bool) ([]byte, *coding.Ref, error) {
 
 // Decode will decode the state.
 func (s *State) Decode(bytes []byte) error {
-	return coding.Decode(bytes, func(dec *coding.Decoder) error {
+	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
 		// decode version
 		var version uint8
 		dec.Uint8(&version)

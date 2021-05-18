@@ -10,7 +10,6 @@ install:
   - go get -t ./...
 script:
   - go test -coverprofile=turing.coverprofile
-  - go test -coverprofile=coding.coverprofile ./coding
   - go test -coverprofile=stdset.coverprofile ./stdset
   - go test -coverprofile=tape.coverprofile ./tape
   - go test -coverprofile=wire.coverprofile ./wire
