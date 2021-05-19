@@ -1,10 +1,8 @@
 # turing
 
-[![Build Status](https://travis-ci.org/256dpi/turing.svg?branch=master)](https://travis-ci.org/256dpi/turing)
-[![Coverage Status](https://coveralls.io/repos/github/256dpi/turing/badge.svg?branch=master)](https://coveralls.io/github/256dpi/turing?branch=master)
+[![Test](https://github.com/256dpi/turing/actions/workflows/test.yml/badge.svg)](https://github.com/256dpi/turing/actions/workflows/test.yml)
 [![GoDoc](https://godoc.org/github.com/256dpi/turing?status.svg)](http://godoc.org/github.com/256dpi/turing)
 [![Release](https://img.shields.io/github/release/256dpi/turing.svg)](https://github.com/256dpi/turing/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/256dpi/turing)](http://goreportcard.com/report/256dpi/turing)
 
 Turing is a framework for building domain specific databases on top of a
 replicated key value store. Database commands are implemented as instructions
