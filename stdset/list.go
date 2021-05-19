@@ -68,24 +68,21 @@ func (l *List) Encode() ([]byte, turing.Ref, error) {
 // Decode implements the turing.Instruction interface.
 func (l *List) Decode(bytes []byte) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("stdset: decode list: invalid version")
 		}
 
 		// decode prefix
-		dec.VarBytes(&l.Prefix, true)
+		l.Prefix = dec.VarBytes(true)
 
 		// decode length
-		var length uint64
-		dec.VarUint(&length)
+		length := dec.VarUint()
 
 		// decode keys
 		l.Keys = make([][]byte, length)
 		for i := 0; i < int(length); i++ {
-			dec.VarBytes(&l.Keys[i], true)
+			l.Keys[i] = dec.VarBytes(true)
 		}
 
 		return nil

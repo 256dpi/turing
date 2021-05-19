@@ -1,7 +1,7 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-github.com/256dpi/fpack v0.0.0-20210518140255-02ed7dcc25bf h1:VyvQz6ACMWNB1uUNoLXb4LWRvJsivQlNTDDGTtbGvNg=
-github.com/256dpi/fpack v0.0.0-20210518140255-02ed7dcc25bf/go.mod h1:R9GND/azcpWGcX4yH7o3ihsPMPd4eSEOw2ZXVeGwt3M=
+github.com/256dpi/fpack v0.1.1-0.20210518202720-8b790b5eefd3 h1:RIWJl2mU2sV7vaLSjxIsQbyIEx2Vo7UQohJF8kbGOx4=
+github.com/256dpi/fpack v0.1.1-0.20210518202720-8b790b5eefd3/go.mod h1:R9GND/azcpWGcX4yH7o3ihsPMPd4eSEOw2ZXVeGwt3M=
 github.com/256dpi/god v0.4.3 h1:E4/JBssmA5rGavWaQ87ZPhNjNC7p0uoHZ3wBR8GyJKs=
 github.com/256dpi/god v0.4.3/go.mod h1:EN2AWUGHrzTbk2YZa9ZM/snM9Sy8msYBKdFXMTQTSVA=
 github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9/go.mod h1:bOvUY6CB00SOBii9/FifXqc0awNKxLFCL/+pkDPuyl8=

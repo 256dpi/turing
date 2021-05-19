@@ -58,23 +58,20 @@ func (v *Cell) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
 // Decode will decode the cell.
 func (v *Cell) Decode(bytes []byte, clone bool) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("turing: decode cell: invalid version")
 		}
 
 		// decode type
-		var typ uint8
-		dec.Uint8(&typ)
+		typ := dec.Uint8()
 		v.Type = CellType(typ)
 		if !v.Type.Valid() {
 			return fmt.Errorf("turing: decode cell: invalid type: %d", v.Type)
 		}
 
 		// decode value
-		dec.Tail(&v.Value, clone)
+		v.Value = dec.Tail(clone)
 
 		return nil
 	})

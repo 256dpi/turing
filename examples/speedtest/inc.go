@@ -132,9 +132,9 @@ func (i *inc) Encode() ([]byte, turing.Ref, error) {
 
 func (i *inc) Decode(bytes []byte) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		dec.Uint64(&i.Key)
-		dec.Uint64(&i.Value)
-		dec.Bool(&i.Merge)
+		i.Key = dec.Uint64()
+		i.Value = dec.Uint64()
+		i.Merge = dec.Bool()
 		return nil
 	})
 }

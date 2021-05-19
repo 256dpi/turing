@@ -36,17 +36,15 @@ func (s *State) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
 // Decode will decode the state.
 func (s *State) Decode(bytes []byte) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("turing: state decode: invalid version")
 		}
 
 		// decode body
-		dec.Uint64(&s.Index)
-		dec.Uint64(&s.Batch)
-		dec.Uint16(&s.Last)
+		s.Index = dec.Uint64()
+		s.Batch = dec.Uint64()
+		s.Last = dec.Uint16()
 
 		return nil
 	})

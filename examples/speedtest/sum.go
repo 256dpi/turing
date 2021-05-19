@@ -72,9 +72,9 @@ func (s *sum) Encode() ([]byte, turing.Ref, error) {
 
 func (s *sum) Decode(bytes []byte) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		dec.Uint64(&s.Start)
-		dec.Uint64(&s.Count)
-		dec.Uint64(&s.Total)
+		s.Start = dec.Uint64()
+		s.Count = dec.Uint64()
+		s.Total = dec.Uint64()
 		return nil
 	})
 }

@@ -54,8 +54,8 @@ func (g *get) Encode() ([]byte, turing.Ref, error) {
 
 func (g *get) Decode(bytes []byte) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		dec.Uint64(&g.Key)
-		dec.Uint64(&g.Value)
+		g.Key = dec.Uint64()
+		g.Value = dec.Uint64()
 		return nil
 	})
 }

@@ -46,22 +46,19 @@ func (s *Stack) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
 // Decode will decode the stack.
 func (s *Stack) Decode(bytes []byte, clone bool) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("turing: decode stack: invalid version")
 		}
 
 		// decode length
-		var length uint16
-		dec.Uint16(&length)
+		length := dec.Uint16()
 
 		// decode operands
 		s.Operands = make([]Operand, int(length))
 		for i := range s.Operands {
-			dec.String(&s.Operands[i].Name, 2, clone)
-			dec.Bytes(&s.Operands[i].Value, 4, clone)
+			s.Operands[i].Name = dec.String(2, clone)
+			s.Operands[i].Value = dec.Bytes(4, clone)
 		}
 
 		return nil
@@ -72,22 +69,19 @@ func (s *Stack) Decode(bytes []byte, clone bool) error {
 // be returned to stop execution.
 func WalkStack(bytes []byte, fn func(i int, op Operand) (bool, error)) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("turing: walk stack: invalid version")
 		}
 
 		// decode length
-		var length uint16
-		dec.Uint16(&length)
+		length := dec.Uint16()
 
 		// decode operands
 		var op Operand
 		for i := 0; i < int(length); i++ {
-			dec.String(&op.Name, 2, false)
-			dec.Bytes(&op.Value, 4, false)
+			op.Name = dec.String(2, false)
+			op.Value = dec.Bytes(4, false)
 			ok, err := fn(i, op)
 			if err != nil || !ok {
 				return err

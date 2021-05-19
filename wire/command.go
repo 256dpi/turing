@@ -46,22 +46,19 @@ func (c *Command) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
 // Decode will decode the command.
 func (c *Command) Decode(bytes []byte, clone bool) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("turing: decode command: invalid version")
 		}
 
 		// decode number of operations
-		var length uint16
-		dec.Uint16(&length)
+		length := dec.Uint16()
 
 		// decode operations
 		c.Operations = make([]Operation, length)
 		for i := 0; i < int(length); i++ {
-			dec.String(&c.Operations[i].Name, 2, clone)
-			dec.Bytes(&c.Operations[i].Code, 4, clone)
+			c.Operations[i].Name = dec.String(2, clone)
+			c.Operations[i].Code = dec.Bytes(4, clone)
 		}
 
 		return nil
@@ -72,22 +69,19 @@ func (c *Command) Decode(bytes []byte, clone bool) error {
 // may be returned to stop execution.
 func WalkCommand(bytes []byte, fn func(i int, op Operation) (bool, error)) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("turing: walk command: invalid version")
 		}
 
 		// decode number of operations
-		var length uint16
-		dec.Uint16(&length)
+		length := dec.Uint16()
 
 		// decode operations
 		var op Operation
 		for i := 0; i < int(length); i++ {
-			dec.String(&op.Name, 2, false)
-			dec.Bytes(&op.Code, 4, false)
+			op.Name = dec.String(2, false)
+			op.Code = dec.Bytes(4, false)
 			ok, err := fn(i, op)
 			if err != nil || !ok {
 				return err

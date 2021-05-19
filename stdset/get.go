@@ -61,17 +61,15 @@ func (g *Get) Encode() ([]byte, turing.Ref, error) {
 // Decode implements the turing.Instruction interface.
 func (g *Get) Decode(bytes []byte) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("stdset: decode get: invalid version")
 		}
 
 		// decode body
-		dec.VarBytes(&g.Key, true)
-		dec.Bool(&g.Exists)
-		dec.Tail(&g.Value, true)
+		g.Key = dec.VarBytes(true)
+		g.Exists = dec.Bool()
+		g.Value = dec.Tail(true)
 
 		return nil
 	})

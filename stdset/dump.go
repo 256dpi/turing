@@ -81,35 +81,24 @@ func (d *Dump) Encode() ([]byte, turing.Ref, error) {
 // Decode implements the turing.Instruction interface.
 func (d *Dump) Decode(bytes []byte) error {
 	return fpack.Decode(bytes, func(dec *fpack.Decoder) error {
-		// decode version
-		var version uint8
-		dec.Uint8(&version)
-		if version != 1 {
+		// check version
+		if dec.Uint8() != 1 {
 			return fmt.Errorf("stdset: decode dump: invalid version")
 		}
 
 		// decode prefix
-		dec.VarBytes(&d.Prefix, true)
+		d.Prefix = dec.VarBytes(true)
 
 		// decode length
-		var length uint64
-		dec.VarUint(&length)
+		length := dec.VarUint()
 
 		// prepare map
 		d.Map = make(map[string]string, length)
 
 		// decode pairs
 		for i := 0; i < int(length); i++ {
-			// decode key
-			var key string
-			dec.VarString(&key, true)
-
-			// decode value
-			var value string
-			dec.VarString(&value, true)
-
-			// set pair
-			d.Map[key] = value
+			key := dec.VarString(true)
+			d.Map[key] = dec.VarString(true)
 		}
 
 		return nil
