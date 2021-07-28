@@ -103,7 +103,7 @@ func TestComputerCombine(t *testing.T) {
 
 	// alloc comes from operator
 	computer = newComputer(registry)
-	assert.Equal(t, 1.0, testing.AllocsPerRun(10, func() {
+	assert.Equal(t, 2.0, testing.AllocsPerRun(10, func() {
 		_, ref, _ := computer.combine(cells)
 		ref.Release()
 	}))
@@ -284,7 +284,24 @@ func BenchmarkComputerCombine(b *testing.B) {
 		},
 	}
 
-	computer := newComputer(nil)
+	registry := &registry{
+		ops: map[string]*Operator{
+			"foo": {
+				Name: "foo",
+				Zero: []byte(""),
+			},
+			"bar": {
+				Name: "bar",
+				Zero: []byte(""),
+			},
+			"baz": {
+				Name: "baz",
+				Zero: []byte(""),
+			},
+		},
+	}
+
+	computer := newComputer(registry)
 
 	b.ReportAllocs()
 	b.ResetTimer()
