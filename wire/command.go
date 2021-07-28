@@ -18,11 +18,11 @@ type Command struct {
 }
 
 // Encode will encode the command.
-func (c *Command) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
+func (c *Command) Encode(borrow bool) ([]byte, fpack.Ref, error) {
 	// check operations
 	for _, op := range c.Operations {
 		if op.Name == "" {
-			return nil, nil, fmt.Errorf("turing: encode command: missing operation name")
+			return nil, fpack.Ref{}, fmt.Errorf("turing: encode command: missing operation name")
 		}
 	}
 

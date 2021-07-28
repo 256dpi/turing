@@ -19,7 +19,7 @@ type State struct {
 }
 
 // Encode will encode the state.
-func (s *State) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
+func (s *State) Encode(borrow bool) ([]byte, fpack.Ref, error) {
 	return fpack.Encode(borrow, func(enc *fpack.Encoder) error {
 		// encode version
 		enc.Uint8(1)

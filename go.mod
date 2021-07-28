@@ -3,7 +3,7 @@ module github.com/256dpi/turing
 go 1.14
 
 require (
-	github.com/256dpi/fpack v0.1.1-0.20210518202720-8b790b5eefd3
+	github.com/256dpi/fpack v0.2.0
 	github.com/256dpi/god v0.4.3
 	github.com/cockroachdb/pebble v0.0.0-20210406181039-e3809b89b488
 	github.com/lni/dragonboat/v3 v3.3.2

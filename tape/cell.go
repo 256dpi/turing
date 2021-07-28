@@ -35,10 +35,10 @@ type Cell struct {
 }
 
 // Encode will encode the cell.
-func (v *Cell) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
+func (v *Cell) Encode(borrow bool) ([]byte, fpack.Ref, error) {
 	// check type
 	if !v.Type.Valid() {
-		return nil, nil, fmt.Errorf("turing: encode cell: invalid type: %c", v.Type)
+		return nil, fpack.Ref{}, fmt.Errorf("turing: encode cell: invalid type: %c", v.Type)
 	}
 
 	return fpack.Encode(borrow, func(enc *fpack.Encoder) error {

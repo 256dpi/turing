@@ -18,11 +18,11 @@ type Stack struct {
 }
 
 // Encode will encode the stack.
-func (s *Stack) Encode(borrow bool) ([]byte, *fpack.Ref, error) {
+func (s *Stack) Encode(borrow bool) ([]byte, fpack.Ref, error) {
 	// check operands
 	for _, op := range s.Operands {
 		if op.Name == "" {
-			return nil, nil, fmt.Errorf("turing: encode stack: missing operand name")
+			return nil, fpack.Ref{}, fmt.Errorf("turing: encode stack: missing operand name")
 		}
 	}
 
